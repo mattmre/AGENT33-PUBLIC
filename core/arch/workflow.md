@@ -8,7 +8,7 @@ Quick links (canonical `core/arch` paths):
 - `core/INDEX.md`
 - `core/arch/templates.md`
 - `core/arch/phase-planning.md`
-- `core/arch/next-session.md`
+- the operator's session handoff document
 - `core/arch/schedule-and-tracking.md`
 - `core/arch/scope-lock-template.md`
 - `core/arch/glossary.md`

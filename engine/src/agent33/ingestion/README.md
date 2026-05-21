@@ -29,7 +29,7 @@ design contract for the full legal and architectural rationale:
 - Decision #17 — Evolver ingestion boundary (concept-only clean-room adaptation)
 - Decision #18 — Imported-asset lifecycle with confidence/trust labels
 
-Both decisions are in `docs/phases/PHASE-PLAN-POST-P72-2026.md`.
+Both decisions are tracked in the project's architectural decision record.
 
 ## Module Contents
 

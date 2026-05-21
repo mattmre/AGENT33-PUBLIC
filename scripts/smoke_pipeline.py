@@ -25,7 +25,7 @@ Two-tier framing per project release gate:
                        with expected content
     Until you reach ceiling-tier, the SMOKE: line in your PR body MUST name
     which tier was run AND any ceiling gap MUST appear as a Carried Debt entry
-    in your next-session.md per §6.3.
+    in your session handoff document per §6.3.
 
 AGENT33 FLOOR-TIER SURFACE:
   production module: agent33.main

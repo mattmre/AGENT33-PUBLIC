@@ -55,12 +55,11 @@ Produce a concise "Next Session Kickoff Narrative" that can be pasted into a bra
 
 ---
 
-### 4) Save Next-Session Narrative (only when explicitly requested)
+### 4) Save Session Handoff Narrative (only when explicitly requested)
 
-When explicitly asked to "save the next-session narrative", write it to:
-```
-./docs/next session/next-session-narrative.md
-```
+When explicitly asked to "save the session handoff narrative", write it to the
+operator's configured session handoff path (for example a file under
+`./docs/session-handoff/`).
 
 - If the folder does not exist, create it
 - **Do not save it unless explicitly requested**
@@ -72,7 +71,7 @@ When explicitly asked to "save the next-session narrative", write it to:
 - [ ] Session log exists in `./docs/session-logs/` (or appended correctly)
 - [ ] `CLAUDE.md` and any necessary project `.md` docs are updated for continuity
 - [ ] Next-session narrative is generated and ready to paste into a new chat
-- [ ] If/when requested, the next-session narrative is saved under `./docs/next session/`
+- [ ] If/when requested, the session handoff narrative is saved under the operator's configured handoff path
 
 ---
 

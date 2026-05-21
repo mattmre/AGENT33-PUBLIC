@@ -7,7 +7,7 @@ CLEAN-ROOM RESTRICTION
 =======================
 No code in this file may originate from the EvoMap/Evolver project.  All
 logic is derived exclusively from AGENT33's own architectural decisions #17
-and #18 as documented in ``docs/phases/PHASE-PLAN-POST-P72-2026.md`` and
+and #18, with the clean-room contract documented in
 ``docs/research/evolver-clean-room-guardrails.md``.
 """
 

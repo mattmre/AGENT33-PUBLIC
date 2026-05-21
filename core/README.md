@@ -11,7 +11,7 @@ It defines the model-agnostic orchestration system, AEP workflow, and reusable t
 - `orchestrator/integrations/`: Platform integration specs (channels, voice/media, credentials, privacy).
 - `workflows/`: Canonical GitHub workflow templates and instructions.
 - `roadmap/`, `phases/`, `research/`, `user-guide/`, `api/`: Project documentation canon.
-- `logs/`: Session logs and next-session narratives, partitioned by source repo.
+- `logs/`: Session logs and session handoff narratives, partitioned by source repo.
 
 ## Orchestration Overview
 - `core/ORCHESTRATION_INDEX.md`: links the orchestration system, AEP workflow, and workflows.
