@@ -1,60 +1,89 @@
 # AGENT-33 Documentation
 
-Last updated: April 17, 2026.
+Welcome to the AGENT-33 documentation set. This index is the canonical entry point for operators, integrators, and contributors. Start with the quick-navigation links if you already know what you need; otherwise work through the numbered sections in order — they progress from first-time setup to advanced architecture and reference material.
 
-This `docs/` directory is the canonical documentation set for AGENT-33.
+## Quick navigation
 
-## Start Here
+- [Installation](../INSTALL.md)
+- [Architecture overview](../ARCHITECTURE.md)
+- [Quick start](../README.md#quick-start)
+- [API reference](api-reference.md)
+- [Changelog](../CHANGELOG.md)
 
-1. [Getting Started](getting-started.md)
-2. [Operator Onboarding](ONBOARDING.md)
-3. [Setup Guide](setup-guide.md)
-4. [Walkthroughs](walkthroughs.md)
-5. [Release Checklist](RELEASE_CHECKLIST.md)
-6. [Operator Guide: Improvement Cycles and Docker Kernels](operator-improvement-cycle-and-jupyter.md)
-7. [Production Deployment Runbook](operators/production-deployment-runbook.md)
-8. [Operator Verification Runbook](operators/operator-verification-runbook.md)
-9. [Process Registry Runbook](operators/process-registry-runbook.md)
-10. [Connector Boundary Runbook](operators/connector-boundary-runbook.md)
-11. [Horizontal Scaling Architecture](operators/horizontal-scaling-architecture.md)
-12. [Incident Response Playbooks](operators/incident-response-playbooks.md)
-13. [Pricing And Effort Runbook](operators/pricing-and-effort-runbook.md)
-14. [Service Level Objectives](operators/service-level-objectives.md)
-15. [Use Cases](use-cases.md)
-16. [Functionality and Workflows](functionality-and-workflows.md)
-17. [API Surface](api-surface.md)
+## 1. Getting started
 
-## Runtime Snapshot
+New to AGENT-33? Read these in order to get a working deployment and your first authenticated request.
 
-- Runtime entry point: `engine/src/agent33/main.py`
-- API prefixes: `/health`, `/v1/*`
-- Auth model: middleware-enforced auth + scope checks on selected endpoints (dashboard routes are public for local operator visibility)
-- Data stores: PostgreSQL/pgvector, Redis, NATS, plus several in-memory services
-- Default deployment: Docker Compose stack in `engine/docker-compose.yml`
-- Frontend control plane: `frontend/` (served by compose at `http://localhost:3000`)
+- [Getting started](getting-started.md) — Fastest path from a fresh checkout to a running demo, including health checks and JWT minting.
+- [Setup guide](setup-guide.md) — End-to-end local setup with prerequisites, environment variables, and Ollama startup modes.
+- [Operator onboarding](ONBOARDING.md) — Operator-oriented tour of the four primary surfaces (control plane, runtime API, CLI, traces).
+- [Walkthroughs](walkthroughs.md) — Task-oriented walkthroughs across agents, workflows, memory, review, release, evaluation, autonomy, and improvement.
+- [Examples](examples.md) — Realistic end-to-end scenarios with commands, expected output, and verification steps.
+- [Use cases](use-cases.md) — Implementation patterns mapped to the current runtime surface, with module requirements and tradeoffs.
 
-## Guide Map
+## 2. Core concepts
 
-| Document | Purpose |
-| --- | --- |
-| `getting-started.md` | Fastest path from clone to first successful AGENT-33 demo |
-| `ONBOARDING.md` | Operator-oriented introduction to the main surfaces, scopes, and first workflows |
-| `setup-guide.md` | End-to-end environment setup, auth bootstrap, and first successful requests |
-| `walkthroughs.md` | Task-oriented walkthroughs across agents, workflows, memory, review, release, evaluation, autonomy, and improvement APIs |
-| `RELEASE_CHECKLIST.md` | Public-launch and release-readiness checklist for security, verification, and operator posture |
-| `operator-improvement-cycle-and-jupyter.md` | Current operator path for the improvement-cycle wizard, canonical presets, and Docker-backed Jupyter execution |
-| `operators/production-deployment-runbook.md` | Current Kubernetes production rollout, verification, monitoring, and rollback guidance for the shipped deploy baseline |
-| `operators/operator-verification-runbook.md` | Canonical authenticated verification order for operator status, doctor, process inventory, and backup safety checks |
-| `operators/process-registry-runbook.md` | Current `/v1/processes` contract, restart-to-`interrupted` recovery path, and bounded cleanup guidance |
-| `operators/connector-boundary-runbook.md` | Connector middleware order, breaker cooldown policy, retry semantics, and `/v1/connectors` inspection workflow |
-| `operators/pricing-and-effort-runbook.md` | Auditable pricing-catalog provenance, live effort-router thresholds, and fast-path verification steps |
-| `operators/horizontal-scaling-architecture.md` | Current replica-safety contract, state-boundary map, blocking globals, and `P1.2` migration sequence for multi-replica rollout |
-| `operators/incident-response-playbooks.md` | First incident-response playbooks for API outages, degraded dependencies, evaluation regressions, and webhook backlog incidents |
-| `operators/service-level-objectives.md` | Current internal SLO baseline, error-budget policy, guardrail mapping, and deferred-objective inventory |
-| `use-cases.md` | Practical implementation patterns with module requirements and tradeoffs |
-| `functionality-and-workflows.md` | Current functionality inventory, lifecycle/state flows, and persistence boundaries |
-| `api-surface.md` | Complete endpoint map with auth/scope requirements |
+Mental models for the abstractions that compose into the platform.
 
-## Legacy and Supporting Material
+- [Concepts](concepts.md) — Tenants, agents, workflows, skills, packs, tools, memory, and how they relate.
+- [Glossary](glossary.md) — Alphabetical definitions of terms used across documentation and source.
+- [Conventions](CONVENTIONS.md) — Repository layout, change-flow expectations, and contribution standards.
+- [Functionality and workflows](functionality-and-workflows.md) — Current behavior map: runtime architecture, lifecycle/state flows, and persistence boundaries.
 
-Existing documents under `engine/docs/` and `core/` remain useful as deep reference material. Use this `docs/` set first when you need current runtime behavior and operational guidance.
+## 3. Architecture
+
+Deep dives into the design of each subsystem.
+
+- [Architecture directory](architecture/) — Full architecture catalog covering system overview, components, data flow, agents, workflows, packs and skills, security model, multi-tenancy, observability, storage, messaging, MCP integration, deployment topologies, help assistant, API surface, and architecture decision records.
+
+## 4. Operator runbooks
+
+Day-2 operations and incident response. These runbooks describe surfaces that are already shipped and verified on `main`.
+
+- [Operator manual](operator-manual.md) — Reference for starting and stopping the engine, watching agents and workflows, managing tenants, governing tools, and handling common operational tasks.
+- [Operators directory](operators/) — Production-focused runbooks covering deployment, verification, scaling, incident response, SLOs, and more (production deployment, agent OS runtime, operator verification, process registry, connector boundary, horizontal scaling, incident response playbooks, pricing and effort, service level objectives, security audit checklist, voice daemon).
+- [Runbooks directory](runbooks/) — Targeted runbooks for Jupyter kernel containers and Kubernetes secret rotation.
+- [Operator improvement cycle and Jupyter](operator-improvement-cycle-and-jupyter.md) — Operator path for the improvement-cycle wizard, canonical workflow presets, and Docker-backed Jupyter execution.
+- [Troubleshooting](troubleshooting.md) — Indexed failure modes with pointers to `/health`, container logs, `/v1/traces`, and `var/` artifacts.
+- [Upgrade guide](upgrade-guide.md) — Version-agnostic upgrade process: backup, upgrade, migrate, smoke, and rollback.
+
+## 5. Workflows, skills, and packs
+
+How to compose, extend, and distribute capability.
+
+- [Default policy packs](default-policy-packs.md) — Connector-boundary policy-pack presets and how they combine with explicit blocklists.
+- [Plugins directory](plugins/) — Plugin SDK: how to create, package, and register plugins that contribute tools, skills, agents, and hooks.
+
+## 6. Observability and governance
+
+Inspection, evaluation, and self-improvement.
+
+- [Self-improvement directory](self-improvement/) — Continuous-improvement loop: intake protocol, testing protocol, offline-mode behavior, and community-improvement model.
+- [Benchmarks directory](benchmarks/) — Benchmark run metadata and pointers to the `benchmarks` branch for full result sets.
+- [Competitive analysis directory](competitive-analysis/) — Autonomous competitive-analysis protocol: how the engine generates competitor dossiers on demand.
+
+## 7. Integration and APIs
+
+External-facing contracts and developer integration. The operator-facing REST API index is the API reference linked from Quick navigation at the top of this page.
+
+- [API surface](api-surface.md) — Source-of-truth map of route modules, public endpoints, and scope checks.
+- [CLI reference](cli-reference.md) — Complete `agent33` command reference with arguments and examples.
+- [Configuration](configuration.md) — Every environment variable, grouped by subsystem, with type, default, purpose, and example.
+
+## 8. Advanced
+
+Release engineering, contribution workflow, and quality gates.
+
+- [Testing](testing.md) — Test-suite layout, layers, and how to run tests locally.
+- [Releasing](releasing.md) — Versioning scheme, release lifecycle, pre-release checklist, and rollback process.
+- [Release checklist](RELEASE_CHECKLIST.md) — Public-launch and release-readiness checklist for security, verification, and operator posture.
+
+## 9. Reference
+
+Authoritative lookup material lives in the sections above. The glossary, configuration, API reference, API surface, and CLI reference are the primary lookup surfaces (listed under sections 2 and 7). The architecture directory additionally contains the architecture decision record (ADR) series for load-bearing design decisions.
+
+## Support
+
+- [Discussions](https://github.com/mattmre/AGENT33-PUBLIC/discussions)
+- [Security policy](../SECURITY.md)
+- [Contributing](../CONTRIBUTING.md)
