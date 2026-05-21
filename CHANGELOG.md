@@ -12,13 +12,6 @@ _No changes yet._
 
 Initial public release of AGENT-33 under the Apache License 2.0.
 
-### Release tooling
-
-- `sync_public` sanitize rules are now `.gitignore`-scoped so internal-only
-  paths are skipped consistently when staging the public mirror.
-- The `--clean` rename gap is documented in `release/README.md` so operators
-  know which renames the sync script does not currently follow.
-
 ### Added
 
 - **Engine** (`engine/`) — FastAPI service with lifespan-wired subsystems and

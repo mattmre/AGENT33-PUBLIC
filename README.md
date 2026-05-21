@@ -1,31 +1,113 @@
+<div align="center">
+
+<img src=".github/social-preview.png" alt="AGENT-33 — Local-First Multi-Agent Orchestration" width="820">
+
 # AGENT-33
 
-AGENT-33 is a local-first AI agent orchestration platform for teams that want **real workflows, explicit governance, and a usable control plane** instead of a pile of disconnected scripts.
+### Local-First Multi-Agent Orchestration Platform with Governance, Evidence, and Workflows
 
-![Python 3.11+](https://img.shields.io/badge/python-3.11%2B-blue)
-![License: Apache 2.0](https://img.shields.io/badge/license-Apache%202.0-blue)
-![Version](https://img.shields.io/badge/version-2.1.0-brightgreen)
-![Docker](https://img.shields.io/badge/docker-ghcr.io-2496ed)
-![FastAPI](https://img.shields.io/badge/FastAPI-async-009688)
-![PRs Welcome](https://img.shields.io/badge/PRs-welcome-ff69b4)
+[![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
+[![Version](https://img.shields.io/badge/version-2.1.0-green.svg)](CHANGELOG.md)
+[![CI](https://github.com/mattmre/AGENT33-PUBLIC/actions/workflows/ci.yml/badge.svg)](https://github.com/mattmre/AGENT33-PUBLIC/actions/workflows/ci.yml)
+[![Python](https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
+[![Docker](https://img.shields.io/badge/runtime-Docker-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
+[![FastAPI](https://img.shields.io/badge/api-FastAPI-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
+[![Ollama](https://img.shields.io/badge/llm-Ollama-000?logo=ollama&logoColor=white)](https://ollama.com/)
+[![pgvector](https://img.shields.io/badge/memory-pgvector-336791?logo=postgresql&logoColor=white)](https://github.com/pgvector/pgvector)
+[![Discussions](https://img.shields.io/github/discussions/mattmre/AGENT33-PUBLIC?logo=github&color=2ea043)](https://github.com/mattmre/AGENT33-PUBLIC/discussions)
+[![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
+
+#### Local-first &middot; Multi-tenant &middot; Audit-trail by design &middot; Approval-gated automation
+
+[**Quick Start**](#quick-start) &nbsp;&middot;&nbsp; [**Architecture**](docs/architecture/overview.md) &nbsp;&middot;&nbsp; [**API Reference**](docs/api-reference.md) &nbsp;&middot;&nbsp; [**Onboarding**](docs/ONBOARDING.md)
+
+[Use Cases](docs/use-cases.md) &nbsp;&middot;&nbsp; [Walkthroughs](docs/walkthroughs.md) &nbsp;&middot;&nbsp; [Self-Improvement](docs/self-improvement/README.md) &nbsp;&middot;&nbsp; [Operator Runbooks](docs/operators/)
+
+</div>
+
+---
+
+## At a Glance
+
+<table>
+  <tr>
+    <td align="center" width="16%">
+      <b><sub>AGENTS</sub></b><br>
+      <b style="font-size:1.5em">6</b><br>
+      <sub>Reference agent definitions</sub>
+    </td>
+    <td align="center" width="16%">
+      <b><sub>WORKFLOWS</sub></b><br>
+      <b style="font-size:1.5em">DAG</b><br>
+      <sub>Composable, with retries</sub>
+    </td>
+    <td align="center" width="16%">
+      <b><sub>TOOLS</sub></b><br>
+      <b style="font-size:1.5em">7</b><br>
+      <sub>Schema-validated builtins</sub>
+    </td>
+    <td align="center" width="16%">
+      <b><sub>SUBSYSTEMS</sub></b><br>
+      <b style="font-size:1.5em">20+</b><br>
+      <sub>Lifespan-wired services</sub>
+    </td>
+    <td align="center" width="16%">
+      <b><sub>LLM PROVIDERS</sub></b><br>
+      <b style="font-size:1.5em">20+</b><br>
+      <sub>Auto-registered from env</sub>
+    </td>
+    <td align="center" width="16%">
+      <b><sub>TENANCY</sub></b><br>
+      <b style="font-size:1.5em">Native</b><br>
+      <sub>Multi-tenant by design</sub>
+    </td>
+  </tr>
+</table>
+
+---
 
 ## Why AGENT-33
 
-AGENT-33 combines an API runtime, workflow engine, memory stack, review/release controls, and a first-party frontend so you can run guarded automation from one system.
+AGENT-33 is a local-first AI agent orchestration platform for teams that want **real workflows, explicit governance, and a usable control plane** instead of a pile of disconnected scripts. It combines an API runtime, workflow engine, memory stack, review/release controls, and a first-party frontend so you can run guarded automation from one system.
 
-- **Local-first runtime**: FastAPI backend, Docker Compose bootstrap, Ollama-friendly model routing
-- **Contained Agent OS**: optional Linux operator workspace with first-party tools, state, and stack connectivity
-- **Guardrailed automation**: scopes, approvals, autonomy budgets, and review/release workflows
-- **Agent + workflow orchestration**: invoke agents directly or compose repeatable workflows
-- **Operational visibility**: health, dashboard surfaces, traces, evaluations, and rollout telemetry
-- **Extensible platform**: packs, tools, memory, webhook intake, and improvement loops
+- **Local-first runtime** &mdash; FastAPI backend, Docker Compose bootstrap, Ollama-friendly model routing
+- **Contained Agent OS** &mdash; optional Linux operator workspace with first-party tools, state, and stack connectivity
+- **Guardrailed automation** &mdash; scopes, approvals, autonomy budgets, and review/release workflows
+- **Agent + workflow orchestration** &mdash; invoke agents directly or compose repeatable DAG workflows
+- **Operational visibility** &mdash; health, dashboard surfaces, traces, evaluations, and rollout telemetry
+- **Extensible platform** &mdash; packs, tools, memory, webhook intake, and improvement loops
+
+```mermaid
+flowchart LR
+    U[Operator / Client] -->|HTTP · WebSocket · SSE| API[FastAPI Surface]
+    API --> AR[Agent Runtime]
+    AR --> WF[Workflow Engine<br/>DAG · retries · checkpoints]
+    AR --> SK[Skill Registry<br/>L0 / L1 / L2 disclosure]
+    AR --> TG[Tool Governance<br/>allowlist · autonomy · approvals]
+    AR --> MEM[(Memory<br/>pgvector + BM25 RRF)]
+    WF --> TP[Trace Pipeline<br/>failure taxonomy · retention]
+    TG --> TP
+    AR --> TP
+
+    style API fill:#0ea5e9,color:#fff
+    style AR fill:#10b981,color:#fff
+    style TG fill:#ef4444,color:#fff
+    style TP fill:#f59e0b,color:#fff
+    style MEM fill:#8b5cf6,color:#fff
+```
+
+For the full lifespan startup order, runtime modes (lite, standard, enterprise), and middleware chain, see [`docs/architecture/overview.md`](docs/architecture/overview.md).
+
+---
 
 ## Repository Layout
 
-- `engine/`: FastAPI runtime, orchestration services, API routes, tests, Docker Compose stack
-- `frontend/`: AGENT-33 control plane UI served at `http://localhost:3000`
-- `core/`: orchestration specs, policy packs, protocol references, workflow materials
-- `docs/`: canonical operator, setup, onboarding, and release-readiness documentation
+- `engine/` &mdash; FastAPI runtime, orchestration services, API routes, tests, Docker Compose stack
+- `frontend/` &mdash; AGENT-33 control plane UI served at `http://localhost:3000`
+- `core/` &mdash; orchestration specs, policy packs, protocol references, workflow materials
+- `docs/` &mdash; canonical operator, setup, onboarding, and release-readiness documentation
+
+---
 
 ## Quick Start
 
@@ -160,13 +242,17 @@ Before any shared, VPS, or production deployment:
 - **Engineering teams** running review, release, evaluation, and autonomy gates in one runtime
 - **Researchers and builders** experimenting with packs, memory, training, and improvement loops
 
-## Current Status
+## Roadmap
 
-The POST-4 roadmap is complete through `POST-4.5`, including the P-PACK v3 A/B harness and behavior rollout. The next roadmap wave is public launch preparation and broader ecosystem work under `POST-CLUSTER`.
+AGENT-33 is under active development. Near-term public direction:
 
-Latest merged implementation PR:
+- **Ecosystem growth** &mdash; broader pack catalog, community-contributed skills and tools, signed pack distribution
+- **MCP integrations** &mdash; richer hosted MCP server surface and tighter MCP client interop with the agent runtime
+- **Public benchmarking** &mdash; continued evaluation against [SkillsBench](https://github.com/benchflow-ai/skillsbench) with CTRF reporting and weekly full-tier runs
+- **Provider depth** &mdash; first-class support for additional local-inference backends (llama.cpp, LM Studio, AirLLM) and embedding providers
+- **Operator UX** &mdash; visual workflow builder polish, sub-agent execution trees, knowledge ingestion cron expansion
 
-- `#406` — `POST-4.5: apply P-PACK v3 behavior rollout`
+See [CHANGELOG.md](CHANGELOG.md) for release history.
 
 ## License
 
