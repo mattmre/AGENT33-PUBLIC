@@ -331,8 +331,7 @@ export const HELP_ARTICLES: HelpArticle[] = [
       "endpoint"
     ],
     sources: [
-      { label: "Advanced quarantine", path: "frontend/src/features/advanced/AdvancedControlPlanePanel.tsx" },
-      { label: "UX session log", path: "docs/sessions/session-133-2026-04-27-ux-overhaul.md" }
+      { label: "Advanced quarantine", path: "frontend/src/features/advanced/AdvancedControlPlanePanel.tsx" }
     ],
     actions: [
       { label: "Open Safety Center", target: "safety" },

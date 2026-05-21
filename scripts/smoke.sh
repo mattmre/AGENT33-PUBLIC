@@ -22,7 +22,7 @@
 #     entry point producing a real output that downstream consumers depend on).
 #     This is the target. Until you reach ceiling, your PR body's SMOKE: line
 #     MUST name the tier you ran AND any ceiling gap MUST appear as a Carried
-#     Debt entry in your next-session.md.
+#     Debt entry in your session handoff document.
 #
 # Use:
 #   bash scripts/smoke.sh                 # full local smoke

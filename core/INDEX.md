@@ -65,7 +65,7 @@ Use the phase index for sequencing and dependency order:
 | [Architecture & Planning Orchestrator Briefing](arch/orchestrator-briefing.md) | Session-start narrative and folder index |
 | [Architecture & Planning Workflow Spec](arch/workflow.md) | End-to-end workflow specification |
 | [Architecture & Planning Templates](arch/templates.md) | ID, branch, and tracker conventions |
-| [Architecture & Planning Next Session](arch/next-session.md) | Session handoff checklist |
+| Architecture & Planning Session Handoff | Session handoff checklist (operator-maintained) |
 | [Architecture & Planning Phase Planning](arch/phase-planning.md) | Long-running planning record |
 | [Architecture & Planning Schedule And Tracking](arch/schedule-and-tracking.md) | Cadence and gates |
 | [Architecture & Planning Tier Close Checklist](arch/tier-close-checklist.md) | Tier close audit checklist |

@@ -12,7 +12,7 @@ Instructs agents on autonomous knowledge management within AGENT-33 sessions.
 
 ## Session Start Checklist
 
-1. Read `docs/next session/next-session-narrative.md` for context
+1. Read the operator's session handoff document for context
 2. Check `core/CHANGELOG.md` for recent changes
 3. Query `core/ARTIFACT_INDEX.md` for relevant artifacts
 4. Review any `supersedes` chains to find current versions

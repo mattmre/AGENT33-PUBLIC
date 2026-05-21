@@ -153,13 +153,13 @@ hook:
   action: Generate session wrap summary for next session
   evidence_capture:
     enabled: true
-    target: core/arch/next-session.md
+    target: docs/handoff.md  # TODO: operator may wire to actual handoff document via .gitignore
     format: structured
   blocking: false
   severity: info
   references:
-    - path: core/arch/next-session.md
-      purpose: Next session context
+    - path: docs/handoff.md
+      purpose: Next session context (TODO: operator may wire to actual handoff document via .gitignore)
     - path: docs/session-logs/
       purpose: Session log archive
 ```

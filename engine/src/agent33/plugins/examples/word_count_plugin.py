@@ -39,7 +39,7 @@ def _build_manifest() -> PluginManifest:
         version="1.0.0",
         description="Count words, characters, and lines in a text string.",
         author="AGENT-33 Contributors",
-        homepage="https://github.com/mattmre/AGENT33",
+        homepage="https://github.com/mattmre/AGENT33-PUBLIC",
         entry_point="word_count_plugin:WordCountPlugin",
         permissions=[PluginPermission.CONFIG_READ],
         status=PluginStatus.ACTIVE,

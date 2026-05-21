@@ -52,7 +52,7 @@ Default per-cycle evidence log:
 Additional references:
 - `docs/Architecture & Planning/workflow.md`
 - `docs/Architecture & Planning/templates.md`
-- `docs/Architecture & Planning/next-session.md`
+- operator's session handoff document
 - `docs/Architecture & Planning/phase-planning.md`
 - `docs/Architecture & Planning/schedule-and-tracking.md`
 - `docs/Architecture & Planning/tier-close-checklist.md`
