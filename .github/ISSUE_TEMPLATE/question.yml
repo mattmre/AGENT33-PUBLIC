@@ -1,0 +1,45 @@
+name: Question / help
+description: Ask a question about installing, configuring, or using AGENT-33.
+title: "[Question]: "
+labels: ["question", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Before opening a question issue, consider whether
+        [Discussions](https://github.com/mattmre/AGENT33-PUBLIC/discussions) is a better fit —
+        it is the preferred place for open-ended Q&A, sharing setups, and community help.
+
+        Use **this** issue type when:
+        - You have a specific, answerable question tied to a configuration or version.
+        - You want the answer surfaced in the issue tracker for future searchers.
+
+  - type: textarea
+    id: question
+    attributes:
+      label: Your question
+      description: Be specific. Include the version, deployment method, and anything you have already tried.
+    validations:
+      required: true
+
+  - type: textarea
+    id: tried
+    attributes:
+      label: What have you already tried?
+      description: Documentation pages read, commands run, search terms used, etc.
+
+  - type: input
+    id: version
+    attributes:
+      label: AGENT-33 version
+      placeholder: "e.g. 2.1.0"
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmations
+      options:
+        - label: I have searched existing issues and Discussions for a similar question.
+          required: true
+        - label: I have not included secrets, API keys, JWT tokens, or production data in this issue.
+          required: true

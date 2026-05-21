@@ -1,0 +1,11 @@
+blank_issues_enabled: false
+contact_links:
+  - name: Ask a question / start a discussion
+    url: https://github.com/mattmre/AGENT33-PUBLIC/discussions
+    about: Open-ended questions, design ideas, share your deployment, and community Q&A live in Discussions.
+  - name: Report a security vulnerability
+    url: https://github.com/mattmre/AGENT33-PUBLIC/security/advisories/new
+    about: Security issues must be reported privately via GitHub Security Advisories — do NOT file a public issue.
+  - name: Join the team as a contributor
+    url: https://github.com/mattmre
+    about: Interested in contributing regularly? Send a direct message to @mattmre on GitHub to start the conversation.
