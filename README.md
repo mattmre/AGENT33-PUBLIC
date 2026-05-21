@@ -9,12 +9,18 @@
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-2.1.0-green.svg)](CHANGELOG.md)
 [![CI](https://github.com/mattmre/AGENT33-PUBLIC/actions/workflows/ci.yml/badge.svg)](https://github.com/mattmre/AGENT33-PUBLIC/actions/workflows/ci.yml)
+[![Container Scan](https://github.com/mattmre/AGENT33-PUBLIC/actions/workflows/security-scan.yml/badge.svg)](https://github.com/mattmre/AGENT33-PUBLIC/actions/workflows/security-scan.yml)
 [![Python](https://img.shields.io/badge/python-3.11%2B-3776AB?logo=python&logoColor=white)](https://www.python.org/)
 [![Docker](https://img.shields.io/badge/runtime-Docker-2496ED?logo=docker&logoColor=white)](https://www.docker.com/)
 [![FastAPI](https://img.shields.io/badge/api-FastAPI-009688?logo=fastapi&logoColor=white)](https://fastapi.tiangolo.com/)
 [![Ollama](https://img.shields.io/badge/llm-Ollama-000?logo=ollama&logoColor=white)](https://ollama.com/)
 [![pgvector](https://img.shields.io/badge/memory-pgvector-336791?logo=postgresql&logoColor=white)](https://github.com/pgvector/pgvector)
 [![Discussions](https://img.shields.io/github/discussions/mattmre/AGENT33-PUBLIC?logo=github&color=2ea043)](https://github.com/mattmre/AGENT33-PUBLIC/discussions)
+[![Issues](https://img.shields.io/github/issues/mattmre/AGENT33-PUBLIC?style=for-the-badge)](https://github.com/mattmre/AGENT33-PUBLIC/issues)
+[![Pull Requests](https://img.shields.io/github/issues-pr/mattmre/AGENT33-PUBLIC?style=for-the-badge)](https://github.com/mattmre/AGENT33-PUBLIC/pulls)
+[![Forks](https://img.shields.io/github/forks/mattmre/AGENT33-PUBLIC?style=for-the-badge)](https://github.com/mattmre/AGENT33-PUBLIC/network/members)
+[![Stars](https://img.shields.io/github/stars/mattmre/AGENT33-PUBLIC?style=for-the-badge)](https://github.com/mattmre/AGENT33-PUBLIC/stargazers)
+[![Contributors](https://img.shields.io/github/contributors/mattmre/AGENT33-PUBLIC?style=for-the-badge)](https://github.com/mattmre/AGENT33-PUBLIC/graphs/contributors)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
 #### Local-first &middot; Multi-tenant &middot; Audit-trail by design &middot; Approval-gated automation
@@ -111,7 +117,20 @@ For the full lifespan startup order, runtime modes (lite, standard, enterprise),
 
 ## Quick Start
 
-### Prerequisites
+### 30-Second Try
+
+Spin up the stack and confirm it's alive in under a minute:
+
+```bash
+cd engine && docker compose up -d
+curl http://localhost:8000/health
+```
+
+Then continue below for the full operator setup (JWT minting, agent invocation, control plane).
+
+### Full Operator Setup
+
+#### Prerequisites
 
 - Docker Desktop or Docker Engine with Compose
 - Python 3.11+
@@ -254,6 +273,34 @@ AGENT-33 is under active development. Near-term public direction:
 
 See [CHANGELOG.md](CHANGELOG.md) for release history.
 
+## Contributors
+
+<a href="https://github.com/mattmre/AGENT33-PUBLIC/graphs/contributors">
+  <img src="https://contrib.rocks/image?repo=mattmre/AGENT33-PUBLIC" alt="Contributors to AGENT33-PUBLIC" />
+</a>
+
+Every commit, issue, review, and Discussion thread makes the project better. Thank you.
+
+## Star History
+
+<a href="https://star-history.com/#mattmre/AGENT33-PUBLIC&Date">
+  <picture>
+    <source media="(prefers-color-scheme: dark)" srcset="https://api.star-history.com/svg?repos=mattmre/AGENT33-PUBLIC&type=Date&theme=dark" />
+    <source media="(prefers-color-scheme: light)" srcset="https://api.star-history.com/svg?repos=mattmre/AGENT33-PUBLIC&type=Date" />
+    <img alt="AGENT-33 star history" src="https://api.star-history.com/svg?repos=mattmre/AGENT33-PUBLIC&type=Date" />
+  </picture>
+</a>
+
 ## License
 
 Apache License 2.0. See [LICENSE](LICENSE).
+
+---
+
+<div align="center">
+
+**[Documentation](docs/)** &nbsp;&middot;&nbsp; **[API Reference](docs/api-reference.md)** &nbsp;&middot;&nbsp; **[Architecture](ARCHITECTURE.md)** &nbsp;&middot;&nbsp; **[Changelog](CHANGELOG.md)** &nbsp;&middot;&nbsp; **[Presentation Suite](presentation/index.html)** &nbsp;&middot;&nbsp; **[Discussions](https://github.com/mattmre/AGENT33-PUBLIC/discussions)**
+
+<sub>AGENT-33 v2.1.0 &middot; Apache License 2.0 &middot; <em>Local-first multi-agent orchestration with built-in governance</em></sub>
+
+</div>
