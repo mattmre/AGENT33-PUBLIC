@@ -1,0 +1,483 @@
+/* AGENT-33 Presentation Styles
+ * Single shared stylesheet for the landing page, executive summary, technical brief,
+ * white paper, use cases, slide deck, and architecture deck.
+ * Pure CSS - no JS framework, no build step.
+ */
+
+:root {
+  --bg: #0a0e1a;
+  --bg-elev: #121829;
+  --bg-card: #1a2236;
+  --border: #2a3654;
+  --text: #e6edf3;
+  --text-dim: #8b96a8;
+  --accent: #0ea5e9;
+  --accent-2: #10b981;
+  --accent-3: #f59e0b;
+  --accent-4: #ef4444;
+  --accent-5: #8b5cf6;
+  --code-bg: #0d1424;
+  --shadow: 0 12px 32px rgba(0, 0, 0, 0.5);
+  --font-sans: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, "Helvetica Neue", Arial, sans-serif;
+  --font-mono: "SF Mono", Monaco, "Cascadia Code", "Roboto Mono", Consolas, monospace;
+}
+
+* {
+  box-sizing: border-box;
+  margin: 0;
+  padding: 0;
+}
+
+html, body {
+  font-family: var(--font-sans);
+  background: var(--bg);
+  color: var(--text);
+  font-size: 16px;
+  line-height: 1.6;
+  -webkit-font-smoothing: antialiased;
+}
+
+body {
+  min-height: 100vh;
+}
+
+a {
+  color: var(--accent);
+  text-decoration: none;
+  transition: opacity 0.15s ease;
+}
+a:hover { opacity: 0.8; }
+
+/* ---------- Layout primitives ---------- */
+
+.container {
+  max-width: 1280px;
+  margin: 0 auto;
+  padding: 0 24px;
+}
+
+.section {
+  padding: 80px 0;
+}
+
+.grid {
+  display: grid;
+  gap: 24px;
+}
+
+.grid-2 { grid-template-columns: repeat(auto-fit, minmax(360px, 1fr)); }
+.grid-3 { grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); }
+.grid-4 { grid-template-columns: repeat(auto-fit, minmax(220px, 1fr)); }
+
+/* ---------- Typography ---------- */
+
+h1, h2, h3, h4 {
+  line-height: 1.2;
+  font-weight: 700;
+  letter-spacing: -0.02em;
+  color: var(--text);
+}
+
+h1 { font-size: clamp(2.5rem, 5vw, 4rem); margin-bottom: 1rem; }
+h2 { font-size: clamp(1.75rem, 3.5vw, 2.5rem); margin-bottom: 1rem; }
+h3 { font-size: 1.5rem; margin-bottom: 0.75rem; }
+h4 { font-size: 1.125rem; margin-bottom: 0.5rem; }
+
+p { color: var(--text); margin-bottom: 1rem; }
+p.lead { font-size: 1.25rem; color: var(--text-dim); max-width: 720px; }
+
+.text-dim { color: var(--text-dim); }
+.text-accent { color: var(--accent); }
+.text-accent-2 { color: var(--accent-2); }
+.text-accent-3 { color: var(--accent-3); }
+.text-accent-4 { color: var(--accent-4); }
+.text-accent-5 { color: var(--accent-5); }
+
+.text-center { text-align: center; }
+.mb-1 { margin-bottom: 0.5rem; }
+.mb-2 { margin-bottom: 1rem; }
+.mb-3 { margin-bottom: 1.5rem; }
+.mb-4 { margin-bottom: 2rem; }
+
+/* ---------- Buttons ---------- */
+
+.btn {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  padding: 12px 24px;
+  border-radius: 8px;
+  font-weight: 600;
+  font-size: 1rem;
+  border: 1px solid transparent;
+  cursor: pointer;
+  transition: all 0.15s ease;
+  text-decoration: none;
+}
+
+.btn-primary {
+  background: var(--accent);
+  color: white;
+}
+.btn-primary:hover { opacity: 1; background: #0284c7; }
+
+.btn-secondary {
+  background: transparent;
+  color: var(--text);
+  border-color: var(--border);
+}
+.btn-secondary:hover { opacity: 1; background: var(--bg-elev); }
+
+.btn-group { display: flex; gap: 12px; flex-wrap: wrap; }
+
+/* ---------- Header / Hero ---------- */
+
+.header {
+  padding: 24px 0;
+  border-bottom: 1px solid var(--border);
+  background: rgba(10, 14, 26, 0.85);
+  backdrop-filter: blur(10px);
+  position: sticky;
+  top: 0;
+  z-index: 10;
+}
+
+.header-inner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+  flex-wrap: wrap;
+}
+
+.logo {
+  font-size: 1.25rem;
+  font-weight: 800;
+  letter-spacing: 0.05em;
+  color: var(--text);
+}
+.logo .accent { color: var(--accent); }
+.logo .dim { color: var(--text-dim); font-weight: 500; }
+
+.nav { display: flex; gap: 20px; flex-wrap: wrap; }
+.nav a { color: var(--text-dim); font-size: 0.93rem; }
+.nav a:hover { color: var(--text); }
+.nav a.active { color: var(--text); }
+
+.hero {
+  padding: 100px 0 80px;
+  text-align: center;
+  background: radial-gradient(circle at top, rgba(14, 165, 233, 0.12) 0%, transparent 60%);
+}
+
+.hero h1 {
+  background: linear-gradient(135deg, var(--text) 0%, var(--accent) 100%);
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+  background-clip: text;
+}
+
+.hero .badges {
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  gap: 8px;
+  margin: 24px 0;
+}
+
+.badge {
+  padding: 4px 12px;
+  border-radius: 999px;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  font-size: 0.85rem;
+  color: var(--text-dim);
+}
+
+/* ---------- Cards ---------- */
+
+.card {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  transition: all 0.15s ease;
+}
+.card:hover {
+  border-color: var(--accent);
+  transform: translateY(-2px);
+  box-shadow: var(--shadow);
+}
+
+.card-icon {
+  font-size: 0.78rem;
+  margin-bottom: 12px;
+  display: inline-block;
+  font-family: var(--font-mono);
+  letter-spacing: 0.08em;
+  color: var(--accent);
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-radius: 6px;
+  padding: 4px 10px;
+}
+
+.card h3 { color: var(--text); }
+.card p { color: var(--text-dim); margin: 0; }
+
+/* ---------- Code blocks ---------- */
+
+code, pre {
+  font-family: var(--font-mono);
+  font-size: 0.9rem;
+}
+
+code:not(pre code) {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  padding: 2px 6px;
+  border-radius: 4px;
+  color: var(--accent);
+}
+
+pre {
+  background: var(--code-bg);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  padding: 16px;
+  overflow-x: auto;
+  margin-bottom: 1rem;
+}
+
+pre code {
+  background: transparent;
+  border: none;
+  padding: 0;
+  color: var(--text);
+}
+
+.code-label {
+  display: inline-block;
+  background: var(--bg-elev);
+  border: 1px solid var(--border);
+  border-bottom: none;
+  padding: 6px 12px;
+  border-radius: 6px 6px 0 0;
+  font-family: var(--font-mono);
+  font-size: 0.8rem;
+  color: var(--text-dim);
+}
+.code-label + pre {
+  border-top-left-radius: 0;
+  margin-top: 0;
+}
+
+/* ---------- Tables ---------- */
+
+table {
+  width: 100%;
+  border-collapse: collapse;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 8px;
+  overflow: hidden;
+  margin-bottom: 1rem;
+}
+
+th, td {
+  padding: 12px 16px;
+  text-align: left;
+  border-bottom: 1px solid var(--border);
+}
+
+th {
+  background: var(--bg-elev);
+  font-weight: 600;
+  color: var(--text);
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+td { color: var(--text-dim); }
+tr:last-child td { border-bottom: none; }
+
+/* ---------- Mermaid diagram container ---------- */
+
+.diagram {
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+  padding: 24px;
+  margin: 32px 0;
+  overflow-x: auto;
+}
+.diagram-title {
+  font-size: 0.85rem;
+  color: var(--text-dim);
+  text-transform: uppercase;
+  letter-spacing: 0.1em;
+  margin-bottom: 16px;
+}
+
+/* ---------- Footer ---------- */
+
+.footer {
+  border-top: 1px solid var(--border);
+  padding: 48px 0 24px;
+  text-align: center;
+  color: var(--text-dim);
+  font-size: 0.9rem;
+}
+
+.footer-links {
+  display: flex;
+  justify-content: center;
+  gap: 18px;
+  margin-bottom: 24px;
+  flex-wrap: wrap;
+}
+
+/* ---------- Slide deck styles ---------- */
+
+.slide {
+  min-height: 100vh;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+  align-items: center;
+  padding: 60px 24px;
+  border-bottom: 1px solid var(--border);
+  position: relative;
+}
+
+.slide-content {
+  max-width: 1024px;
+  width: 100%;
+  text-align: center;
+}
+
+.slide-content.left { text-align: left; }
+
+.slide h1 { font-size: clamp(2.5rem, 6vw, 5rem); }
+.slide h2 { font-size: clamp(2rem, 4vw, 3rem); }
+
+.slide-num {
+  position: absolute;
+  top: 24px;
+  right: 24px;
+  color: var(--text-dim);
+  font-size: 0.85rem;
+  font-family: var(--font-mono);
+  letter-spacing: 0.08em;
+}
+
+.slide-controls {
+  position: fixed;
+  bottom: 24px;
+  right: 24px;
+  display: flex;
+  gap: 8px;
+  z-index: 100;
+}
+
+.slide-controls .btn {
+  padding: 8px 16px;
+  font-size: 0.85rem;
+}
+
+/* ---------- Stats / metrics grid ---------- */
+
+.stats {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+  gap: 24px;
+  margin: 32px 0;
+}
+
+.stat {
+  text-align: center;
+  padding: 24px;
+  background: var(--bg-card);
+  border: 1px solid var(--border);
+  border-radius: 12px;
+}
+
+.stat-value {
+  font-size: 2.5rem;
+  font-weight: 800;
+  color: var(--accent);
+  line-height: 1;
+  margin-bottom: 8px;
+}
+
+.stat-label {
+  color: var(--text-dim);
+  font-size: 0.9rem;
+  text-transform: uppercase;
+  letter-spacing: 0.05em;
+}
+
+/* ---------- Pipeline visual ---------- */
+
+.pipeline {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  flex-wrap: wrap;
+  gap: 16px;
+  margin: 48px 0;
+}
+
+.pipeline-stage {
+  background: var(--bg-card);
+  border: 2px solid var(--border);
+  border-radius: 12px;
+  padding: 20px 24px;
+  min-width: 150px;
+  text-align: center;
+}
+
+.pipeline-stage .stage-num {
+  font-family: var(--font-mono);
+  font-size: 0.75rem;
+  color: var(--text-dim);
+  margin-bottom: 8px;
+  letter-spacing: 0.08em;
+  text-transform: uppercase;
+}
+
+.pipeline-stage .stage-name {
+  font-weight: 600;
+  margin-bottom: 4px;
+}
+
+.pipeline-stage .stage-threads {
+  font-size: 0.85rem;
+  color: var(--accent);
+}
+
+.pipeline-arrow {
+  color: var(--accent);
+  font-size: 1.5rem;
+}
+
+/* ---------- Utility ---------- */
+
+.flex { display: flex; }
+.flex-center { display: flex; justify-content: center; align-items: center; }
+.flex-between { display: flex; justify-content: space-between; align-items: center; }
+.flex-col { flex-direction: column; }
+.gap-2 { gap: 1rem; }
+.gap-3 { gap: 1.5rem; }
+.gap-4 { gap: 2rem; }
+
+.hidden-mobile { display: inline-block; }
+@media (max-width: 900px) {
+  .hidden-mobile { display: none; }
+  .nav { gap: 12px; }
+  .nav a { font-size: 0.85rem; }
+  .section { padding: 48px 0; }
+  .pipeline-arrow { transform: rotate(90deg); }
+  .header-inner { flex-direction: column; align-items: flex-start; }
+}

@@ -1,0 +1,929 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AGENT-33 - Technical Brief</title>
+  <meta name="description" content="Technical brief for AGENT-33: runtime topology, lifespan order, request lifecycle, API surface, observability stack, security posture, deployment shapes.">
+  <link rel="stylesheet" href="./assets/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    .tb-hero {
+      padding: 80px 0 48px;
+      background: linear-gradient(180deg, rgba(139, 92, 246, 0.08) 0%, transparent 100%);
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+    }
+    .tb-hero h1 {
+      font-size: clamp(2.25rem, 5vw, 3.75rem);
+      max-width: 1000px;
+      margin: 0 auto 16px;
+    }
+    .toc {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin: 32px 0;
+    }
+    .toc-title {
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      color: var(--text-dim);
+      font-size: 0.85rem;
+      margin-bottom: 12px;
+    }
+    .toc-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 8px 24px;
+    }
+    .toc-grid a {
+      color: var(--text);
+      padding: 4px 0;
+      border-bottom: 1px dashed transparent;
+    }
+    .toc-grid a:hover {
+      color: var(--accent);
+      border-bottom-color: var(--accent);
+      opacity: 1;
+    }
+    .toc-num {
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+      font-size: 0.8rem;
+      margin-right: 8px;
+    }
+    section.tb {
+      padding: 56px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    section.tb:last-of-type { border-bottom: none; }
+    .tb h2 {
+      font-size: clamp(1.5rem, 2.8vw, 2rem);
+      margin-bottom: 8px;
+    }
+    .tb h2 .num {
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+      font-size: 0.85em;
+      margin-right: 12px;
+    }
+    .tb h3 {
+      font-size: 1.25rem;
+      margin: 24px 0 8px;
+      color: var(--accent);
+    }
+    .tb p { margin-bottom: 12px; color: var(--text); }
+    .tb ul, .tb ol {
+      margin: 0 0 16px 24px;
+      color: var(--text);
+    }
+    .tb li { margin-bottom: 6px; }
+    .stage-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin: 24px 0;
+    }
+    .stage-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent);
+      border-radius: 8px;
+      padding: 20px;
+    }
+    .stage-card .stage-id {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      letter-spacing: 0.1em;
+      color: var(--text-dim);
+      text-transform: uppercase;
+    }
+    .stage-card h4 {
+      margin: 6px 0 6px;
+      font-size: 1.1rem;
+    }
+    .stage-card .stage-count {
+      color: var(--accent);
+      font-size: 0.85rem;
+      font-weight: 600;
+    }
+    .stage-card p {
+      color: var(--text-dim);
+      font-size: 0.9rem;
+      margin: 8px 0 0;
+    }
+    .stage-card:nth-child(2) { border-left-color: var(--accent-2); }
+    .stage-card:nth-child(2) .stage-count { color: var(--accent-2); }
+    .stage-card:nth-child(3) { border-left-color: var(--accent-3); }
+    .stage-card:nth-child(3) .stage-count { color: var(--accent-3); }
+    .stage-card:nth-child(4) { border-left-color: var(--accent-4); }
+    .stage-card:nth-child(4) .stage-count { color: var(--accent-4); }
+    .stage-card:nth-child(5) { border-left-color: var(--accent-5); }
+    .stage-card:nth-child(5) .stage-count { color: var(--accent-5); }
+    .stage-card:nth-child(6) { border-left-color: var(--accent); }
+    .stage-card:nth-child(6) .stage-count { color: var(--accent); }
+    .perf-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+      gap: 16px;
+      margin: 24px 0;
+    }
+    .perf-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+      text-align: center;
+    }
+    .perf-card .v {
+      font-size: 2.2rem;
+      font-weight: 800;
+      color: var(--accent-2);
+      line-height: 1;
+    }
+    .perf-card .l {
+      font-size: 0.85rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-top: 8px;
+    }
+    .perf-card .d {
+      color: var(--text-dim);
+      font-size: 0.85rem;
+      margin-top: 8px;
+    }
+    .stack-row {
+      display: grid;
+      grid-template-columns: 220px 1fr;
+      gap: 24px;
+      padding: 18px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .stack-row:last-child { border-bottom: none; }
+    .stack-key {
+      color: var(--accent);
+      font-weight: 600;
+      text-transform: uppercase;
+      letter-spacing: 0.05em;
+      font-size: 0.85rem;
+    }
+    .stack-val { color: var(--text); }
+    .stack-val code {
+      font-size: 0.85rem;
+    }
+    .callout {
+      background: var(--bg-card);
+      border-left: 4px solid var(--accent-3);
+      border-radius: 8px;
+      padding: 20px 24px;
+      margin: 24px 0;
+      color: var(--text-dim);
+      font-size: 0.95rem;
+    }
+    .callout strong { color: var(--accent-3); }
+    .deploy-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+      gap: 16px;
+      margin-top: 24px;
+    }
+    .deploy-card {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 20px;
+    }
+    .deploy-card h4 { margin-bottom: 4px; color: var(--text); }
+    .deploy-card .mode-id {
+      display: inline-block;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      background: var(--bg-elev);
+      border: 1px solid var(--border);
+      border-radius: 4px;
+      padding: 2px 8px;
+      color: var(--accent);
+      margin-bottom: 8px;
+    }
+    .deploy-card ul {
+      margin: 8px 0 0 20px;
+      color: var(--text-dim);
+      font-size: 0.9rem;
+    }
+    .deploy-card li { margin-bottom: 4px; }
+    .anchor-offset { scroll-margin-top: 80px; }
+    @media (max-width: 700px) {
+      .stack-row { grid-template-columns: 1fr; gap: 4px; }
+    }
+    @media print {
+      .header, .nav, .footer { display: none; }
+      section.tb { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="header">
+  <div class="container header-inner">
+    <div class="logo">AGENT<span class="accent">-33</span></div>
+    <nav class="nav">
+      <a href="./index.html">Overview</a>
+      <a href="./executive-summary.html">Exec Summary</a>
+      <a href="./technical-brief.html" class="active">Tech Brief</a>
+      <a href="./white-paper.html">White Paper</a>
+      <a href="./use-cases.html">Use Cases</a>
+      <a href="./architecture.html">Architecture</a>
+      <a href="./slides.html">Slides</a>
+      <a href="../README.md">Back to README</a>
+    </nav>
+  </div>
+</header>
+
+<section class="tb-hero">
+  <div class="container">
+    <h1>Technical Brief</h1>
+    <p class="lead" style="margin: 0 auto;">
+      For engineers and architects. The runtime, the stack, the trade-offs,
+      and where the bytes go.
+    </p>
+    <div class="badges" style="margin-top: 24px;">
+      <span class="badge">v2.1.0</span>
+      <span class="badge">15 min read</span>
+      <span class="badge">Apache 2.0</span>
+    </div>
+  </div>
+</section>
+
+<div class="container">
+  <nav class="toc">
+    <div class="toc-title">Contents</div>
+    <div class="toc-grid">
+      <a href="#overview"><span class="toc-num">01</span>Overview</a>
+      <a href="#topology"><span class="toc-num">02</span>Runtime topology</a>
+      <a href="#stack"><span class="toc-num">03</span>Tech stack</a>
+      <a href="#lifespan"><span class="toc-num">04</span>Lifespan order</a>
+      <a href="#agents"><span class="toc-num">05</span>Agent runtime</a>
+      <a href="#workflows"><span class="toc-num">06</span>Workflow engine</a>
+      <a href="#memory"><span class="toc-num">07</span>Memory + retrieval</a>
+      <a href="#tools"><span class="toc-num">08</span>Tools + governance</a>
+      <a href="#deployment"><span class="toc-num">09</span>Deployment modes</a>
+      <a href="#api"><span class="toc-num">10</span>API surface</a>
+      <a href="#observability"><span class="toc-num">11</span>Observability</a>
+      <a href="#security"><span class="toc-num">12</span>Security posture</a>
+    </div>
+  </nav>
+</div>
+
+<section class="tb anchor-offset" id="overview">
+  <div class="container">
+    <h2><span class="num">01</span>Overview</h2>
+    <p>
+      AGENT-33 is an async Python multi-agent orchestration framework built on top of FastAPI.
+      The runtime accepts agent invocations and workflow runs over HTTP, WebSocket, and
+      Server-Sent Events; routes them through a DAG executor against a registry of LLM-backed
+      agents; and persists the resulting traces, evidence, lineage, and review state to
+      durable stores.
+    </p>
+    <p>The platform is structured as three concentric layers:</p>
+    <ol>
+      <li><strong>Product surfaces</strong> &mdash; agents, workflows, skills, packs, tools, code execution. The bits operators interact with.</li>
+      <li><strong>Platform</strong> &mdash; LLM router, memory, security, autonomy, review, release, improvement, evaluation. The bits that govern the product surfaces.</li>
+      <li><strong>Foundation</strong> &mdash; observability, scaling, sessions, sandboxing, plugins, provenance, training. The bits that keep the platform honest.</li>
+    </ol>
+    <div class="callout">
+      <strong>Reading order:</strong> the white paper covers the design rationale; this brief
+      covers the runtime mechanics. The architecture deck has the Mermaid diagrams.
+    </div>
+  </div>
+</section>
+
+<section class="tb anchor-offset" id="topology" style="background: var(--bg-elev);">
+  <div class="container">
+    <h2><span class="num">02</span>Runtime topology</h2>
+    <p>
+      The FastAPI application is stateless. Durable state lives in PostgreSQL (with pgvector),
+      Redis, NATS, and the local filesystem. Optional Ollama provides local LLM inference.
+      Every subsystem is constructed by the lifespan and stored on <code>app.state.*</code>;
+      shutdown reverses the order so that the database connection pool is the last thing to close.
+    </p>
+
+    <div class="diagram">
+      <div class="diagram-title">Stateless app, durable stores</div>
+      <pre class="mermaid">
+flowchart LR
+  subgraph CLIENTS["Clients"]
+    UI["frontend/ SPA"]
+    CLI["agent33 CLI"]
+    SDK["External SDK / curl"]
+  end
+
+  subgraph APP["FastAPI application"]
+    MW["Middleware chain"]
+    ROUTES["API routes"]
+    WS["WebSocket / SSE"]
+    STATE["app.state subsystems"]
+  end
+
+  subgraph STORES["State stores"]
+    PG[("PostgreSQL<br/>+ pgvector")]
+    RD[("Redis")]
+    NB[("NATS bus")]
+    FS[("Filesystem<br/>state, archives")]
+    OL[("Ollama<br/>optional")]
+  end
+
+  UI --> MW
+  CLI --> MW
+  SDK --> MW
+  MW --> ROUTES
+  MW --> WS
+  ROUTES --> STATE
+  WS --> STATE
+  STATE --> PG
+  STATE --> RD
+  STATE --> NB
+  STATE --> FS
+  STATE --> OL
+
+  style MW fill:#0ea5e9,color:#fff
+  style STATE fill:#10b981,color:#fff
+  style PG fill:#8b5cf6,color:#fff
+  style OL fill:#f59e0b,color:#fff
+      </pre>
+    </div>
+
+    <h3>Three runtime modes</h3>
+
+    <div class="stage-grid">
+      <div class="stage-card">
+        <div class="stage-id">Mode</div>
+        <h4>Lite</h4>
+        <div class="stage-count">single process</div>
+        <p>SQLite, in-process cache, in-process bus. Suitable for laptops, demos, and CI smoke runs.</p>
+      </div>
+      <div class="stage-card">
+        <div class="stage-id">Mode</div>
+        <h4>Standard</h4>
+        <div class="stage-count">Compose or small K8s</div>
+        <p>PostgreSQL + Redis + NATS + Ollama. The default operator profile.</p>
+      </div>
+      <div class="stage-card">
+        <div class="stage-id">Mode</div>
+        <h4>Enterprise</h4>
+        <div class="stage-count">production K8s</div>
+        <p>Standard plus dedicated observability, persistent volumes, ingress, and HPA.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="tb anchor-offset" id="stack">
+  <div class="container">
+    <h2><span class="num">03</span>Tech stack</h2>
+
+    <div class="stack-row">
+      <div class="stack-key">Application</div>
+      <div class="stack-val">
+        <strong>FastAPI</strong> async Python with Uvicorn / asgi-lifespan, strict mypy,
+        Ruff linting, pytest in async mode. Build via Hatchling
+        (<code>engine/pyproject.toml</code>).
+      </div>
+    </div>
+    <div class="stack-row">
+      <div class="stack-key">Persistence</div>
+      <div class="stack-val">
+        <strong>PostgreSQL 14+</strong> with the <code>pgvector</code> extension. Async via
+        SQLAlchemy 2.x. Migrations managed by Alembic
+        (<code>engine/alembic/versions/</code>).
+      </div>
+    </div>
+    <div class="stack-row">
+      <div class="stack-key">Memory</div>
+      <div class="stack-val">
+        <code>LongTermMemory</code> writes 1536-dim vectors into pgvector with an IVF-Flat
+        cosine index. Short-term ring buffer on top. <code>BM25Index</code> + reciprocal
+        rank fusion for hybrid retrieval.
+      </div>
+    </div>
+    <div class="stack-row">
+      <div class="stack-key">Caching</div>
+      <div class="stack-val">
+        <strong>Redis 6+</strong> async client with TTL-based rate limiters, ephemeral
+        coordination, and per-tenant locks. Falls back to <code>InProcessCache</code> in lite mode.
+      </div>
+    </div>
+    <div class="stack-row">
+      <div class="stack-key">Event bus</div>
+      <div class="stack-val">
+        <strong>NATS 2.10+</strong>, JetStream-capable. Carries messaging adapter events
+        (Telegram / Discord / Slack / WhatsApp) and sub-agent dispatch. Falls back to
+        <code>InProcessMessageBus</code> in lite mode.
+      </div>
+    </div>
+    <div class="stack-row">
+      <div class="stack-key">LLM router</div>
+      <div class="stack-val">
+        <strong>Ollama</strong>-friendly model router with OpenAI-compatible adapter. The
+        provider catalogue auto-registers <strong>20+ providers</strong> from environment
+        variables, including local-inference backends (Ollama, llama.cpp, LM Studio, AirLLM).
+      </div>
+    </div>
+    <div class="stack-row">
+      <div class="stack-key">Embeddings</div>
+      <div class="stack-val">
+        Pluggable provider with an LRU cache. Default path uses local Ollama embedding
+        models; cloud providers (OpenAI, Voyage) registered through the same interface.
+      </div>
+    </div>
+    <div class="stack-row">
+      <div class="stack-key">Frontend</div>
+      <div class="stack-val">
+        <strong>React 18 + TypeScript</strong> single-page application built with Vite, served
+        by Nginx in production. The operator console for sessions, agents, workflows,
+        packs, traces, and release operations.
+      </div>
+    </div>
+    <div class="stack-row">
+      <div class="stack-key">CLI</div>
+      <div class="stack-val">
+        <code>agent33</code> shipped as a console-script entry point.
+        <code>status</code>, <code>sessions</code>, <code>bench</code>, <code>packs</code>,
+        configuration introspection.
+      </div>
+    </div>
+    <div class="stack-row">
+      <div class="stack-key">Observability</div>
+      <div class="stack-val">
+        Structured <code>structlog</code> JSON to stdout, Prometheus metrics at
+        <code>/metrics</code>, rolling <code>MetricsCollector</code>, rule-based
+        <code>AlertManager</code>, <code>ExecutionLineage</code>, <code>ExecutionReplay</code>,
+        and a structured <code>TraceCollector</code>.
+      </div>
+    </div>
+    <div class="stack-row">
+      <div class="stack-key">Container runtime</div>
+      <div class="stack-val">
+        Multi-stage <code>Dockerfile</code> with non-root user, minimal base. Compose stack
+        in <code>engine/docker-compose.yml</code> with profiles for <code>local-ollama</code>,
+        <code>dev</code>, <code>agent-os</code>, <code>integrations</code>, and <code>gpu</code>.
+      </div>
+    </div>
+    <div class="stack-row">
+      <div class="stack-key">Orchestration</div>
+      <div class="stack-val">
+        Kubernetes overlays under <code>deploy/k8s/</code> (kustomize-based). Base manifests
+        are cluster-agnostic; the production overlay adds replica counts, ingress hostnames,
+        and TLS configuration. HPA shipped with conservative defaults.
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="tb anchor-offset" id="lifespan" style="background: var(--bg-elev);">
+  <div class="container">
+    <h2><span class="num">04</span>Lifespan order</h2>
+    <p>
+      The FastAPI lifespan in <code>engine/src/agent33/main.py</code> brings subsystems up in
+      dependency order. Each step can read from previous steps. Shutdown is the reverse.
+    </p>
+
+    <div class="stage-grid">
+      <div class="stage-card">
+        <div class="stage-id">Step 1-3</div>
+        <h4>Bootstrap</h4>
+        <div class="stage-count">paths &middot; secrets &middot; DB</div>
+        <p>Resolve runtime state paths, validate secrets (exit on insecure JWT in prod), open the async PostgreSQL engine and create the <code>vector</code> extension.</p>
+      </div>
+      <div class="stage-card">
+        <div class="stage-id">Step 4-6</div>
+        <h4>State stores</h4>
+        <div class="stage-count">Redis &middot; NATS &middot; guards</div>
+        <p>Async Redis (fallback to in-process cache), async NATS (fallback to in-process bus), scaling guards for cron ownership.</p>
+      </div>
+      <div class="stage-card">
+        <div class="stage-id">Step 7-9</div>
+        <h4>Registries</h4>
+        <div class="stage-count">agents &middot; tools &middot; packs &middot; skills</div>
+        <p>Agent registry auto-discovers JSON definitions. Tool registry scans entry points and validates schemas. Pack and skill registries scan filesystems.</p>
+      </div>
+      <div class="stage-card">
+        <div class="stage-id">Step 10-12</div>
+        <h4>Execution + LLM</h4>
+        <div class="stage-count">sandbox &middot; router &middot; embeddings</div>
+        <p>Code executor with adapters, model router, embedding provider with LRU cache, BM25 index, hybrid searcher, RAG pipeline, progressive recall.</p>
+      </div>
+      <div class="stage-card">
+        <div class="stage-id">Step 13-14</div>
+        <h4>Governance + skill injection</h4>
+        <div class="stage-count">approvals &middot; sessions</div>
+        <p>Approval service, token manager, tool governance loads <code>~/.agent33/approved-tools.json</code>. Capability packs, skill injector, hybrid skill matcher wired into <code>AgentRuntime</code>.</p>
+      </div>
+      <div class="stage-card">
+        <div class="stage-id">Step 15-16</div>
+        <h4>Integrations + transports</h4>
+        <div class="stage-count">ingestion &middot; messaging &middot; MCP &middot; WS / SSE</div>
+        <p>Knowledge ingestion cron, web research, voice sidecar probe, messaging adapters, MCP service bridge, WebSocket and SSE managers, agent-to-workflow bridge.</p>
+      </div>
+    </div>
+
+    <div class="callout">
+      <strong>Fallback discipline:</strong> Subsystems that fail to initialise log a warning
+      and fall back to an in-process alternative where one exists. The application starts in
+      <em>lite</em> mode if PostgreSQL, Redis, and NATS are all unavailable.
+    </div>
+  </div>
+</section>
+
+<section class="tb anchor-offset" id="agents">
+  <div class="container">
+    <h2><span class="num">05</span>Agent runtime</h2>
+    <p>
+      Agents are declarative JSON files auto-loaded from
+      <code>engine/agent-definitions/</code> by the <code>AgentRegistry</code>. Six reference
+      agents ship in the box:
+    </p>
+    <ul>
+      <li><strong>orchestrator</strong> &mdash; high-level director, hand-off and evidence-aware</li>
+      <li><strong>director</strong> &mdash; project-level planning and decomposition</li>
+      <li><strong>worker</strong> &mdash; code worker for implementation tasks</li>
+      <li><strong>qa</strong> &mdash; quality assurance, evaluation, regression triage</li>
+      <li><strong>researcher</strong> &mdash; research and source synthesis</li>
+      <li><strong>browser-agent</strong> &mdash; web research with the headless browser tool</li>
+    </ul>
+
+    <h3>Tool-use loop</h3>
+    <p>
+      <code>AgentRuntime.invoke()</code> opens a trace, runs progressive recall against memory,
+      builds the system prompt (skills injected via L0 / L1 / L2 disclosure), calls the LLM
+      with the allowed tools, executes tool calls via the governed
+      <code>ToolRegistry.validated_execute()</code>, feeds results back to the LLM, and emits
+      the final run record.
+    </p>
+    <p>
+      <code>AgentRuntime.invoke_iterative()</code> exposes the same loop with streaming events
+      over Server-Sent Events. <code>run_stream()</code> in <code>ToolLoop</code> emits
+      <code>token</code>, <code>tool_call</code>, <code>tool_result</code>, and
+      <code>completed</code> events suitable for the operator console.
+    </p>
+
+    <h3>Capability taxonomy</h3>
+    <p>
+      Agents declare capabilities drawn from a 25-entry taxonomy across five categories:
+      <strong>P</strong>lanning, <strong>I</strong>ntake, <strong>V</strong>alidation,
+      <strong>R</strong>esearch, e<strong>X</strong>ecution. The orchestrator and director use
+      capabilities to route work and reason about deficits.
+    </p>
+  </div>
+</section>
+
+<section class="tb anchor-offset" id="workflows" style="background: var(--bg-elev);">
+  <div class="container">
+    <h2><span class="num">06</span>Workflow engine</h2>
+    <p>
+      Workflows are declarative DAGs in YAML or JSON. The executor in
+      <code>engine/src/agent33/workflows/</code> performs a topological sort, runs steps
+      with retries and timeouts, and persists checkpoints to PostgreSQL.
+    </p>
+
+    <h3>Action library</h3>
+    <table>
+      <thead>
+        <tr><th>Action</th><th>Purpose</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>invoke_agent</code></td><td>Run a registered agent against an input. Result becomes the step output.</td></tr>
+        <tr><td><code>run_command</code></td><td>Execute a shell command via the governed CLI adapter with timeout.</td></tr>
+        <tr><td><code>validate</code></td><td>Schema-validate a value or expression result.</td></tr>
+        <tr><td><code>transform</code></td><td>Apply a deterministic transformation (template or expression).</td></tr>
+        <tr><td><code>conditional</code></td><td>Branch on an expression; route to one of N continuations.</td></tr>
+        <tr><td><code>parallel_group</code></td><td>Fan out N children, gather, merge.</td></tr>
+        <tr><td><code>wait</code></td><td>Block on a duration, signal, or external event.</td></tr>
+        <tr><td><code>execute_code</code></td><td>Run code in the sandboxed code executor under an <code>ExecutionContract</code>.</td></tr>
+      </tbody>
+    </table>
+
+    <h3>State machine</h3>
+    <p>
+      Each workflow run progresses through a deterministic state machine. Checkpoints record
+      the last successful step output, so resuming from a SIGTERM mid-run is a primary path,
+      not an emergency one.
+    </p>
+  </div>
+</section>
+
+<section class="tb anchor-offset" id="memory">
+  <div class="container">
+    <h2><span class="num">07</span>Memory and retrieval</h2>
+    <p>
+      AGENT-33 ships a four-stage retrieval stack:
+    </p>
+    <ol>
+      <li><strong>Short-term buffer.</strong> Last-N agent interactions, in-process, per session.</li>
+      <li><strong>Long-term store.</strong> pgvector-backed embeddings, 1536-dim, IVF-Flat cosine index, tenant-scoped.</li>
+      <li><strong>BM25 index.</strong> Lexical companion to dense retrieval, warmed up at startup against the long-term store.</li>
+      <li><strong>Hybrid searcher.</strong> Reciprocal rank fusion over BM25 + vector results.</li>
+    </ol>
+
+    <h3>Chunking</h3>
+    <p>
+      The ingestion pipeline uses a token-aware chunker (default 1200 tokens) so that
+      embeddings are computed against units the LLM can re-emit verbatim. The chunker is
+      pluggable; the default uses <code>tiktoken</code>-style heuristics with paragraph and
+      sentence fallbacks.
+    </p>
+
+    <h3>Progressive recall</h3>
+    <p>
+      <code>ProgressiveRecall</code> resolves the recall budget per agent and per turn,
+      starting with high-confidence summaries and expanding to full chunks only when the
+      caller signals a deeper need. It composes with the skill injector so that prompts
+      stay within the context budget.
+    </p>
+
+    <h3>Knowledge ingestion</h3>
+    <p>
+      The <code>knowledge/</code> subsystem accepts RSS, GitHub, web, and folder sources via
+      APScheduler-driven cron jobs. Ingestion respects per-tenant scopes; the schedule
+      ownership guard prevents multiple replicas from running the same job.
+    </p>
+  </div>
+</section>
+
+<section class="tb anchor-offset" id="tools" style="background: var(--bg-elev);">
+  <div class="container">
+    <h2><span class="num">08</span>Tools and governance</h2>
+    <p>
+      Tools implement the <code>Tool</code> interface; schema-aware tools additionally implement
+      <code>SchemaAwareTool</code> and ship a JSON Schema for their inputs. The registry
+      validates the schema at registration and again on call via
+      <code>validated_execute()</code>.
+    </p>
+
+    <h3>Built-in tools</h3>
+    <ul>
+      <li><strong>shell</strong> &mdash; command execution under <code>CLIAdapter</code> with timeout and allowlist</li>
+      <li><strong>file_read</strong> &mdash; read a file under the workspace root</li>
+      <li><strong>file_write</strong> &mdash; write a file under the workspace root</li>
+      <li><strong>file_search</strong> &mdash; glob / ripgrep-style search</li>
+      <li><strong>web_fetch</strong> &mdash; HTTP GET with SSRF protection and a host allowlist</li>
+      <li><strong>browser</strong> &mdash; headless browser navigation and screenshot</li>
+      <li><strong>code_exec</strong> &mdash; execute code via the sandbox contract</li>
+    </ul>
+
+    <h3>Governance</h3>
+    <p>
+      <code>ToolGovernance</code> consults the per-tenant allowlist, the active autonomy
+      budget, and any pending approval tokens. The runtime answers
+      <em>allowed</em>, <em>denied</em>, or <em>needs-approval</em>. Sensitive operations
+      route through the HMAC-signed one-time approval token flow, with the operator
+      console rendering pending requests.
+    </p>
+  </div>
+</section>
+
+<section class="tb anchor-offset" id="deployment">
+  <div class="container">
+    <h2><span class="num">09</span>Deployment modes</h2>
+    <p>
+      The same engine image runs in three deployment shapes, each documented under
+      <code>docs/architecture/deployment-topologies.md</code>.
+    </p>
+
+    <div class="deploy-grid">
+      <div class="deploy-card">
+        <span class="mode-id">M1</span>
+        <h4>Lite</h4>
+        <ul>
+          <li>Single process</li>
+          <li>SQLite + in-process cache + in-process bus</li>
+          <li>Laptops, demos, CI smoke runs</li>
+          <li>Falls back here automatically when external stores are unreachable</li>
+        </ul>
+      </div>
+      <div class="deploy-card">
+        <span class="mode-id">M2</span>
+        <h4>Standard, Compose</h4>
+        <ul>
+          <li>PostgreSQL + Redis + NATS + Ollama</li>
+          <li>Docker Compose</li>
+          <li>Default developer and operator profile</li>
+          <li><code>engine/docker-compose.yml</code></li>
+        </ul>
+      </div>
+      <div class="deploy-card">
+        <span class="mode-id">M3</span>
+        <h4>Standard, K8s</h4>
+        <ul>
+          <li>Kustomize base manifests</li>
+          <li>StatefulSet Postgres + pgvector</li>
+          <li>Single-instance HPA by default</li>
+          <li><code>deploy/k8s/base/</code></li>
+        </ul>
+      </div>
+      <div class="deploy-card">
+        <span class="mode-id">M4</span>
+        <h4>Enterprise, K8s</h4>
+        <ul>
+          <li>Production overlay</li>
+          <li>Ingress + TLS + persistent volumes</li>
+          <li>Dedicated observability stack</li>
+          <li><code>deploy/k8s/overlays/production/</code></li>
+        </ul>
+      </div>
+      <div class="deploy-card">
+        <span class="mode-id">M5</span>
+        <h4>Air-gapped</h4>
+        <ul>
+          <li>Ollama-only path</li>
+          <li>Opt-in egress, no required cloud APIs</li>
+          <li>Pre-pulled images and models</li>
+          <li>Local pack registry</li>
+        </ul>
+      </div>
+      <div class="deploy-card">
+        <span class="mode-id">M6</span>
+        <h4>Local-dev hybrid</h4>
+        <ul>
+          <li>Infra services in Compose</li>
+          <li>Engine on the host via uvicorn</li>
+          <li>Fast iteration loop</li>
+          <li>Used by the maintainer team</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="tb anchor-offset" id="api" style="background: var(--bg-elev);">
+  <div class="container">
+    <h2><span class="num">10</span>API surface</h2>
+
+    <h3>REST</h3>
+    <table>
+      <thead>
+        <tr><th>Endpoint</th><th>Method</th><th>Purpose</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>/v1/auth/token</code></td><td>POST</td><td>Bootstrap auth token (dev profile)</td></tr>
+        <tr><td><code>/v1/agents/</code></td><td>GET</td><td>List registered agents</td></tr>
+        <tr><td><code>/v1/agents/{name}/invoke</code></td><td>POST</td><td>Invoke an agent synchronously</td></tr>
+        <tr><td><code>/v1/agents/{name}/invoke/stream</code></td><td>POST (SSE)</td><td>Streaming invocation</td></tr>
+        <tr><td><code>/v1/workflows</code></td><td>POST</td><td>Register or execute a workflow</td></tr>
+        <tr><td><code>/v1/workflows/{id}/runs</code></td><td>POST</td><td>Start a workflow run</td></tr>
+        <tr><td><code>/v1/workflows/{id}/runs/{run_id}</code></td><td>GET</td><td>Run state + checkpoints</td></tr>
+        <tr><td><code>/v1/tools</code></td><td>GET</td><td>Registered tools with JSON Schemas</td></tr>
+        <tr><td><code>/v1/packs/*</code></td><td>various</td><td>Pack registry, install, update, revoke</td></tr>
+        <tr><td><code>/v1/skills/*</code></td><td>various</td><td>Skill registry CRUD and search</td></tr>
+        <tr><td><code>/v1/memory/*</code></td><td>various</td><td>Memory query, ingest, recall</td></tr>
+        <tr><td><code>/v1/review/*</code></td><td>various</td><td>Review queue, risk assessment, sign-off</td></tr>
+        <tr><td><code>/v1/release/*</code></td><td>various</td><td>Release lifecycle, checklist, sync, rollback</td></tr>
+        <tr><td><code>/v1/evaluation/*</code></td><td>various</td><td>Golden tasks, gates, regressions</td></tr>
+        <tr><td><code>/v1/traces/*</code></td><td>various</td><td>Trace query with failure-taxonomy filter</td></tr>
+        <tr><td><code>/v1/autonomy/*</code></td><td>various</td><td>Budgets, stop conditions, escalations</td></tr>
+        <tr><td><code>/v1/outcomes/*</code></td><td>various</td><td>Outcome records and impact tracking</td></tr>
+        <tr><td><code>/health</code> &middot; <code>/readyz</code> &middot; <code>/metrics</code></td><td>GET</td><td>Liveness, readiness, Prometheus metrics (public)</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Authentication</h3>
+    <p>
+      Bearer JWT or <code>X-API-Key</code> on every non-public route. The auth middleware
+      attaches a <code>TokenPayload</code> to <code>request.state.user</code>; routes consume
+      it via FastAPI <code>Depends</code>. Scope enforcement is per-route, drawn from the
+      scope catalogue in <code>security/permissions.py</code>.
+    </p>
+
+    <h3>CLI example</h3>
+    <span class="code-label">agent33 CLI</span>
+<pre><code>pip install -e ".[dev]"
+agent33 status
+agent33 sessions list
+agent33 packs list
+agent33 bench run --suite smoke
+agent33 bench report --format ctrf</code></pre>
+  </div>
+</section>
+
+<section class="tb anchor-offset" id="observability">
+  <div class="container">
+    <h2><span class="num">11</span>Observability</h2>
+
+    <table>
+      <thead>
+        <tr><th>Layer</th><th>Component</th><th>Purpose</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Logs</td><td><code>structlog</code> JSON to stdout</td><td>Structured request, agent, and workflow logs with correlation ids</td></tr>
+        <tr><td>Metrics</td><td>Prometheus <code>/metrics</code></td><td>Counters and timings per route, per tool, per agent</td></tr>
+        <tr><td>Dashboard</td><td><code>MetricsCollector</code> rolling window</td><td>Operator console panels: counts, timings, error rate</td></tr>
+        <tr><td>Alerts</td><td><code>AlertManager</code> rule engine</td><td>Threshold and trend alerts against the rolling window</td></tr>
+        <tr><td>Lineage</td><td><code>ExecutionLineage</code></td><td>Parent-child graph of agent / workflow / sub-agent runs</td></tr>
+        <tr><td>Replay</td><td><code>ExecutionReplay</code></td><td>Deterministic replay of recorded runs</td></tr>
+        <tr><td>Traces</td><td><code>TraceCollector</code></td><td>Structured Session &rarr; Run &rarr; Task &rarr; Step &rarr; Action traces</td></tr>
+      </tbody>
+    </table>
+
+    <h3>Failure taxonomy</h3>
+    <p>Every trace is tagged with one of ten failure categories:</p>
+    <ul>
+      <li><code>F-ENV</code> &mdash; environment / dependency unavailable</li>
+      <li><code>F-INP</code> &mdash; bad input (validation, schema)</li>
+      <li><code>F-EXE</code> &mdash; execution error</li>
+      <li><code>F-TMO</code> &mdash; timeout</li>
+      <li><code>F-RES</code> &mdash; resource exhausted</li>
+      <li><code>F-SEC</code> &mdash; security policy denial</li>
+      <li><code>F-DEP</code> &mdash; downstream dependency error</li>
+      <li><code>F-VAL</code> &mdash; output validation failure</li>
+      <li><code>F-REV</code> &mdash; review rejection</li>
+      <li><code>F-UNK</code> &mdash; uncategorised</li>
+    </ul>
+    <p>Retention policies are configured per category so operators can keep critical traces longer than noise.</p>
+  </div>
+</section>
+
+<section class="tb anchor-offset" id="security" style="background: var(--bg-elev);">
+  <div class="container">
+    <h2><span class="num">12</span>Security posture</h2>
+
+    <table>
+      <thead>
+        <tr><th>Control</th><th>Implementation</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Encryption at rest</td><td>AES-256-GCM via <code>security/encryption.py</code></td></tr>
+        <tr><td>Secret vault</td><td>Fernet-backed via <code>security/vault.py</code></td></tr>
+        <tr><td>Authentication</td><td>JWT (configurable algorithm) or <code>X-API-Key</code> per request</td></tr>
+        <tr><td>Scope enforcement</td><td>Per-route, catalogue in <code>security/permissions.py</code></td></tr>
+        <tr><td>Multi-tenant isolation</td><td>Tenant id resolved at middleware, enforced at repository layer</td></tr>
+        <tr><td>Tool governance</td><td>Per-subject rate limiting, autonomy budgets, allowlists</td></tr>
+        <tr><td>Sensitive-op approvals</td><td>HMAC-signed one-time approval tokens, operator-visible</td></tr>
+        <tr><td>Prompt injection screening</td><td>Pre-LLM screening on user-supplied prompt contributions</td></tr>
+        <tr><td>SSRF protection</td><td>Host allowlist on HTTP and browser tools; metadata IPs blocked</td></tr>
+        <tr><td>Subprocess timeouts</td><td>Configurable per tool via <code>SandboxConfig</code></td></tr>
+        <tr><td>Pack trust</td><td>SHA-256 integrity verification via <code>hmac.compare_digest</code>; revocation list</td></tr>
+        <tr><td>Code execution</td><td>Sandbox contract (<code>ExecutionContract</code>); adapters for CLI, Jupyter, GPU Docker</td></tr>
+      </tbody>
+    </table>
+
+    <div class="callout">
+      <strong>Production warning:</strong> Bootstrap auth is for local development only.
+      Before any shared, VPS, or production deployment, set
+      <code>AUTH_BOOTSTRAP_ENABLED=false</code>, rotate <code>API_SECRET_KEY</code>,
+      <code>JWT_SECRET</code>, and <code>ENCRYPTION_KEY</code>, and work through the release
+      checklist.
+    </div>
+  </div>
+</section>
+
+<section class="section" style="background: var(--bg);">
+  <div class="container text-center">
+    <h2>Go deeper</h2>
+    <p class="lead" style="margin: 0 auto 32px;">Three documents worth a longer read.</p>
+    <div class="btn-group" style="justify-content: center;">
+      <a href="./white-paper.html" class="btn btn-primary">Technical White Paper</a>
+      <a href="./architecture.html" class="btn btn-secondary">Architecture Deck</a>
+      <a href="./use-cases.html" class="btn btn-secondary">Use Cases</a>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer-links">
+      <a href="./index.html">Overview</a>
+      <a href="./executive-summary.html">Exec Summary</a>
+      <a href="./technical-brief.html">Tech Brief</a>
+      <a href="./white-paper.html">White Paper</a>
+      <a href="./use-cases.html">Use Cases</a>
+      <a href="./architecture.html">Architecture</a>
+      <a href="./slides.html">Slides</a>
+      <a href="../README.md">Back to README</a>
+    </div>
+    <p>AGENT-33 v2.1.0 &middot; Apache License 2.0 &middot; Built for governed agent runtimes.</p>
+  </div>
+</footer>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'dark',
+    themeVariables: {
+      primaryColor: '#1a2236',
+      primaryTextColor: '#e6edf3',
+      primaryBorderColor: '#2a3654',
+      lineColor: '#0ea5e9',
+      secondaryColor: '#121829',
+      tertiaryColor: '#0d1424',
+      background: '#0a0e1a',
+      mainBkg: '#1a2236',
+      secondBkg: '#121829',
+      fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif'
+    }
+  });
+</script>
+
+</body>
+</html>

@@ -1,0 +1,813 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AGENT-33 - Technical White Paper</title>
+  <meta name="description" content="Multi-agent orchestration with governance, evidence, and multi-tenant isolation. AGENT-33 v2.1.0 technical white paper.">
+  <link rel="stylesheet" href="./assets/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    .wp-hero {
+      padding: 100px 0 56px;
+      background: linear-gradient(180deg, rgba(245, 158, 11, 0.07) 0%, transparent 100%);
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+    }
+    .wp-hero h1 {
+      font-size: clamp(2.25rem, 5vw, 3.5rem);
+      max-width: 1000px;
+      margin: 0 auto 16px;
+    }
+    .wp-hero .subtitle {
+      color: var(--text-dim);
+      font-size: 1.2rem;
+      max-width: 720px;
+      margin: 0 auto;
+    }
+    .wp-meta {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 24px;
+      margin-top: 24px;
+      color: var(--text-dim);
+      font-size: 0.95rem;
+    }
+    .wp-meta strong { color: var(--text); }
+    .wp-layout {
+      display: grid;
+      grid-template-columns: 240px 1fr;
+      gap: 48px;
+      padding: 48px 0;
+      align-items: start;
+    }
+    @media (max-width: 1024px) {
+      .wp-layout { grid-template-columns: 1fr; }
+      .wp-toc-sticky { position: static !important; }
+    }
+    .wp-toc-sticky {
+      position: sticky;
+      top: 80px;
+    }
+    .wp-toc {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px;
+    }
+    .wp-toc-title {
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      margin-bottom: 12px;
+    }
+    .wp-toc ol {
+      list-style: none;
+      counter-reset: section;
+      padding: 0;
+      margin: 0;
+    }
+    .wp-toc li {
+      counter-increment: section;
+      padding: 4px 0;
+      border-bottom: 1px dashed var(--border);
+    }
+    .wp-toc li:last-child { border-bottom: none; }
+    .wp-toc li a {
+      color: var(--text-dim);
+      font-size: 0.9rem;
+      display: flex;
+      gap: 8px;
+    }
+    .wp-toc li a::before {
+      content: counter(section, decimal-leading-zero);
+      color: var(--accent);
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+    }
+    .wp-toc li a:hover { color: var(--text); opacity: 1; }
+    .wp-main h2 {
+      font-size: clamp(1.4rem, 2.4vw, 1.9rem);
+      margin: 56px 0 12px;
+      padding-bottom: 8px;
+      border-bottom: 1px solid var(--border);
+      scroll-margin-top: 80px;
+    }
+    .wp-main h2:first-child { margin-top: 0; }
+    .wp-main h2 .num {
+      color: var(--text-dim);
+      font-family: var(--font-mono);
+      font-size: 0.85em;
+      margin-right: 12px;
+    }
+    .wp-main h3 {
+      font-size: 1.15rem;
+      color: var(--accent);
+      margin: 28px 0 8px;
+      scroll-margin-top: 80px;
+    }
+    .wp-main p {
+      color: var(--text);
+      margin-bottom: 14px;
+      line-height: 1.7;
+    }
+    .wp-main ul, .wp-main ol {
+      margin: 12px 0 16px 24px;
+      color: var(--text);
+    }
+    .wp-main li { margin-bottom: 6px; line-height: 1.7; }
+    .wp-main code { font-size: 0.85em; }
+    .abstract {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-left: 4px solid var(--accent);
+      border-radius: 8px;
+      padding: 24px 28px;
+      margin: 24px 0;
+    }
+    .abstract p { color: var(--text-dim); font-size: 1.05rem; line-height: 1.7; }
+    .abstract p:last-child { margin-bottom: 0; }
+    .wp-callout {
+      background: var(--bg-card);
+      border-left: 4px solid var(--accent-3);
+      border-radius: 6px;
+      padding: 16px 20px;
+      margin: 24px 0;
+      color: var(--text-dim);
+      font-size: 0.95rem;
+    }
+    .wp-callout strong { color: var(--accent-3); }
+    @media print {
+      .header, .footer, .wp-toc-sticky { display: none; }
+      .wp-layout { grid-template-columns: 1fr; }
+      .wp-main h2 { page-break-after: avoid; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="header">
+  <div class="container header-inner">
+    <div class="logo">AGENT<span class="accent">-33</span></div>
+    <nav class="nav">
+      <a href="./index.html">Overview</a>
+      <a href="./executive-summary.html">Exec Summary</a>
+      <a href="./technical-brief.html">Tech Brief</a>
+      <a href="./white-paper.html" class="active">White Paper</a>
+      <a href="./use-cases.html">Use Cases</a>
+      <a href="./architecture.html">Architecture</a>
+      <a href="./slides.html">Slides</a>
+      <a href="../README.md">Back to README</a>
+    </nav>
+  </div>
+</header>
+
+<section class="wp-hero">
+  <div class="container">
+    <h1>Technical White Paper</h1>
+    <p class="subtitle">
+      Multi-Agent Orchestration with Governance, Evidence, and Multi-Tenant Isolation
+    </p>
+    <div class="wp-meta">
+      <div><strong>Version</strong> &middot; 2.1.0</div>
+      <div><strong>License</strong> &middot; Apache 2.0</div>
+      <div><strong>Date</strong> &middot; 2026-05-21</div>
+    </div>
+  </div>
+</section>
+
+<div class="container">
+  <div class="wp-layout">
+
+    <aside class="wp-toc-sticky">
+      <nav class="wp-toc">
+        <div class="wp-toc-title">Contents</div>
+        <ol>
+          <li><a href="#motivation">Motivation</a></li>
+          <li><a href="#principles">Design Principles</a></li>
+          <li><a href="#architecture">Architecture</a></li>
+          <li><a href="#agents">Agent Model</a></li>
+          <li><a href="#workflows">Workflow Execution</a></li>
+          <li><a href="#memory">Memory + Retrieval</a></li>
+          <li><a href="#governance">Governance Contracts</a></li>
+          <li><a href="#observability">Observability</a></li>
+          <li><a href="#security">Security Model</a></li>
+          <li><a href="#non-goals">What AGENT-33 Is Not</a></li>
+          <li><a href="#roadmap">Roadmap</a></li>
+          <li><a href="#references">References</a></li>
+        </ol>
+      </nav>
+    </aside>
+
+    <main class="wp-main">
+
+      <h2>Abstract</h2>
+      <div class="abstract">
+        <p>
+          AGENT-33 is an open-source multi-agent orchestration framework engineered for
+          teams who need real workflows, explicit governance, and a usable control plane
+          instead of a pile of disconnected scripts. It combines a declarative agent
+          registry, a DAG-based workflow engine, a sandbox-contract code executor, a
+          hybrid BM25 + vector retrieval stack, and a trace pipeline with a 10-category
+          failure taxonomy in one async Python runtime.
+        </p>
+        <p>
+          The platform is multi-tenant from day one, local-first by default (Ollama out of
+          the box), and exposes six declarative extension points: agents, workflows,
+          skills, packs, tools, and MCP servers. Twelve subsystems carry governance,
+          evidence, and lifecycle responsibilities so that an operator can answer
+          &ldquo;who did what, when, and under what authority&rdquo; without leaving the
+          platform.
+        </p>
+        <p>
+          This document describes the design philosophy, system architecture, and
+          operational characteristics that distinguish AGENT-33 from generic LLM
+          orchestration libraries and hosted agent platforms.
+        </p>
+      </div>
+
+      <h2 id="motivation"><span class="num">1</span>Motivation</h2>
+
+      <h3>1.1 The agent-platform problem</h3>
+      <p>
+        The 2020s produced an abundance of LLM endpoints and a smaller number of
+        &ldquo;agent frameworks&rdquo;: libraries that wrap a tool-use loop, a prompt
+        template engine, and a vector store. Most of them ship as developer libraries
+        and assume the application layer above them will solve the platform concerns.
+      </p>
+      <p>That assumption holds for a single-user agent script. It does not hold for:</p>
+      <ul>
+        <li>Multi-tenant SaaS deployments where one operator&rsquo;s data must never leak into another&rsquo;s context</li>
+        <li>Regulated workloads where every tool call needs an identity, a scope, and an audit entry</li>
+        <li>Teams running agent rollouts where evaluation gates and regression detection are non-negotiable</li>
+        <li>Self-hosted environments where cloud APIs are off the table</li>
+      </ul>
+      <p>
+        Each of these introduces requirements that are easier to satisfy at the
+        platform layer than to retrofit per application. AGENT-33 is the platform layer.
+      </p>
+
+      <h3>1.2 The governance problem</h3>
+      <p>
+        An agent is, by construction, a system that can invoke tools and write outputs
+        on a human&rsquo;s behalf. The accountability gap is wider than for traditional
+        software: the model decides which tool to call, with what arguments, in what
+        order. Without explicit governance, the application owner cannot answer the
+        post-hoc question of why a particular tool was invoked, by which agent, against
+        which tenant, with what authority.
+      </p>
+      <p>AGENT-33 closes that gap in three ways:</p>
+      <ol>
+        <li><strong>Identity per call.</strong> The auth middleware resolves a tenant and a token payload for every request. Tool calls carry that identity through to execution and persistence.</li>
+        <li><strong>Scope per route.</strong> Tools are JSON-Schema validated. Tool execution is allowlist-gated per tenant. Autonomy budgets enforce file, command, and network scope at runtime.</li>
+        <li><strong>Evidence per action.</strong> Tool invocations produce traces. Workflow steps produce checkpoints. Agent runs produce lineage records. Replays survive a fresh checkout.</li>
+      </ol>
+
+      <h3>1.3 The local-first imperative</h3>
+      <p>
+        A significant fraction of agent workloads cannot send data to cloud APIs. The
+        reasons vary &mdash; regulatory regime, contractual obligation, data residency,
+        operator preference &mdash; but the engineering consequence is the same: the
+        platform must run end-to-end against a model the operator controls.
+      </p>
+      <p>
+        AGENT-33&rsquo;s default stack is Ollama. The Compose bootstrap brings the entire
+        runtime up against a local Ollama endpoint with no external dependencies. Cloud
+        providers, hosted vector databases, signing authorities, and message buses are
+        all opt-in. The model router auto-registers <strong>20+ providers</strong> from
+        environment variables, so swapping inference backends is configuration, not code.
+      </p>
+
+      <h2 id="principles"><span class="num">2</span>Design Principles</h2>
+
+      <h3>2.1 Declarative-first</h3>
+      <p>
+        Agents are JSON. Workflows are YAML or JSON. Skills are Markdown with YAML
+        frontmatter. Packs are YAML manifests over a directory of files. Anything you
+        can declare you can ship without code changes. The auto-discovery scan at
+        startup picks up files dropped into the appropriate directory.
+      </p>
+      <p>
+        Declarative-first does not mean &ldquo;declarative-only.&rdquo; The
+        <code>Tool</code> interface, the messaging adapter interface, the model provider
+        interface, and the sandbox adapter interface are all extensible in Python.
+        Declarative is the default; programmatic extension is the escape hatch.
+      </p>
+
+      <h3>2.2 Governed execution</h3>
+      <p>
+        Code execution, tool calls, autonomy budgets, review sign-offs, release
+        lifecycles, and pack trust all flow through dedicated subsystems with explicit
+        state machines. There is no implicit &ldquo;agent does whatever the model
+        said&rdquo; path through the runtime. The default answer to a privileged
+        operation is <em>no</em>; the operator&rsquo;s job is to widen scope explicitly,
+        not to narrow it after-the-fact.
+      </p>
+
+      <h3>2.3 Local-first, remote optional</h3>
+      <p>
+        The default stack runs against Ollama on a developer laptop. Every external
+        integration is opt-in behind feature flags and graceful fallbacks. The lifespan
+        treats Redis and NATS as <em>optional</em>; failed initialisation logs a warning
+        and falls back to <code>InProcessCache</code> and <code>InProcessMessageBus</code>.
+      </p>
+      <p>
+        The application starts in <em>lite</em> mode if PostgreSQL, Redis, and NATS are
+        all unavailable. This is intentional: the platform must be self-sufficient on a
+        laptop or in a CI smoke run, not just in production.
+      </p>
+
+      <h3>2.4 Multi-tenant by construction</h3>
+      <p>
+        Tenant id is a property of the durable schema, not a deployment convention.
+        Every Alembic-managed model carries a <code>tenant_id</code> column. The auth
+        middleware resolves the tenant from the inbound credential and attaches it to
+        the request state. Repository methods either filter by <code>tenant_id</code>
+        directly or call a tenant-scoped helper that does.
+      </p>
+      <p>
+        Cross-tenant data is a bug, not a misconfiguration. Operator and admin scopes
+        still see one tenant at a time unless they explicitly use admin endpoints. The
+        test suite includes regression cases that exercise tenant isolation at the
+        repository layer.
+      </p>
+
+      <h3>2.5 Evidence over assertion</h3>
+      <p>
+        The platform proves what happened, rather than asserting it. Traces, lineage,
+        and replay records survive long after the agent loop exits. The trace pipeline
+        tags every span with one of ten failure categories so that operators can group
+        incidents by class and apply retention policies that match their compliance
+        posture.
+      </p>
+
+      <h2 id="architecture"><span class="num">3</span>Architecture</h2>
+
+      <h3>3.1 Two-layer model</h3>
+      <p>
+        AGENT-33 separates <em>specification</em> from <em>runtime</em>. The two layers
+        ship together and version together but serve different purposes.
+      </p>
+      <ul>
+        <li><strong><code>core/</code></strong> &mdash; Plain Markdown specifications: agent role specs, orchestrator handoff and evidence rules, phase planning and gates, versioned API specs, workflow templates, policy pack definitions. These documents are auto-loaded by the orchestrator agent at runtime.</li>
+        <li><strong><code>engine/</code></strong> &mdash; Async Python runtime. Hatchling-built, strict mypy, Ruff linting, pytest in async mode. This is the actual software.</li>
+        <li><strong><code>frontend/</code></strong> &mdash; React / TypeScript single-page application. The day-to-day operator interface; every operation is reachable via the API and CLI.</li>
+      </ul>
+
+      <h3>3.2 Subsystem map</h3>
+      <p>
+        The engine package contains roughly 60 first-class subsystem directories under
+        <code>engine/src/agent33/</code>. They cluster into seven groups by responsibility:
+        product surfaces, platform, integration, observability, control surfaces, runtime
+        substrate, and foundation. The architecture deck and component catalog walk
+        through each directory and the modules to read first.
+      </p>
+
+      <div class="diagram">
+        <div class="diagram-title">Subsystem clusters</div>
+        <pre class="mermaid">
+flowchart TB
+  subgraph PROD["Product surfaces"]
+    AGENTS["agents/"]
+    WF["workflows/"]
+    SKL["skills/"]
+    PKS["packs/"]
+    TLS["tools/"]
+    EXEC["execution/"]
+  end
+
+  subgraph PLAT["Platform"]
+    LLM["llm/"]
+    MEM["memory/"]
+    SEC["security/"]
+    AUTO["autonomy/"]
+    REV["review/"]
+    REL["release/"]
+    IMP["improvement/"]
+    EVAL["evaluation/"]
+  end
+
+  subgraph OBS["Observability"]
+    OBSV["observability/"]
+    OUTC["outcomes/"]
+    EXPL["explanation/"]
+  end
+
+  subgraph FOUND["Foundation"]
+    MAIN["main.py"]
+    CFG["config.py"]
+    LIFE["lifespan/"]
+    SAND["sandboxing/"]
+    POL["policy/"]
+  end
+
+  PROD --> PLAT
+  PROD --> OBS
+  PLAT --> FOUND
+  OBS --> FOUND
+        </pre>
+      </div>
+
+      <h3>3.3 Lifespan and request lifecycle</h3>
+      <p>
+        The FastAPI lifespan brings subsystems up in a deterministic order, storing each
+        on <code>app.state.*</code>. Shutdown is the reverse: workflows are cancelled,
+        services drain, message buses disconnect, and the database connection pool
+        closes last. The technical brief documents the full sequence; the architecture
+        deck has the sequence diagram.
+      </p>
+
+      <h2 id="agents"><span class="num">4</span>Agent Model</h2>
+
+      <h3>4.1 Declarative definitions</h3>
+      <p>
+        Agents are JSON files auto-discovered from
+        <code>engine/agent-definitions/</code>. Each definition declares the agent&rsquo;s
+        capabilities (drawn from a 25-entry taxonomy across P/I/V/R/X categories), the
+        tools it may use, the LLM model and parameters, the system-prompt frame, and the
+        skills it loads.
+      </p>
+      <p>
+        Six reference agents ship in the box: <strong>orchestrator</strong>,
+        <strong>director</strong>, <strong>worker</strong>, <strong>qa</strong>,
+        <strong>researcher</strong>, and <strong>browser-agent</strong>. They are not
+        the only agents possible &mdash; they are the curated starting set that the
+        operator console and the workflow library reference by name.
+      </p>
+
+      <h3>4.2 Invocation paths</h3>
+      <p><code>AgentRuntime</code> exposes three invocation paths:</p>
+      <ol>
+        <li><code>invoke()</code> &mdash; synchronous, returns the final <code>AgentRunResult</code>.</li>
+        <li><code>invoke_iterative()</code> &mdash; streams tool-use events over SSE; suited for the operator console.</li>
+        <li><code>run_stream()</code> via <code>ToolLoop</code> &mdash; the underlying generator that emits <code>token</code>, <code>tool_call</code>, <code>tool_result</code>, and <code>completed</code> events.</li>
+      </ol>
+      <p>
+        Iterative routing parameters (model selection, temperature, max iterations) are
+        resolved <em>after</em> pre-hooks run, so hook-mutated inputs influence routing
+        instead of stale request payloads.
+      </p>
+
+      <h3>4.3 Tool-use loop</h3>
+      <p>The tool-use loop is the heart of the agent runtime. A single iteration looks like:</p>
+      <ol>
+        <li>The runtime opens a trace, runs progressive recall against memory, and constructs the system prompt with skills injected per the L0/L1/L2 disclosure ladder.</li>
+        <li>The LLM is called with the allowed tools and the assembled context.</li>
+        <li>For each tool call the model emits, the runtime asks <code>ToolGovernance.authorize()</code> for the tool, parameters, and current autonomy budget.</li>
+        <li>If authorised, the registry runs <code>validated_execute()</code>, which JSON-Schema validates the inputs again and executes the tool.</li>
+        <li>The result is fed back to the LLM as a tool-result message. The loop continues until the model emits a final message or the iteration ceiling is reached.</li>
+      </ol>
+
+      <h3>4.4 Skill injection</h3>
+      <p>
+        Skills are SKILL.md or SKILL.yaml files with YAML frontmatter. The skill registry
+        scans the skill directories on startup and on demand; the skill injector chooses
+        a disclosure level per call:
+      </p>
+      <ul>
+        <li><strong>L0</strong> &mdash; one-sentence summary; cheap, used for many skills at once</li>
+        <li><strong>L1</strong> &mdash; outline; medium, used when L0 keeps surfacing the same skill</li>
+        <li><strong>L2</strong> &mdash; full body; expensive, used when the agent has committed to the skill</li>
+      </ul>
+      <p>
+        Tool context is resolved at injection time so that L2 skills can reference the
+        tools the agent currently has scoped, not the tools the skill was authored
+        against.
+      </p>
+
+      <h2 id="workflows"><span class="num">5</span>Workflow Execution</h2>
+
+      <h3>5.1 DAG executor</h3>
+      <p>
+        Workflows are declarative DAGs in YAML or JSON. The executor performs a
+        topological sort, runs steps in dependency order, and persists checkpoints to
+        PostgreSQL. Steps with no inter-dependencies run in parallel; parallel groups
+        are a first-class action.
+      </p>
+
+      <h3>5.2 Action library</h3>
+      <p>
+        Eight action types cover the common shapes: <code>invoke_agent</code>,
+        <code>run_command</code>, <code>validate</code>, <code>transform</code>,
+        <code>conditional</code>, <code>parallel_group</code>, <code>wait</code>, and
+        <code>execute_code</code>. Each action takes inputs from earlier steps via an
+        expression evaluator and writes outputs that downstream steps can reference.
+      </p>
+
+      <h3>5.3 Checkpoints and resume</h3>
+      <p>
+        Each successful step writes a checkpoint to PostgreSQL with the step output, the
+        run state, and the expression context. A workflow that hits a SIGTERM mid-run
+        resumes from the last checkpoint; the topological sort recomputes the remaining
+        DAG against the checkpoint state. Resume is a primary path, not an emergency one.
+      </p>
+
+      <h3>5.4 Retries and timeouts</h3>
+      <p>
+        Each step has a retry policy (count, backoff) and a timeout. The executor wraps
+        step execution with the policy; failed steps are retried with exponential backoff
+        until exhaustion. Timeout enforcement is cooperative: long-running tool calls
+        respect cancellation tokens.
+      </p>
+
+      <h2 id="memory"><span class="num">6</span>Memory + Retrieval</h2>
+
+      <h3>6.1 Four-stage stack</h3>
+      <p>The retrieval stack has four stages:</p>
+      <ol>
+        <li><strong>Short-term buffer</strong> &mdash; last-N agent interactions, in-process, per session.</li>
+        <li><strong>Long-term store</strong> &mdash; pgvector-backed embeddings, 1536-dim, IVF-Flat cosine index, tenant-scoped.</li>
+        <li><strong>BM25 index</strong> &mdash; lexical companion to dense retrieval, warmed up at startup.</li>
+        <li><strong>Hybrid searcher</strong> &mdash; reciprocal rank fusion (RRF) over BM25 + vector.</li>
+      </ol>
+
+      <h3>6.2 Chunking</h3>
+      <p>
+        The ingestion pipeline uses a token-aware chunker (default 1200 tokens) so that
+        embeddings are computed against units the LLM can re-emit verbatim. Chunk size
+        is configurable per ingestion source; the chunker preserves paragraph and
+        sentence boundaries where possible.
+      </p>
+
+      <h3>6.3 Hybrid retrieval</h3>
+      <p>
+        Vector retrieval is good at semantic similarity; BM25 is good at lexical match.
+        AGENT-33 runs both for every query and fuses the rankings with reciprocal rank
+        fusion (RRF). The default k for RRF is configurable per tenant; the default
+        result set size respects the agent&rsquo;s recall budget.
+      </p>
+
+      <h3>6.4 Progressive recall</h3>
+      <p>
+        <code>ProgressiveRecall</code> resolves the recall budget per agent and per turn,
+        starting with high-confidence summaries and expanding to full chunks only when
+        the caller signals a deeper need. It composes with the skill injector so that
+        prompts stay within the context budget.
+      </p>
+
+      <h2 id="governance"><span class="num">7</span>Governance Contracts</h2>
+
+      <h3>7.1 Tool governance</h3>
+      <p>
+        Every tool call passes through <code>ToolGovernance</code> before execution. The
+        check considers:
+      </p>
+      <ul>
+        <li>The per-tenant allowlist for the tool</li>
+        <li>The active autonomy budget for the subject (file scope, command scope, network scope)</li>
+        <li>Pending approval tokens for sensitive operations</li>
+        <li>Per-subject rate limits</li>
+      </ul>
+      <p>
+        The answer is <em>allowed</em>, <em>denied</em>, or <em>needs-approval</em>.
+        Sensitive operations route through the HMAC-signed one-time approval token flow;
+        the operator console renders pending requests and forwards approvals back to the
+        runtime.
+      </p>
+
+      <h3>7.2 Autonomy budgets</h3>
+      <p>
+        An autonomy budget is an explicit declaration of what an agent or workflow run
+        may do. It has a lifecycle state machine (DRAFT &rarr; ACTIVE &rarr; COMPLETED),
+        preflight checks (PF-01..PF-10), and runtime enforcement (EF-01..EF-08) covering
+        file access scope, command scope, and network egress scope.
+      </p>
+      <p>
+        Stop conditions and escalation policies are configured per budget. A budget that
+        hits a stop condition triggers a structured escalation: the run pauses, the
+        operator is notified, and the trace pipeline records the cause. Resumption
+        requires an explicit operator action.
+      </p>
+
+      <h3>7.3 Review automation</h3>
+      <p>
+        The <code>review/</code> subsystem implements a two-layer review process: risk
+        assessment runs against the change set or the run output, reviewer assignment
+        picks the smallest reviewer set that covers the risk surface, and the signoff
+        state machine drives the review to either <em>approved</em> or <em>rejected</em>.
+        The review service exposes an HTTP API; the operator console renders the queue.
+      </p>
+
+      <h3>7.4 Release lifecycle</h3>
+      <p>
+        Releases follow a lifecycle state machine: PLANNED &rarr; FROZEN &rarr; RC &rarr;
+        VALIDATING &rarr; RELEASED &rarr; ROLLED_BACK. A pre-release checklist
+        (RL-01..RL-08) gates the transition from FROZEN to RC. The sync engine runs in
+        dry-run mode by default and uses fnmatch matching to scope sync operations. The
+        rollback manager has a decision matrix that drives the response to validation
+        failures.
+      </p>
+
+      <h2 id="observability"><span class="num">8</span>Observability</h2>
+
+      <h3>8.1 Trace pipeline</h3>
+      <p>
+        Every run produces a structured trace following the Session &rarr; Run &rarr;
+        Task &rarr; Step &rarr; Action hierarchy. The trace collector tags each trace
+        with a failure category drawn from a 10-entry taxonomy: <code>F-ENV</code>,
+        <code>F-INP</code>, <code>F-EXE</code>, <code>F-TMO</code>, <code>F-RES</code>,
+        <code>F-SEC</code>, <code>F-DEP</code>, <code>F-VAL</code>, <code>F-REV</code>,
+        <code>F-UNK</code>. Retention policies are configured per category so that
+        operators can keep critical traces longer than noise.
+      </p>
+
+      <h3>8.2 Lineage and replay</h3>
+      <p>
+        <code>ExecutionLineage</code> records the parent-child graph of agent runs,
+        workflow runs, and sub-agent dispatches. <code>ExecutionReplay</code> records
+        enough state to deterministically replay a recorded run on a fresh checkout.
+        Lineage answers &ldquo;what produced this?&rdquo;; replay answers
+        &ldquo;produce it again.&rdquo;
+      </p>
+
+      <h3>8.3 Evaluation gates</h3>
+      <p>
+        The <code>evaluation/</code> subsystem exposes golden tasks (GT-01..GT-07),
+        golden cases (GC-01..GC-04), a metrics calculator (M-01..M-05), a gate enforcer
+        with configurable thresholds, and a regression detector (RI-01..RI-05). The
+        evaluation service is called by the release lifecycle: the transition from
+        VALIDATING to RELEASED is gated on a passing evaluation run.
+      </p>
+
+      <h3>8.4 Outcomes and improvement</h3>
+      <p>
+        The <code>outcomes/</code> subsystem records the operational outcome of each
+        agent run and workflow run, persisted to SQLite (best-effort) for impact
+        tracking. The <code>improvement/</code> subsystem aggregates outcomes into
+        research intake records, lessons learned with action tracking, and improvement
+        metrics (IM-01..IM-05) with trend computation. The roadmap refresh loop runs on
+        a cadence.
+      </p>
+
+      <h2 id="security"><span class="num">9</span>Security Model</h2>
+
+      <h3>9.1 Authentication and authorisation</h3>
+      <p>
+        Bearer JWT or <code>X-API-Key</code> on every non-public route. The auth
+        middleware attaches a <code>TokenPayload</code> to <code>request.state.user</code>;
+        routes consume it via FastAPI <code>Depends</code>. Public paths are an explicit
+        list (<code>/health</code>, <code>/healthz</code>, <code>/readyz</code>,
+        <code>/metrics</code>, <code>/v1/auth/token</code>, dashboard reads, OpenAPI
+        docs); everything else requires a credential.
+      </p>
+
+      <h3>9.2 Scopes</h3>
+      <p>
+        The scope catalogue covers <code>admin</code>, <code>agents:read</code>,
+        <code>agents:write</code>, <code>agents:invoke</code>,
+        <code>workflows:read</code>, <code>workflows:write</code>,
+        <code>workflows:execute</code>, <code>tools:execute</code>,
+        <code>operator:read</code>, and <code>operator:write</code>. Routes declare the
+        scopes they require; the middleware enforces them.
+      </p>
+
+      <h3>9.3 Encryption and secrets</h3>
+      <p>
+        AES-256-GCM encryption for secrets at rest. Fernet-backed vault for high-level
+        secret storage. The configuration system uses <code>SecretStr</code> for
+        sensitive fields; callers must call <code>get_secret_value()</code> explicitly.
+        The lifespan validates production-grade secrets at startup and refuses to start
+        with the development default JWT secret in production mode.
+      </p>
+
+      <h3>9.4 Pack trust</h3>
+      <p>
+        Pack integrity is verified with SHA-256 via <code>hmac.compare_digest</code>.
+        The pack trust manager applies a per-pack trust policy and consults a revocation
+        list before activation. Asymmetric authorship signing via Sigstore cosign is on
+        the near-term roadmap.
+      </p>
+
+      <h3>9.5 Sandboxing</h3>
+      <p>
+        Code execution runs under <code>CodeExecutor</code> with a
+        <code>SandboxConfig</code>, an <code>ExecutionContract</code>, and an
+        <code>ExecutionResult</code>. Three adapters ship: <code>CLIAdapter</code> for
+        subprocess execution with timeout, <code>JupyterAdapter</code> for kernel-based
+        execution, and an optional GPU Docker adapter for accelerator workloads.
+      </p>
+
+      <h2 id="non-goals"><span class="num">10</span>What AGENT-33 Is Not</h2>
+
+      <p>
+        Honest scoping matters as much as honest capability claims. The following are
+        explicitly outside the platform's responsibility.
+      </p>
+
+      <h3>10.1 Not a model provider</h3>
+      <p>
+        AGENT-33 does not train, fine-tune, or serve LLMs in production. It is a
+        client of model endpoints. The model router auto-registers providers but does
+        not run inference itself. AirLLM-backed local inference is an optional Compose
+        profile, not a core path.
+      </p>
+
+      <h3>10.2 Not a vector database</h3>
+      <p>
+        AGENT-33 reads and writes embeddings into pgvector. It does not replace
+        purpose-built vector databases at high scale. Operators who need
+        billion-vector-class retrieval should plug a dedicated vector store into the
+        embedding provider interface; the hybrid searcher will compose over it.
+      </p>
+
+      <h3>10.3 Not a generic web framework</h3>
+      <p>
+        AGENT-33 is built on FastAPI, but it is not a general-purpose web application
+        scaffold. The routes, middleware, and lifespan are tuned for agent workloads.
+        Operators who want to add unrelated CRUD endpoints should run a separate
+        FastAPI app behind the same gateway.
+      </p>
+
+      <h3>10.4 Not a replacement for purpose-built MLOps</h3>
+      <p>
+        The evaluation subsystem covers agent-output regression detection. It is not a
+        replacement for full MLOps experiment tracking. Operators running deep
+        fine-tuning experiments should integrate with their MLOps stack via the
+        evaluation API.
+      </p>
+
+      <h2 id="roadmap"><span class="num">11</span>Roadmap</h2>
+
+      <p>The near-term public direction:</p>
+      <ul>
+        <li><strong>Ecosystem growth</strong> &mdash; broader pack catalog, community-contributed skills and tools, signed pack distribution via Sigstore cosign.</li>
+        <li><strong>MCP integrations</strong> &mdash; richer hosted MCP server surface and tighter MCP client interop with the agent runtime.</li>
+        <li><strong>Public benchmarking</strong> &mdash; continued evaluation against SkillsBench with CTRF reporting and weekly full-tier runs.</li>
+        <li><strong>Provider depth</strong> &mdash; first-class support for additional local-inference backends (llama.cpp, LM Studio, AirLLM) and embedding providers.</li>
+        <li><strong>Operator UX</strong> &mdash; visual workflow builder polish, sub-agent execution trees, knowledge ingestion cron expansion.</li>
+        <li><strong>Horizontal scaling</strong> &mdash; multi-replica deployment with explicit state-boundary coordination, building on the existing ownership guard.</li>
+      </ul>
+
+      <div class="wp-callout">
+        <strong>Known limitations at launch:</strong> The default Kubernetes manifest
+        is single-instance. Pack signing uses SHA-256 integrity verification only
+        (asymmetric authorship signing is upcoming). A handful of authenticated routes
+        are not yet scoped per-tenant. These are tracked, not hidden.
+      </div>
+
+      <h2 id="references"><span class="num">12</span>References</h2>
+
+      <h3>Repository documents</h3>
+      <ul>
+        <li><a href="../README.md">README.md</a> &mdash; project overview and quick start</li>
+        <li><a href="../ARCHITECTURE.md">ARCHITECTURE.md</a> &mdash; canonical architectural reference</li>
+        <li><a href="../INSTALL.md">INSTALL.md</a> &mdash; installation guide</li>
+        <li><a href="../QUICKSTART.md">QUICKSTART.md</a> &mdash; quick start guide</li>
+        <li><a href="../DEVELOPMENT.md">DEVELOPMENT.md</a> &mdash; developer guide</li>
+        <li><a href="../CONTRIBUTING.md">CONTRIBUTING.md</a> &mdash; contribution guide</li>
+        <li><a href="../RELEASE_NOTES.md">RELEASE_NOTES.md</a> &mdash; v2.1.0 release notes</li>
+        <li><a href="../SECURITY.md">SECURITY.md</a> &mdash; security policy and disclosure</li>
+      </ul>
+
+      <h3>External references</h3>
+      <ul>
+        <li><a href="https://fastapi.tiangolo.com/">FastAPI</a> &mdash; the async Python web framework AGENT-33 is built on</li>
+        <li><a href="https://github.com/pgvector/pgvector">pgvector</a> &mdash; PostgreSQL extension for vector similarity search</li>
+        <li><a href="https://ollama.com/">Ollama</a> &mdash; the default local LLM backend</li>
+        <li><a href="https://nats.io/">NATS</a> &mdash; the event bus used for messaging and sub-agent dispatch</li>
+        <li><a href="https://github.com/benchflow-ai/skillsbench">SkillsBench</a> &mdash; the benchmark suite AGENT-33 evaluates against</li>
+      </ul>
+
+    </main>
+  </div>
+</div>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer-links">
+      <a href="./index.html">Overview</a>
+      <a href="./executive-summary.html">Exec Summary</a>
+      <a href="./technical-brief.html">Tech Brief</a>
+      <a href="./white-paper.html">White Paper</a>
+      <a href="./use-cases.html">Use Cases</a>
+      <a href="./architecture.html">Architecture</a>
+      <a href="./slides.html">Slides</a>
+      <a href="../README.md">Back to README</a>
+    </div>
+    <p>AGENT-33 v2.1.0 &middot; Apache License 2.0 &middot; Multi-agent orchestration with governance and evidence.</p>
+  </div>
+</footer>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'dark',
+    themeVariables: {
+      primaryColor: '#1a2236',
+      primaryTextColor: '#e6edf3',
+      primaryBorderColor: '#2a3654',
+      lineColor: '#0ea5e9',
+      secondaryColor: '#121829',
+      tertiaryColor: '#0d1424',
+      background: '#0a0e1a',
+      mainBkg: '#1a2236',
+      secondBkg: '#121829',
+      fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif'
+    }
+  });
+</script>
+
+</body>
+</html>
