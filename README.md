@@ -4,7 +4,9 @@
 
 # AGENT-33
 
-### Local-First Multi-Agent Orchestration Platform with Governance, Evidence, and Workflows
+### Local-First Multi-Agent Orchestration Platform
+
+<sub>Governance &middot; Evidence &middot; Workflows &middot; Multi-tenant Isolation &middot; Observability</sub>
 
 [![License](https://img.shields.io/badge/license-Apache--2.0-blue.svg)](LICENSE)
 [![Version](https://img.shields.io/badge/version-2.1.0-green.svg)](CHANGELOG.md)
@@ -23,7 +25,7 @@
 [![Contributors](https://img.shields.io/github/contributors/mattmre/AGENT33-PUBLIC?style=for-the-badge)](https://github.com/mattmre/AGENT33-PUBLIC/graphs/contributors)
 [![PRs Welcome](https://img.shields.io/badge/PRs-welcome-brightgreen.svg)](CONTRIBUTING.md)
 
-#### Local-first &middot; Multi-tenant &middot; Audit-trail by design &middot; Approval-gated automation
+#### Local-First &middot; Approval-gated automation &middot; Audit trail by design &middot; Multi-tenant
 
 [**Quick Start**](#quick-start) &nbsp;&middot;&nbsp; [**Architecture**](docs/architecture/overview.md) &nbsp;&middot;&nbsp; [**API Reference**](docs/api-reference.md) &nbsp;&middot;&nbsp; [**Onboarding**](docs/ONBOARDING.md)
 
