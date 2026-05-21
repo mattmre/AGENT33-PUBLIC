@@ -11,23 +11,18 @@ This `docs/` directory is the canonical documentation set for AGENT-33.
 3. [Setup Guide](setup-guide.md)
 4. [Walkthroughs](walkthroughs.md)
 5. [Release Checklist](RELEASE_CHECKLIST.md)
-6. [Phase 25/26 Live Review Walkthrough](phase25-26-live-review-walkthrough.md)
-7. [Operator Guide: Improvement Cycles and Docker Kernels](operator-improvement-cycle-and-jupyter.md)
-8. [Production Deployment Runbook](operators/production-deployment-runbook.md)
-9. [Operator Verification Runbook](operators/operator-verification-runbook.md)
-10. [Process Registry Runbook](operators/process-registry-runbook.md)
-11. [Connector Boundary Runbook](operators/connector-boundary-runbook.md)
-12. [Horizontal Scaling Architecture](operators/horizontal-scaling-architecture.md)
-13. [Incident Response Playbooks](operators/incident-response-playbooks.md)
-14. [Pricing And Effort Runbook](operators/pricing-and-effort-runbook.md)
-15. [Service Level Objectives](operators/service-level-objectives.md)
-16. [Phase 22 Surface Validation](validation/phase22-phase25-27-surface-validation.md)
-17. [Use Cases](use-cases.md)
-18. [Functionality and Workflows](functionality-and-workflows.md)
-19. [API Surface](api-surface.md)
-20. [PR Review (2026-02-15)](pr-review-2026-02-15.md)
-21. [Phase 22 Progress Log](progress/phase-22-ui-log.md)
-22. [Phase 22 PR Checkpoints](prs/README.md)
+6. [Operator Guide: Improvement Cycles and Docker Kernels](operator-improvement-cycle-and-jupyter.md)
+7. [Production Deployment Runbook](operators/production-deployment-runbook.md)
+8. [Operator Verification Runbook](operators/operator-verification-runbook.md)
+9. [Process Registry Runbook](operators/process-registry-runbook.md)
+10. [Connector Boundary Runbook](operators/connector-boundary-runbook.md)
+11. [Horizontal Scaling Architecture](operators/horizontal-scaling-architecture.md)
+12. [Incident Response Playbooks](operators/incident-response-playbooks.md)
+13. [Pricing And Effort Runbook](operators/pricing-and-effort-runbook.md)
+14. [Service Level Objectives](operators/service-level-objectives.md)
+15. [Use Cases](use-cases.md)
+16. [Functionality and Workflows](functionality-and-workflows.md)
+17. [API Surface](api-surface.md)
 
 ## Runtime Snapshot
 
@@ -47,7 +42,6 @@ This `docs/` directory is the canonical documentation set for AGENT-33.
 | `setup-guide.md` | End-to-end environment setup, auth bootstrap, and first successful requests |
 | `walkthroughs.md` | Task-oriented walkthroughs across agents, workflows, memory, review, release, evaluation, autonomy, and improvement APIs |
 | `RELEASE_CHECKLIST.md` | Public-launch and release-readiness checklist for security, verification, and operator posture |
-| `phase25-26-live-review-walkthrough.md` | Operator guide for live workflow execution, review artifact generation, signoff, and tool approvals |
 | `operator-improvement-cycle-and-jupyter.md` | Current operator path for the improvement-cycle wizard, canonical presets, and Docker-backed Jupyter execution |
 | `operators/production-deployment-runbook.md` | Current Kubernetes production rollout, verification, monitoring, and rollback guidance for the shipped deploy baseline |
 | `operators/operator-verification-runbook.md` | Canonical authenticated verification order for operator status, doctor, process inventory, and backup safety checks |
@@ -57,12 +51,10 @@ This `docs/` directory is the canonical documentation set for AGENT-33.
 | `operators/horizontal-scaling-architecture.md` | Current replica-safety contract, state-boundary map, blocking globals, and `P1.2` migration sequence for multi-replica rollout |
 | `operators/incident-response-playbooks.md` | First incident-response playbooks for API outages, degraded dependencies, evaluation regressions, and webhook backlog incidents |
 | `operators/service-level-objectives.md` | Current internal SLO baseline, error-budget policy, guardrail mapping, and deferred-objective inventory |
-| `validation/phase22-phase25-27-surface-validation.md` | Evidence-backed validation record for the Phase 22 extension surfaces introduced by the Phase 25-27 stack |
 | `use-cases.md` | Practical implementation patterns with module requirements and tradeoffs |
 | `functionality-and-workflows.md` | Current functionality inventory, lifecycle/state flows, and persistence boundaries |
 | `api-surface.md` | Complete endpoint map with auth/scope requirements |
-| `pr-review-2026-02-15.md` | Review of PR #1 through PR #12 with merged/open impact assessment |
 
 ## Legacy and Supporting Material
 
-Existing documents under `engine/docs/`, `core/`, and `docs/phases/` remain useful as deep reference material. Use this `docs/` set first when you need current runtime behavior and operational guidance.
+Existing documents under `engine/docs/` and `core/` remain useful as deep reference material. Use this `docs/` set first when you need current runtime behavior and operational guidance.

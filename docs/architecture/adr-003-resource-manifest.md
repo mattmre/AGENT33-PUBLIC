@@ -1,4 +1,4 @@
-# ADR: Session 139 Resource Manifest
+# ADR-003: Resource Manifest
 
 ## Status
 

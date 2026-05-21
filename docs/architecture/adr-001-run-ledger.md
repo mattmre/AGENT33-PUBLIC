@@ -1,4 +1,4 @@
-# ADR: Session 137 Task Run Evidence Ledger
+# ADR-001: Task Run Evidence Ledger
 
 Date: 2026-05-05
 

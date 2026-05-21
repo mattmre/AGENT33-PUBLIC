@@ -6,12 +6,19 @@ How AGENT-33 processes new information sources and converts them into actionable
 
 When a new repository is provided for analysis:
 
-1. **Clone** — Fetch the repository to a local working directory
-2. **Dossier** — Generate a structured dossier using `docs/research/templates/REPO_DOSSIER_TEMPLATE.md`
-3. **Feature Matrix** — Extract capabilities into `docs/research/templates/FEATURE_MATRIX_SCHEMA.md` format
-4. **Gap Analysis** — Compare extracted features against AGENT-33's current capabilities
-5. **Improvement Proposals** — Generate specific, testable proposals for any identified gaps
-6. **Output** — Store dossier in `docs/research/repo_dossiers/`, update feature matrix
+1. **Clone** — Fetch the repository to a local working directory.
+2. **Dossier** — Generate a structured dossier covering the repository's
+   orchestration primitive, state model, tooling protocol, observability
+   surfaces, safety/governance posture, and extensibility points.
+3. **Feature Matrix** — Extract capabilities into a comparable feature
+   matrix (orchestration, state, safety, tooling, observability,
+   productization).
+4. **Gap Analysis** — Compare extracted features against AGENT-33's current
+   capabilities.
+5. **Improvement Proposals** — Generate specific, testable proposals for any
+   identified gaps.
+6. **Output** — Store the dossier in engine memory and update the live
+   feature matrix.
 
 Usage: `agent33 intake <repo-url>`
 
