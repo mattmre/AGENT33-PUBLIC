@@ -1,0 +1,145 @@
+---
+description: Rules for AGENT-33 refinement workflows and artifact processing
+globs:
+  - "core/research/**/*.md"
+  - "core/templates/**/*.md"
+  - "collected/**/*.md"
+role: system
+alwaysApply: false
+---
+
+# Refinement Rules
+
+These rules guide AI agents when performing refinement workflows on AGENT-33 artifacts.
+
+## Refinement Scope
+
+Refinement applies to:
+- Framework prompts (`core/prompts/`)
+- Research dossiers (`core/research/`)
+- Phase documentation (`docs/phases/`)
+- Template files (`core/templates/`)
+
+Refinement does NOT apply to:
+- Collected artifacts (`collected/`) - These are immutable source captures
+- Code findings in upstream repos - Remediate in source
+
+## Refinement Process
+
+### 1. Identify Scope
+
+Before refining, determine:
+- What artifacts are affected?
+- Are there trigger files changed?
+- What's the dependency chain?
+
+```python
+# Check scope first
+if trigger_files_changed():
+    scope = "full"
+else:
+    scope = "incremental"
+    affected = find_affected_artifacts()
+```
+
+### 2. Preserve Evidence
+
+Every refinement must capture:
+- What was changed
+- Why it was changed
+- How the change was verified
+
+Example evidence block:
+```markdown
+## Refinement Evidence
+
+**Date**: 2026-01-20
+**Artifacts**: core/prompts/SYSTEM.md
+**Reason**: Alignment with updated governance policy
+**Verification**: Manual review confirms policy compliance
+```
+
+### 3. Minimal Diffs
+
+Make the smallest possible change:
+- ✅ Change one section to fix one issue
+- ❌ Rewrite entire document for one issue
+- ✅ Add missing relationship entry
+- ❌ Restructure all relationships
+
+### 4. Update Dependencies
+
+After refinement:
+- Check dependents in the artifact graph
+- Mark them for review if semantics changed
+- Update relationship tables if structure changed
+
+## Collected Artifacts
+
+The `collected/` directory contains immutable source captures:
+
+```
+collected/
+├── project-a/    # Captured from source repo A
+├── project-b/    # Captured from source repo B
+└── project-c/    # Captured from source repo C
+```
+
+### Rules for Collected
+
+1. **Never modify** - These are read-only captures
+2. **Reference only** - Point to canonical versions in `core/`
+3. **Sync tracking** - Track sync status in `sync-plan.md`
+
+### When Source Changes
+
+If upstream content changes:
+1. Update collected artifacts (new capture)
+2. Review canonical versions for updates needed
+3. Document in sync-plan.md
+
+## Quality Checklist
+
+Before completing refinement:
+
+- [ ] Changes are minimal and focused
+- [ ] Evidence is captured
+- [ ] Relationships are updated
+- [ ] Dependents are identified
+- [ ] No collected artifacts modified
+
+## Anti-Patterns
+
+### ❌ Modifying Collected Artifacts
+
+```markdown
+<!-- BAD -->
+Fixed typo in collected/project-a/README.md
+
+<!-- GOOD -->
+Noted typo in collected/project-a/README.md
+→ Created issue in upstream repo
+→ Will sync after upstream fix
+```
+
+### ❌ Large Scope Creep
+
+```markdown
+<!-- BAD -->
+While fixing the prompt, also restructured templates...
+
+<!-- GOOD -->
+Fixed prompt issue. Created separate task for template restructure.
+```
+
+### ❌ Missing Dependency Updates
+
+```markdown
+<!-- BAD -->
+Updated SYSTEM.md (done)
+
+<!-- GOOD -->
+Updated SYSTEM.md
+→ Dependents: worker.md, reviewer.md marked for review
+→ Created tasks in TASKS.md
+```

@@ -1,0 +1,100 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="_card.css">
+<style>
+  .dsp { padding: 22px 26px; }
+  .row { display:flex; flex-wrap:wrap; gap:14px; align-items:center; }
+  .row + .row { margin-top: 14px; }
+
+  .btn {
+    border: 1px solid transparent;
+    background: #1a1d21;
+    color: #e2e8f0;
+    border-radius: 4px;
+    padding: .55rem 1rem;
+    font-weight: 600;
+    letter-spacing: .05em;
+    font-family: "Space Grotesk", sans-serif;
+    font-size: .88rem;
+    box-shadow: 4px 4px 8px rgba(0,0,0,.4), -4px -4px 8px rgba(255,255,255,.04);
+    cursor: pointer;
+  }
+  .btn.hover {
+    color: #30d5c8;
+    box-shadow: 6px 6px 14px rgba(0,0,0,.45), -6px -6px 14px rgba(255,255,255,.04);
+  }
+  .btn.pressed {
+    box-shadow: inset 4px 4px 8px rgba(0,0,0,.45), inset -4px -4px 8px rgba(255,255,255,.04);
+  }
+  .btn.primary {
+    background: #30d5c8;
+    color: #03080c;
+    box-shadow: 0 4px 12px rgba(48,213,200,.3);
+  }
+  .btn.disabled { opacity: .42; cursor: not-allowed; }
+
+  .caption {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 10px;
+    color: #6fa8b8;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    margin-top: 6px;
+    text-align: center;
+  }
+  .stack { display:grid; gap:0; justify-items:center; }
+
+  .token-row {
+    display:flex; gap:18px; align-items:center;
+    padding: 10px 12px;
+    border: 1px solid rgba(125,182,202,.16);
+    border-radius: 4px;
+    background: rgba(8,18,24,.55);
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px;
+    color: #9dc3cf;
+    letter-spacing: .04em;
+    margin-top: 16px;
+  }
+  .token-row b { color: #30d5c8; font-weight: 500; }
+  .token-row .sep { color: rgba(125,182,202,.3); }
+</style>
+</head>
+<body>
+<div class="dsp">
+  <p class="eyebrow">BUTTONS · STATES</p>
+
+  <div class="row" style="margin-top:14px;">
+    <div class="stack">
+      <button class="btn">Default</button>
+      <p class="caption">rest</p>
+    </div>
+    <div class="stack">
+      <button class="btn hover">Hover</button>
+      <p class="caption">accent · lifted</p>
+    </div>
+    <div class="stack">
+      <button class="btn pressed">Pressed</button>
+      <p class="caption">inset</p>
+    </div>
+    <div class="stack">
+      <button class="btn primary">Primary</button>
+      <p class="caption">teal · drop</p>
+    </div>
+    <div class="stack">
+      <button class="btn disabled" disabled>Disabled</button>
+      <p class="caption">42% opacity</p>
+    </div>
+  </div>
+
+  <div class="token-row">
+    <span><b>radius</b> 4px</span><span class="sep">·</span>
+    <span><b>padding</b> .55rem 1rem</span><span class="sep">·</span>
+    <span><b>weight</b> 600</span><span class="sep">·</span>
+    <span><b>track</b> .05em</span>
+  </div>
+</div>
+</body>
+</html>

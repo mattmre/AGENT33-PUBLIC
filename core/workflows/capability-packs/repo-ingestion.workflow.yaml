@@ -1,0 +1,32 @@
+name: repo-ingestion
+version: 1.0.0
+description: Analyze an external repository or benchmark using the imported research and MCP builder capabilities.
+inputs:
+  target:
+    type: string
+    description: Repository, benchmark, or paper target.
+    required: true
+outputs:
+  result:
+    type: object
+    description: Research output and adaptation recommendations.
+steps:
+  - id: research
+    name: Ingest and analyze the target
+    action: invoke-agent
+    agent: researcher
+    inputs:
+      agent_name: researcher
+      target: target
+      active_skills:
+        - platform-builder/repo-ingestor
+        - platform-builder/mcp-builder
+execution:
+  mode: dependency-aware
+  fail_fast: true
+metadata:
+  author: agent-33
+  tags:
+    - capability-pack
+    - research
+    - platform-builder

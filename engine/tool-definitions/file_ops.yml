@@ -1,0 +1,29 @@
+name: file_ops
+description: >
+  File system operations including read, write, and list with path allowlist
+  enforcement for sandboxed access.
+version: "1.0"
+owner: agent33-core
+provenance:
+  repo_url: https://github.com/mattmre/AGENT33-PUBLIC
+  license: Apache-2.0
+status: active
+
+parameters:
+  operation:
+    type: string
+    required: true
+    description: "Operation to perform: read, write, or list."
+  path:
+    type: string
+    required: true
+    description: Target file or directory path.
+  content:
+    type: string
+    required: false
+    description: Content to write (required for write operation).
+
+governance:
+  required_scope: tools:execute
+  path_allowlist: []
+  max_output_bytes: 1048576

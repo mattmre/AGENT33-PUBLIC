@@ -1,0 +1,99 @@
+# Python
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+*.egg
+dist/
+build/
+
+# Virtual environments
+.env
+.venv/
+venv/
+env/
+!engine/src/agent33/env/
+!engine/src/agent33/env/*.py
+
+# IDE & editor
+.idea/
+.vscode/
+*.swp
+*.swo
+
+# Caches
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+
+# Claude Code local settings
+.claude/settings.local.json
+
+# OS artifacts
+nul
+Thumbs.db
+.DS_Store
+
+# PR review and diff artifacts (session working files)
+pr*_review.md
+pr*_diff.txt
+pr*_full_diff.txt
+pr*_code_diff*.txt
+pr*_files.txt
+pr*_view.txt
+pr*_engine.txt
+pr*_frontend.txt
+pr_diff.txt
+pr_list.json
+filtered_diff.txt
+review.md
+review_comment*.md
+review_pr*.md
+
+# Session diff-processing scripts (ad-hoc tooling)
+filter_diff.py
+filter_pr*.py
+split_diff*.py
+strip_diff.py
+
+# Git worktrees (local checkout directories)
+worktrees/
+
+# Additional test/coverage output
+test-results/
+smoke-results/
+
+# ---------------------------------------------------------------------------
+# Internal vs public boundary
+# ---------------------------------------------------------------------------
+# Loose session-planning files (task_plan, findings, progress, reviews)
+# generated during development MUST NOT be tracked at the repo root. The
+# patterns below catch the common drift cases. Operators should commit
+# durable docs to docs/ instead of dropping them at root.
+#
+#
+#
+# These ignores apply ONLY at the repo root (note the leading slash).
+#
+#
+/task_plan.md
+/findings.md
+/progress.md
+/review.md
+/review_comment.md
+/review_comment_pr*.md
+/review_pr*.md
+/RELEASE_NOTES_*.md
+/EXEC-SUMMARY-*.md
+/pr-review-*.md
+/pr*_review.md
+# Loose PR-body drafts at repo root — keep them out of public sources.
+# The leading dot catches hidden-file variants too.
+/.pr-body*.md
+/pr-body*.md
+/pr_body*.md
+
+# Public worktree / sync staging (created by release/scripts/sync_public.*).
+# This is a generated mirror of the sanitized public tree; do not check it in.
+public-stage/
+release/.cache/

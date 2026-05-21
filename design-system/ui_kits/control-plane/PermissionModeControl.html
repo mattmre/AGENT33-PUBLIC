@@ -1,0 +1,161 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>AGENT-33 · PermissionModeControl</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="_kit.css">
+<style>
+  body { max-width: 720px; }
+  .mode-stack { display: grid; gap: 14px; }
+  .mode-picker {
+    display: flex; gap: 0;
+    background: var(--bg-deep);
+    border: 1px solid var(--line);
+  }
+  .mode-picker button {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--text-mute);
+    font-family: var(--sans);
+    font-size: .82rem;
+    font-weight: 600;
+    padding: 11px 10px;
+    cursor: pointer;
+    border-bottom: 2px solid transparent;
+    display: grid; gap: 2px; text-align: center;
+  }
+  .mode-picker button small {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: .14em;
+    color: var(--text-mute);
+    text-transform: uppercase;
+  }
+  .mode-picker button.active {
+    background: var(--teal-soft);
+    color: var(--teal);
+    border-bottom-color: var(--teal);
+  }
+  .mode-picker button.active small { color: var(--teal); }
+  .mode-picker button:hover:not(.active) { color: var(--ice); }
+
+  .mode-headline {
+    display: grid; gap: 4px;
+  }
+  .mode-headline strong { color: var(--ice); font-size: 1rem; }
+  .mode-headline p { margin: 0; color: var(--text-soft); font-size: .82rem; }
+
+  .mode-details {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--line);
+  }
+  .mode-cell {
+    background: var(--bg-deep);
+    padding: 10px 12px;
+    display: grid; gap: 3px;
+    border-top: 2px solid var(--teal);
+  }
+  .mode-cell.review { border-top-color: var(--amber); }
+  .mode-cell.plane  { border-top-color: var(--sky); }
+  .mode-cell dt {
+    font-family: var(--mono); font-size: 9px;
+    letter-spacing: .14em; color: var(--text-mute);
+    text-transform: uppercase;
+  }
+  .mode-cell dd {
+    margin: 0;
+    color: var(--ice);
+    font-size: .8rem;
+    line-height: 1.4;
+  }
+
+  .plane-toggle {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 14px;
+    background: var(--bg-deep);
+    border: 1px solid var(--line);
+    border-left: 2px solid var(--sky);
+  }
+  .plane-toggle .copy { display: grid; gap: 2px; }
+  .plane-toggle .copy strong { color: var(--ice); font-size: .86rem; }
+  .plane-toggle .copy small {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: .16em;
+    color: var(--text-mute);
+    text-transform: uppercase;
+  }
+
+  .body-tone-OBSERVER { --tone: var(--sky); }
+  .body-tone-OPERATOR { --tone: var(--teal); }
+  .body-tone-PRO      { --tone: var(--amber); }
+  .body-tone-ADMIN    { --tone: var(--red); }
+</style>
+</head>
+<body>
+
+<div class="kit-head">
+  <div>
+    <p class="eyebrow">▸ COMPONENT · PERMISSION</p>
+    <h1>PermissionModeControl</h1>
+  </div>
+  <div class="meta">
+    <span>SOURCE · <b>PermissionModeControl.tsx</b></span>
+    <span>MODE · <b>OPERATOR</b></span>
+  </div>
+</div>
+
+<section class="panel">
+  <div class="deco"><div class="grid"></div></div>
+  <div class="panel-body mode-stack">
+    <div>
+      <p class="eyebrow">▸ PERMISSION MODE</p>
+      <h2>Choose how much agents can do unattended</h2>
+      <p>Mode selection drives every gate on the board: which workflows can launch, which commands can run, and which artifacts must be reviewed.</p>
+    </div>
+
+    <div class="mode-picker" role="tablist" aria-label="Permission mode">
+      <button role="tab"><span>Observer</span><small>READ-ONLY</small></button>
+      <button role="tab" class="active"><span>Operator</span><small>SOFT GATE</small></button>
+      <button role="tab"><span>Pro</span><small>HARD GATE</small></button>
+      <button role="tab"><span>Admin</span><small>OVERRIDE</small></button>
+    </div>
+
+    <div class="mode-headline">
+      <strong>Operator · Soft gate</strong>
+      <p>Agents may research, draft, and run safe commands. Anything that mutates artifacts pauses for a single reviewer ack.</p>
+    </div>
+
+    <dl class="mode-details">
+      <div class="mode-cell">
+        <dt>Allowed now</dt>
+        <dd>Plan, research, run-command, draft artifacts</dd>
+      </div>
+      <div class="mode-cell review">
+        <dt>Review gate</dt>
+        <dd>Reviewer ack required for any artifact merge</dd>
+      </div>
+      <div class="mode-cell plane">
+        <dt>Control plane</dt>
+        <dd>Beginner guardrails — Pro controls hidden</dd>
+      </div>
+    </dl>
+
+    <div class="plane-toggle">
+      <div class="copy">
+        <strong>Beginner guardrails</strong>
+        <small>HIDES PRO PANELS · 1-CLICK FALLBACKS</small>
+      </div>
+      <button class="btn primary">Unlock Pro controls</button>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>

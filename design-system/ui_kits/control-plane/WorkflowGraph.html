@@ -1,0 +1,268 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>AGENT-33 · WorkflowGraph</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="_kit.css">
+<style>
+  body { max-width: 1280px; }
+  .graph-wrap {
+    display: grid;
+    grid-template-columns: 1fr 280px;
+    gap: 14px;
+    margin-top: 14px;
+  }
+  .graph-canvas {
+    position: relative;
+    height: 540px;
+    background:
+      radial-gradient(700px 380px at 70% 20%, rgba(48,213,200,.05), transparent 70%),
+      var(--bg-deep);
+    border: 1px solid var(--line);
+    overflow: hidden;
+  }
+  .graph-canvas::before {
+    content: "";
+    position: absolute; inset: 0;
+    background-image:
+      radial-gradient(rgba(141,200,221,.18) 1px, transparent 1px);
+    background-size: 24px 24px;
+    opacity: .35;
+    pointer-events: none;
+  }
+  .canvas-toolbar {
+    position: absolute; top: 12px; left: 12px;
+    display: flex; gap: 4px;
+    z-index: 5;
+  }
+  .canvas-toolbar button {
+    width: 26px; height: 26px;
+    background: var(--bg-deep);
+    border: 1px solid var(--line);
+    color: var(--ice);
+    font-family: var(--mono);
+    font-size: 13px;
+    cursor: pointer;
+  }
+  .canvas-toolbar button:hover { border-color: var(--teal); color: var(--teal); }
+  .canvas-header {
+    position: absolute; top: 12px; right: 12px;
+    background: var(--bg-deep);
+    border: 1px solid var(--line);
+    padding: 8px 12px;
+    z-index: 5;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: .12em;
+    color: var(--text-mute);
+    text-transform: uppercase;
+  }
+  .canvas-header b { color: var(--teal); font-weight: 500; }
+  .canvas-header strong { color: var(--ice); font-weight: 600; }
+
+  /* SVG node styling — react-flow style nodes drawn directly */
+  .wf-svg {
+    position: absolute; inset: 0;
+    width: 100%; height: 100%;
+  }
+  .wf-edge {
+    fill: none;
+    stroke: var(--line-strong);
+    stroke-width: 1.4;
+  }
+  .wf-edge.animated {
+    stroke: var(--teal);
+    stroke-dasharray: 6 6;
+    animation: dash 1.6s linear infinite;
+  }
+  @keyframes dash { to { stroke-dashoffset: -24; } }
+
+  .wf-node {
+    position: absolute;
+    min-width: 156px;
+    transform: translate(-50%, -50%);
+    background: linear-gradient(170deg, rgba(22,45,58,.95), rgba(10,27,36,.95));
+    border: 2px solid var(--line);
+    color: var(--ice);
+    font-family: var(--sans);
+    font-size: .82rem;
+    text-align: center;
+    padding: 12px 14px;
+    cursor: pointer;
+  }
+  .wf-node strong { display: block; font-weight: 600; font-size: .86rem; }
+  .wf-node .pill {
+    display: inline-block;
+    margin-top: 6px;
+    padding: 2px 9px;
+    font-family: var(--mono);
+    font-size: 9px;
+    font-weight: 600;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+  }
+  .wf-node.success  { border-color: var(--green); box-shadow: 0 0 12px rgba(139,233,168,.25); }
+  .wf-node.success .pill { color: var(--green); background: var(--green-soft); }
+  .wf-node.failed   { border-color: var(--red); box-shadow: 0 0 12px rgba(255,107,107,.3); }
+  .wf-node.failed .pill { color: var(--red); background: var(--red-soft); }
+  .wf-node.running  { border-color: var(--sky); box-shadow: 0 0 14px rgba(125,211,252,.4); animation: glow 1.6s ease-in-out infinite; }
+  .wf-node.running .pill { color: var(--sky); background: var(--sky-soft); }
+  .wf-node.retrying { border-color: var(--amber); }
+  .wf-node.retrying .pill { color: var(--amber); background: var(--amber-soft); }
+  .wf-node.pending  { border-color: var(--text-mute); }
+  .wf-node.pending .pill { color: var(--text-mute); background: rgba(111,168,184,.15); }
+  .wf-node.selected { outline: 2px solid var(--teal); outline-offset: 4px; }
+  @keyframes glow {
+    0%, 100% { box-shadow: 0 0 12px rgba(125,211,252,.3); }
+    50%      { box-shadow: 0 0 20px rgba(125,211,252,.6); }
+  }
+
+  .graph-detail {
+    background: var(--bg-deep);
+    border: 1px solid var(--line);
+    padding: 14px 16px;
+    align-self: start;
+  }
+  .graph-detail h4 {
+    margin: 0 0 10px;
+    font-family: var(--sans);
+    font-size: .92rem;
+    color: var(--ice);
+    padding-bottom: 8px;
+    border-bottom: 1px solid var(--line);
+  }
+  .graph-detail .row {
+    display: grid;
+    grid-template-columns: 80px 1fr;
+    gap: 10px;
+    padding: 4px 0;
+    font-size: .8rem;
+  }
+  .graph-detail .row span:first-child {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: .14em;
+    color: var(--text-mute);
+    text-transform: uppercase;
+    padding-top: 2px;
+  }
+  .graph-detail .row span:last-child { color: var(--ice); }
+  .graph-detail pre {
+    margin: 4px 0 0;
+    background: #03080c;
+    padding: 8px 10px;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: #cfeaef;
+    border-left: 2px solid var(--teal);
+    white-space: pre-wrap;
+  }
+  .react-flow-controls {
+    position: absolute; bottom: 12px; left: 12px;
+    display: flex; flex-direction: column;
+    background: var(--bg-deep);
+    border: 1px solid var(--line);
+  }
+  .react-flow-controls button {
+    width: 28px; height: 28px;
+    background: transparent;
+    border: none;
+    border-bottom: 1px solid var(--line);
+    color: var(--ice);
+    font-family: var(--mono);
+    cursor: pointer;
+  }
+  .react-flow-controls button:last-child { border-bottom: none; }
+  .react-flow-controls button:hover { color: var(--teal); }
+</style>
+</head>
+<body>
+
+<div class="kit-head">
+  <div>
+    <p class="eyebrow">▸ COMPONENT · WORKFLOW</p>
+    <h1>WorkflowGraph</h1>
+  </div>
+  <div class="meta">
+    <span>SOURCE · <b>WorkflowGraph.tsx</b></span>
+    <span>POLL · <b>2s</b></span>
+    <span>FLOW · <b>cache-rollout</b></span>
+  </div>
+</div>
+
+<div class="graph-wrap">
+  <div class="graph-canvas">
+    <div class="canvas-toolbar">
+      <button title="Pan">⊕</button>
+      <button title="Fit">▣</button>
+      <button title="Lock">🔒</button>
+    </div>
+    <div class="canvas-header">
+      <strong>cache_metrics_rollout</strong> <b>v3</b> · 5 nodes · 5 edges
+    </div>
+
+    <svg class="wf-svg" viewBox="0 0 800 540" preserveAspectRatio="none">
+      <!-- edges drawn first so they sit behind nodes -->
+      <path class="wf-edge"          d="M 200 90 C 200 130 200 130 200 200" />
+      <path class="wf-edge animated" d="M 200 230 C 200 280 380 280 380 320" />
+      <path class="wf-edge animated" d="M 380 350 C 380 390 380 390 380 430" />
+      <path class="wf-edge"          d="M 200 230 C 200 320 80  340 80  430" />
+      <path class="wf-edge"          d="M 380 460 C 380 490 600 480 600 430" />
+    </svg>
+
+    <div class="wf-node success" style="left: 200px; top: 90px;">
+      <strong>plan_changes</strong>
+      <span class="pill">success</span>
+    </div>
+    <div class="wf-node success selected" style="left: 200px; top: 215px;">
+      <strong>scout_research</strong>
+      <span class="pill">success</span>
+    </div>
+    <div class="wf-node running" style="left: 380px; top: 335px;">
+      <strong>build_patch</strong>
+      <span class="pill">running</span>
+    </div>
+    <div class="wf-node pending" style="left: 380px; top: 450px;">
+      <strong>review_diff</strong>
+      <span class="pill">pending</span>
+    </div>
+    <div class="wf-node retrying" style="left: 80px; top: 450px;">
+      <strong>tests_unit</strong>
+      <span class="pill">retrying · 2/3</span>
+    </div>
+    <div class="wf-node failed" style="left: 600px; top: 450px;">
+      <strong>tests_e2e</strong>
+      <span class="pill">failed</span>
+    </div>
+
+    <div class="react-flow-controls">
+      <button title="Zoom in">+</button>
+      <button title="Zoom out">−</button>
+      <button title="Fit view">⤢</button>
+    </div>
+  </div>
+
+  <aside class="graph-detail">
+    <h4>Node details</h4>
+    <div class="row"><span>ID</span><span>scout_research</span></div>
+    <div class="row"><span>Name</span><span>Scout Research</span></div>
+    <div class="row"><span>Action</span><span>workflows.scout.deep_search</span></div>
+    <div class="row"><span>Status</span><span>success</span></div>
+    <div class="row"><span>Duration</span><span>00:42 · 3 retries</span></div>
+    <div class="row">
+      <span>Metadata</span>
+      <pre>{
+  "model": "claude-haiku",
+  "tokens_in": 4012,
+  "tokens_out": 387,
+  "trace_id": "tr_8af0c2"
+}</pre>
+    </div>
+  </aside>
+</div>
+
+</body>
+</html>

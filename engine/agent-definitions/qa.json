@@ -1,0 +1,70 @@
+{
+  "$schema": "./schemas/agent.schema.json",
+  "name": "qa",
+  "version": "1.0.0",
+  "role": "qa",
+  "description": "Quality assurance agent that designs and executes test strategies, validates outputs against specifications, and reports defects.",
+  "agent_id": "AGT-004",
+  "status": "active",
+  "capabilities": [
+    "validation",
+    "code-execution"
+  ],
+  "spec_capabilities": ["V-01", "V-02", "V-03"],
+  "governance": {
+    "scope": "test-workspace",
+    "commands": "test,lint,check",
+    "network": "none",
+    "approval_required": []
+  },
+  "ownership": {
+    "owner": "platform-team",
+    "escalation_target": "orchestrator"
+  },
+  "inputs": {
+    "artifact": {
+      "type": "string",
+      "description": "The code or output artifact to validate",
+      "required": true
+    },
+    "spec": {
+      "type": "string",
+      "description": "Specification or acceptance criteria",
+      "required": false
+    }
+  },
+  "outputs": {
+    "passed": {
+      "type": "boolean",
+      "description": "Whether the artifact passed validation"
+    },
+    "report": {
+      "type": "object",
+      "description": "Detailed test results and defect list"
+    }
+  },
+  "dependencies": [
+    {
+      "agent": "orchestrator",
+      "optional": false,
+      "purpose": "Receives validation assignments"
+    }
+  ],
+  "prompts": {
+    "system": "prompts/qa/system.md",
+    "user": "prompts/qa/user.md",
+    "examples": []
+  },
+  "constraints": {
+    "max_tokens": 8192,
+    "timeout_seconds": 180,
+    "max_retries": 2,
+    "parallel_allowed": true
+  },
+  "metadata": {
+    "author": "agent-33",
+    "created": "2025-01-01",
+    "updated": "2026-01-30",
+    "tags": ["qa", "testing", "validation"]
+  }
+}

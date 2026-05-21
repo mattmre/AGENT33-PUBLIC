@@ -1,0 +1,25 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: agent33-api
+  annotations:
+    # Force TLS redirect in production
+    nginx.ingress.kubernetes.io/ssl-redirect: "true"
+spec:
+  # Production host — operator must configure for their domain.
+  # Uncomment and adjust:
+  # rules:
+  #   - host: agent33.example.com
+  #     http:
+  #       paths:
+  #         - path: /
+  #           pathType: Prefix
+  #           backend:
+  #             service:
+  #               name: agent33-api
+  #               port:
+  #                 number: 8000
+  # tls:
+  #   - hosts:
+  #       - agent33.example.com
+  #     secretName: agent33-tls

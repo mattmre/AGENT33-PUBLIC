@@ -1,0 +1,27 @@
+# AGENT-33 Load Test Scenario: Light
+#
+# Purpose: Smoke-level validation that the API handles low concurrency without
+# errors or latency spikes. Suitable for post-deploy verification and local
+# development checks.
+#
+# Usage:
+#   locust -f locustfile.py --config scenarios/light.yaml
+#   locust -f locustfile.py --config scenarios/light.yaml --auth-token "$TOKEN"
+
+# Target host (override with --host on CLI or LOCUST_HOST env var)
+host: http://localhost:8000
+
+# Concurrency profile
+users: 10
+spawn-rate: 2
+run-time: 60s
+
+# Headless mode for CI / scripted runs
+headless: true
+
+# Acceptance criteria (documented, not enforced by Locust natively):
+#   - 0 failures on /healthz
+#   - /healthz p95 < 50ms
+#   - /health p95 < 100ms
+#   - Agent invoke p95 < 5s (LLM-dependent)
+#   - 0 HTTP 5xx errors across all endpoints

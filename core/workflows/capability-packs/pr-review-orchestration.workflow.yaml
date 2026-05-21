@@ -1,0 +1,31 @@
+name: pr-review-orchestration
+version: 1.0.0
+description: Review and prepare a pull request using the imported PR-manager capability pack.
+inputs:
+  pr_number:
+    type: integer
+    description: Pull request number to review.
+    required: true
+outputs:
+  result:
+    type: object
+    description: Review findings and merge readiness state.
+steps:
+  - id: review
+    name: Execute PR review workflow
+    action: invoke-agent
+    agent: qa
+    inputs:
+      agent_name: qa
+      pr_number: pr_number
+      active_skills:
+        - workflow-ops/pr-manager
+execution:
+  mode: dependency-aware
+  fail_fast: true
+metadata:
+  author: agent-33
+  tags:
+    - capability-pack
+    - review
+    - workflow-ops

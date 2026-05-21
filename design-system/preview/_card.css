@@ -1,0 +1,25 @@
+/* preview/_card.css — common styles for design-system preview cards */
+@import url('https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap');
+
+* { box-sizing: border-box; }
+html, body {
+  margin: 0;
+  background: #1a1d21;
+  color: #e2e8f0;
+  font-family: "Space Grotesk", "Segoe UI", sans-serif;
+  -webkit-font-smoothing: antialiased;
+}
+.dsp {
+  padding: 22px 26px;
+  min-height: 100vh;
+}
+.dsp-row { display: flex; flex-wrap: wrap; gap: 14px; align-items: stretch; }
+.dsp-grid { display: grid; gap: 12px; }
+.eyebrow {
+  letter-spacing: 0.12em; font-size: 0.74rem; color: #30d5c8; margin: 0;
+}
+.label {
+  color: #6fa8b8; font-size: 0.66rem; font-weight: 700; letter-spacing: 0.08em; text-transform: uppercase;
+}
+.mono { font-family: "IBM Plex Mono", Consolas, monospace; }
+.dim { color: #94a3b8; }

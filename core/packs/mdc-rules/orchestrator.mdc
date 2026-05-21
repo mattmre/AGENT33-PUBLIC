@@ -1,0 +1,159 @@
+---
+description: Rules for AGENT-33 orchestration and agent coordination
+globs:
+  - "core/orchestrator/**/*.md"
+  - "core/agents/**/*.md"
+  - "core/packs/**/*.md"
+role: system
+alwaysApply: false
+---
+
+# Orchestrator Rules
+
+These rules guide AI agents when working with AGENT-33 orchestration components.
+
+## Core Principles
+
+1. **Model-Agnostic** - Never assume a specific LLM; write for any model
+2. **Evidence-First** - Always capture verification evidence
+3. **Minimal Diffs** - Make smallest possible changes
+4. **Auditability** - Every decision should be traceable
+
+## File Patterns
+
+### README.md Files
+
+Every directory should have a README.md that:
+- Explains the directory's purpose
+- Lists entry points for navigation
+- Includes a Relationships table
+
+Example:
+```markdown
+# Directory Name
+
+Brief description.
+
+## Entry Points
+- `FILE1.md` - Purpose
+- `FILE2.md` - Purpose
+
+## Relationships
+
+| Type | Target | Notes |
+|------|--------|-------|
+| depends-on | `../other/` | Why |
+```
+
+### Relationship Tables
+
+All artifacts should include relationship tables:
+
+```markdown
+## Relationships
+
+| Type | Target | Notes |
+|------|--------|-------|
+| depends-on | Path | Explanation |
+| implements | ID | Source reference |
+| uses | Path | How it's used |
+```
+
+Valid relationship types:
+- `depends-on` - Required dependency
+- `implements` - Implements a specification
+- `uses` - Optional usage
+- `parent` - Parent document
+- `contains` - Contains children
+- `informs` - Provides context to
+- `outputs-to` - Produces output for
+
+## Agent Definitions
+
+When defining agents in `core/orchestrator/agents/`:
+
+1. Use consistent structure:
+   - Role description
+   - Capabilities list
+   - Input/output specification
+   - Constraints
+   - Examples
+
+2. Reference the agent schema:
+   ```json
+   {
+     "$schema": "../schemas/agent.schema.json"
+   }
+   ```
+
+3. Document all dependencies explicitly
+
+## Workflow Definitions
+
+When defining workflows in `core/workflows/`:
+
+1. Define clear triggers (manual, on-change, scheduled)
+2. List steps with explicit dependencies
+3. Specify success/failure criteria
+4. Include dry-run support
+
+## Handoff Documents
+
+When updating handoff documents in `core/orchestrator/handoff/`:
+
+1. Keep STATUS.md current with runtime context
+2. Update TASKS.md with explicit acceptance criteria
+3. Log decisions in DECISIONS.md with rationale
+4. Capture evidence in EVIDENCE_CAPTURE.md
+
+## Anti-Patterns
+
+### ❌ Model-Specific Assumptions
+
+```markdown
+<!-- BAD -->
+Claude should use the /edit tool to...
+
+<!-- GOOD -->
+The agent should edit files using...
+```
+
+### ❌ Missing Evidence
+
+```markdown
+<!-- BAD -->
+Fixed the validation issue.
+
+<!-- GOOD -->
+Fixed the validation issue.
+**Evidence**: Ran `agent-33 validate` - all checks passed.
+```
+
+### ❌ Large Undocumented Changes
+
+```markdown
+<!-- BAD -->
+Restructured the entire directory.
+
+<!-- GOOD -->
+Restructured directory:
+- Moved X to Y (reason: ...)
+- Renamed A to B (reason: ...)
+```
+
+## Code Examples
+
+When including code examples:
+
+1. Use Python for illustrative patterns (language-agnostic concepts)
+2. Include type hints for clarity
+3. Add docstrings explaining purpose
+4. Mark as "illustrative" not "implementation"
+
+```python
+# Illustrative pattern - not actual implementation
+@dataclass
+class Example:
+    """Shows the pattern, not production code."""
+    field: str
+```

@@ -1,0 +1,176 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "./agent.schema.json",
+  "title": "AGENT-33 Agent Definition Schema",
+  "description": "Schema for defining agents in the AGENT-33 orchestration framework",
+  "type": "object",
+  "required": ["name", "version", "role"],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Reference to this schema for IDE support"
+    },
+    "name": {
+      "type": "string",
+      "description": "Unique identifier for the agent",
+      "pattern": "^[a-z][a-z0-9-]*$",
+      "minLength": 2,
+      "maxLength": 64
+    },
+    "version": {
+      "type": "string",
+      "description": "Semantic version of the agent definition",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "role": {
+      "type": "string",
+      "description": "The agent's role in the orchestration system",
+      "enum": ["orchestrator", "director", "worker", "reviewer", "researcher", "validator"]
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of the agent's purpose",
+      "maxLength": 500
+    },
+    "capabilities": {
+      "type": "array",
+      "description": "List of capabilities this agent provides",
+      "items": {
+        "type": "string",
+        "enum": [
+          "file-read",
+          "file-write",
+          "code-execution",
+          "web-search",
+          "api-calls",
+          "orchestration",
+          "validation",
+          "research",
+          "refinement"
+        ]
+      },
+      "uniqueItems": true
+    },
+    "inputs": {
+      "type": "object",
+      "description": "Input parameters the agent accepts",
+      "additionalProperties": {
+        "$ref": "#/$defs/parameterDef"
+      }
+    },
+    "outputs": {
+      "type": "object",
+      "description": "Output parameters the agent produces",
+      "additionalProperties": {
+        "$ref": "#/$defs/parameterDef"
+      }
+    },
+    "dependencies": {
+      "type": "array",
+      "description": "Other agents this agent depends on",
+      "items": {
+        "type": "object",
+        "required": ["agent"],
+        "properties": {
+          "agent": {
+            "type": "string",
+            "description": "Name of the dependent agent"
+          },
+          "optional": {
+            "type": "boolean",
+            "description": "Whether this dependency is optional",
+            "default": false
+          },
+          "purpose": {
+            "type": "string",
+            "description": "Why this dependency exists"
+          }
+        }
+      }
+    },
+    "prompts": {
+      "type": "object",
+      "description": "Prompt templates for the agent",
+      "properties": {
+        "system": {
+          "type": "string",
+          "description": "Path to system prompt file"
+        },
+        "user": {
+          "type": "string",
+          "description": "Path to user prompt template"
+        },
+        "examples": {
+          "type": "array",
+          "description": "Paths to example prompt files",
+          "items": {"type": "string"}
+        }
+      }
+    },
+    "constraints": {
+      "type": "object",
+      "description": "Execution constraints for the agent",
+      "properties": {
+        "max_tokens": {
+          "type": "integer",
+          "description": "Maximum tokens per response",
+          "minimum": 100,
+          "maximum": 200000
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "description": "Maximum execution time",
+          "minimum": 10,
+          "maximum": 3600
+        },
+        "max_retries": {
+          "type": "integer",
+          "description": "Maximum retry attempts on failure",
+          "minimum": 0,
+          "maximum": 10
+        },
+        "parallel_allowed": {
+          "type": "boolean",
+          "description": "Whether this agent can run in parallel",
+          "default": true
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "description": "Additional metadata for the agent",
+      "properties": {
+        "author": {"type": "string"},
+        "created": {"type": "string", "format": "date"},
+        "updated": {"type": "string", "format": "date"},
+        "tags": {
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "parameterDef": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["string", "number", "boolean", "array", "object", "path"]
+        },
+        "description": {
+          "type": "string"
+        },
+        "required": {
+          "type": "boolean",
+          "default": false
+        },
+        "default": {},
+        "enum": {
+          "type": "array"
+        }
+      }
+    }
+  }
+}

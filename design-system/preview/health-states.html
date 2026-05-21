@@ -1,0 +1,267 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="_card.css">
+<style>
+  .dsp { padding: 22px 26px; }
+  .stack { display: grid; gap: 10px; margin-top: 14px; max-width: 560px; }
+
+  .hrow {
+    position: relative;
+    display: flex; align-items: center; gap: 14px;
+    padding: .8rem 1rem;
+    border: 1px solid rgba(125,182,202,.18);
+    border-radius: 4px;
+    background:
+      linear-gradient(180deg, rgba(4,16,22,.85), rgba(4,16,22,.65)),
+      #050d12;
+    overflow: hidden;
+    isolation: isolate;
+    height: 56px;
+  }
+
+  /* ── Cyber vector accents — schematic rules + tick marks ─────── */
+  .deco {
+    position: absolute; inset: 0;
+    pointer-events: none;
+    z-index: 2;
+    overflow: hidden;
+  }
+  /* hairline horizontal rule running through the row, fading at ends */
+  .deco .rule {
+    position: absolute;
+    left: 0; right: 0;
+    top: 50%;
+    height: 1px;
+    background: linear-gradient(90deg,
+      transparent 0%,
+      rgba(141,200,221,.0) 8%,
+      rgba(141,200,221,.18) 30%,
+      rgba(141,200,221,.32) 60%,
+      var(--accent, rgba(141,200,221,.45)) 78%,
+      transparent 100%);
+    transform: translateY(-.5px);
+  }
+  /* corner brackets — top-left + bottom-right tick marks */
+  .deco svg {
+    position: absolute;
+    color: var(--accent, rgba(141,200,221,.45));
+  }
+  .deco .br-tl { top: 5px; left: 6px; }
+  .deco .br-br { bottom: 5px; right: 6px; }
+
+  /* tiny mono HUD coordinate, top-right above the state text */
+  .deco .coord {
+    position: absolute;
+    top: 5px;
+    right: 12px;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 8px;
+    letter-spacing: .22em;
+    color: rgba(141,200,221,.42);
+  }
+  /* short vertical hash marks — race-car stripes feel, very subtle */
+  .deco .ticks {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    right: 28%;
+    width: 36px; height: 12px;
+    background:
+      linear-gradient(90deg,
+        transparent 0,
+        transparent 4px,
+        var(--accent-soft, rgba(141,200,221,.16)) 4px,
+        var(--accent-soft, rgba(141,200,221,.16)) 5px,
+        transparent 5px,
+        transparent 11px,
+        var(--accent-soft, rgba(141,200,221,.22)) 11px,
+        var(--accent-soft, rgba(141,200,221,.22)) 12px,
+        transparent 12px,
+        transparent 20px,
+        var(--accent-soft, rgba(141,200,221,.16)) 20px,
+        var(--accent-soft, rgba(141,200,221,.16)) 21px,
+        transparent 21px);
+    transform-origin: center;
+    transform: translateY(-50%) skewX(-22deg);
+  }
+  .hrow .label {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: .7rem; color: #c8dde4;
+    letter-spacing: .12em;
+    z-index: 3;
+  }
+  .hrow .state {
+    margin-left: auto;
+    font-family: "Space Grotesk", sans-serif;
+    font-weight: 600;
+    font-size: .86rem;
+    z-index: 3;
+  }
+
+  .dot {
+    width: 9px; height: 9px; border-radius: 50%;
+    position: relative; flex: 0 0 9px; z-index: 3;
+  }
+  .dot::after {
+    content: ""; position: absolute; inset: -5px;
+    border-radius: 50%;
+    border: 1px solid currentColor;
+    opacity: .5;
+    animation: dotRing 3.6s ease-out infinite;
+  }
+  @keyframes dotRing {
+    0%   { transform: scale(.5); opacity: .7; }
+    100% { transform: scale(1.7); opacity: 0; }
+  }
+
+  .fog {
+    position: absolute; inset: 0;
+    pointer-events: none;
+    z-index: 1;
+    overflow: hidden;
+  }
+  /* JS-spawned puffs */
+  .puff {
+    position: absolute;
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 50%,
+      var(--fog) 0%,
+      var(--fog-soft) 30%,
+      transparent 68%);
+    mix-blend-mode: screen;
+    will-change: transform, opacity;
+    pointer-events: none;
+  }
+
+  /* gentle base wash so rows are tinted between puffs */
+  .hrow::before {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(90deg, transparent 0%, var(--wash) 100%);
+    opacity: .16;
+    z-index: 0;
+  }
+
+  .hrow.ok   { --fog: rgba(139,233,168,.7);  --fog-soft: rgba(139,233,168,.22); --wash: rgba(139,233,168,.42); --accent: rgba(139,233,168,.5); --accent-soft: rgba(139,233,168,.22); border-color: rgba(139,233,168,.22); }
+  .hrow.ok .dot { background: #8be9a8; box-shadow: 0 0 10px rgba(139,233,168,.7); color: #8be9a8; }
+  .hrow.ok .state { color: #8be9a8; }
+
+  .hrow.warn { --fog: rgba(246,189,96,.7);  --fog-soft: rgba(246,189,96,.22);  --wash: rgba(246,189,96,.42);  --accent: rgba(246,189,96,.5); --accent-soft: rgba(246,189,96,.22); border-color: rgba(246,189,96,.26); }
+  .hrow.warn .dot { background: #f6bd60; box-shadow: 0 0 10px rgba(246,189,96,.7); color: #f6bd60; }
+  .hrow.warn .state { color: #f6bd60; }
+
+  .hrow.err  { --fog: rgba(255,107,107,.78); --fog-soft: rgba(255,107,107,.26); --wash: rgba(255,107,107,.5); --accent: rgba(255,107,107,.55); --accent-soft: rgba(255,107,107,.24); border-color: rgba(255,107,107,.28); }
+  .hrow.err .dot { background: #ff6b6b; box-shadow: 0 0 10px rgba(255,107,107,.8); color: #ff6b6b; }
+  .hrow.err .state { color: #ff6b6b; }
+
+  .hrow.idle { --fog: rgba(148,163,184,.45); --fog-soft: rgba(148,163,184,.14); --wash: rgba(148,163,184,.25); --accent: rgba(148,163,184,.4); --accent-soft: rgba(148,163,184,.18); }
+  .hrow.idle .dot { background: #94a3b8; color: #94a3b8; }
+  .hrow.idle .dot::after { animation: none; opacity: 0; }
+  .hrow.idle .state { color: #94a3b8; }
+</style>
+</head>
+<body>
+<div class="dsp">
+  <p class="eyebrow">RUNTIME HEALTH STATES</p>
+
+  <div class="stack">
+    <div class="hrow ok"   data-tempo="fast" data-coord="N 047 · E 122"><span class="dot"></span><span class="label">OVERALL</span><span class="state">healthy</span><div class="fog"></div></div>
+    <div class="hrow warn" data-tempo="fast" data-coord="MOD 002"><span class="dot"></span><span class="label">OLLAMA</span><span class="state">configured</span><div class="fog"></div></div>
+    <div class="hrow err"  data-tempo="fastest" data-coord="ALERT 91"><span class="dot"></span><span class="label">WEBHOOKS</span><span class="state">degraded</span><div class="fog"></div></div>
+    <div class="hrow idle" data-tempo="slow" data-coord="STDBY"><span class="dot"></span><span class="label">TRAINING</span><span class="state">unconfigured</span><div class="fog"></div></div>
+  </div>
+</div>
+
+<script>
+(function() {
+  const rand = (a, b) => a + Math.random() * (b - a);
+
+  // tempo profiles: ms between spawns
+  const tempos = {
+    fastest: [700, 1800],
+    fast:    [1000, 2400],
+    slow:    [2800, 5200],
+  };
+
+  function spawn(row) {
+    const fog = row.querySelector('.fog');
+    if (!fog) return;
+    const w = row.offsetWidth || 540;
+    const h = row.offsetHeight || 56;
+
+    // randomize: size, blur, opacity peak, vertical spawn position,
+    // travel duration, vertical drift target
+    const size      = rand(80, 220);
+    const blur      = rand(14, 26);
+    const peak      = rand(0.45, 0.78);
+    const startY    = rand(-h * 0.6, h * 0.6);   // anywhere along the right edge (some overflow above/below)
+    const endX      = -(w + size + rand(40, 200));
+    const driftY    = rand(-30, 30);
+    const dur       = rand(2800, 5200);          // total lifetime ms
+    const scaleEnd  = rand(0.85, 1.35);
+    const startXOff = rand(-20, 60);             // slight randomness on entry x
+
+    const puff = document.createElement('div');
+    puff.className = 'puff';
+    puff.style.width  = size + 'px';
+    puff.style.height = size + 'px';
+    puff.style.right  = (-size * 0.5 + startXOff) + 'px';
+    puff.style.top    = (h / 2 - size / 2 + startY) + 'px';
+    puff.style.filter = 'blur(' + blur + 'px)';
+    puff.style.opacity = '0';
+    fog.appendChild(puff);
+
+    const anim = puff.animate([
+      { transform: 'translate(0, 0) scale(1)',                                 opacity: 0 },
+      { transform: 'translate(' + (endX * 0.18) + 'px, ' + (driftY * 0.2) + 'px) scale(1.05)', opacity: peak,         offset: 0.18 },
+      { transform: 'translate(' + (endX * 0.55) + 'px, ' + driftY + 'px) scale(' + ((1 + scaleEnd) / 2) + ')', opacity: peak * 0.85, offset: 0.6 },
+      { transform: 'translate(' + endX + 'px, ' + (driftY * 1.4) + 'px) scale(' + scaleEnd + ')', opacity: 0 }
+    ], {
+      duration: dur,
+      easing: 'cubic-bezier(.4,.1,.6,.9)',
+      fill: 'forwards'
+    });
+
+    anim.onfinish = () => puff.remove();
+  }
+
+  function loopRow(row) {
+    const tempoKey = row.dataset.tempo || 'fast';
+    const [lo, hi] = tempos[tempoKey] || tempos.fast;
+
+    function tick() {
+      // 70% single puff, 30% double-spawn for richer texture
+      spawn(row);
+      if (Math.random() < 0.3) setTimeout(() => spawn(row), rand(80, 260));
+      setTimeout(tick, rand(lo, hi));
+    }
+
+    // stagger initial spawn so rows don't all fire at once
+    setTimeout(tick, rand(0, 800));
+  }
+
+  // build deco svg + rule + ticks for every row, before wiring puffs
+  const decoMarkup = () => `
+    <div class="deco">
+      <div class="rule"></div>
+      <div class="ticks"></div>
+      <svg class="br-tl" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1">
+        <path d="M0 5 L0 0 L5 0" />
+        <path d="M0 9 L0 14" stroke-opacity=".5" />
+      </svg>
+      <svg class="br-br" width="14" height="14" viewBox="0 0 14 14" fill="none" stroke="currentColor" stroke-width="1">
+        <path d="M14 9 L14 14 L9 14" />
+        <path d="M14 5 L14 0" stroke-opacity=".5" />
+      </svg>
+    </div>`;
+
+  document.querySelectorAll('.hrow').forEach(row => {
+    row.insertAdjacentHTML('afterbegin', decoMarkup());
+  });
+
+  document.querySelectorAll('.hrow').forEach(loopRow);
+})();
+</script>
+</body>
+</html>

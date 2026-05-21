@@ -1,0 +1,35 @@
+name: meeting-notes
+version: "1.0.0"
+description: "Transform meeting transcript or notes into structured action items and summary"
+inputs:
+  transcript:
+    type: string
+    required: true
+    description: "Meeting transcript or rough notes"
+  attendees:
+    type: string
+    required: false
+    default: ""
+    description: "Comma-separated list of attendees (optional)"
+outputs:
+  structured_notes:
+    type: string
+    description: "Structured meeting notes with action items"
+steps:
+  - id: structure-notes
+    name: "Structure Meeting Notes"
+    action: invoke-agent
+    agent: orchestrator
+    inputs:
+      agent_name: orchestrator
+      message: "Convert these meeting notes into a structured format with: 1) Meeting Summary (2-3 sentences), 2) Key Decisions Made, 3) Action Items (with owner if mentioned), 4) Open Questions, 5) Next Steps. Attendees: {{ attendees }}. Notes: {{ transcript }}"
+    depends_on: []
+execution:
+  mode: sequential
+  fail_fast: false
+metadata:
+  author: agent-33
+  tags: [meeting, notes, productivity, action-items]
+sample_inputs:
+  transcript: "Call with the platform team. Sarah says the API latency is still high, probably 300ms p99. Jake is looking into it, thinks it's the database connection pool. We decided to increase the pool size from 10 to 25 as a quick fix. Sarah will monitor for 48 hours. Jake also mentioned we need to upgrade postgres before the end of quarter. Everyone agreed. TODO: Jake sends Sarah the connection pool config. Sarah to report back Thursday. Jake to create ticket for postgres upgrade."
+  attendees: "Sarah, Jake"

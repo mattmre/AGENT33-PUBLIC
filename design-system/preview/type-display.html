@@ -1,0 +1,308 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="_card.css">
+<style>
+  /* ─── Stage ─────────────────────────────────────────────────────── */
+  body {
+    background:
+      radial-gradient(1200px 600px at 80% -10%, rgba(48,213,200,.08), transparent 60%),
+      radial-gradient(900px 500px at -10% 110%, rgba(141,200,221,.06), transparent 55%),
+      #0c1015;
+    overflow: hidden;
+  }
+  .stage {
+    position: relative;
+    padding: 26px 30px;
+    min-height: 100vh;
+    display: grid;
+    grid-template-rows: auto 1fr auto;
+    gap: 18px;
+    overflow: hidden;
+  }
+
+  /* ─── Ambient grid + scan ───────────────────────────────────────── */
+  .stage::before {
+    content: "";
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(48,213,200,.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(48,213,200,.06) 1px, transparent 1px);
+    background-size: 44px 44px;
+    mask-image: radial-gradient(ellipse 80% 70% at 50% 50%, #000 40%, transparent 80%);
+    pointer-events: none;
+    animation: gridDrift 22s linear infinite;
+  }
+  @keyframes gridDrift {
+    from { background-position: 0 0, 0 0; }
+    to   { background-position: 44px 44px, -44px 44px; }
+  }
+  .stage::after {
+    content: "";
+    position: absolute; left: 0; right: 0; height: 200%;
+    top: -50%;
+    background: linear-gradient(180deg, transparent 0%, transparent 48%, rgba(48,213,200,.07) 50%, transparent 52%, transparent 100%);
+    pointer-events: none;
+    animation: scanSweep 9s linear infinite;
+    mix-blend-mode: screen;
+  }
+  @keyframes scanSweep {
+    0%   { transform: translateY(0%); opacity: 0; }
+    10%  { opacity: 1; }
+    90%  { opacity: 1; }
+    100% { transform: translateY(50%); opacity: 0; }
+  }
+
+  /* ─── Header strip ──────────────────────────────────────────────── */
+  .meta {
+    position: relative;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    z-index: 2;
+  }
+  .meta-left { display: flex; align-items: center; gap: 10px; }
+  .meta-dot {
+    width: 8px; height: 8px; border-radius: 50%;
+    background: #30d5c8;
+    box-shadow: 0 0 10px #30d5c8, 0 0 22px rgba(48,213,200,.6);
+    animation: dotPulse 2.4s ease-in-out infinite;
+  }
+  @keyframes dotPulse {
+    0%, 100% { transform: scale(1); opacity: .9; }
+    50%      { transform: scale(1.4); opacity: 1; }
+  }
+  .meta .eyebrow { color: #30d5c8; }
+  .meta-right {
+    display: flex; gap: 14px;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px; color: #6fa8b8;
+    letter-spacing: .1em;
+  }
+  .meta-right span b { color: #d2e8ef; font-weight: 500; }
+
+  /* ─── Hero word: AGENT-33 ───────────────────────────────────────── */
+  .hero {
+    position: relative;
+    z-index: 2;
+    display: grid;
+    align-content: center;
+    justify-items: start;
+    gap: 14px;
+    padding: 6px 0 4px;
+  }
+
+  .hero-wrap {
+    position: relative;
+    line-height: 0.92;
+  }
+
+  /* the main word — split into chars for stagger */
+  .hero-word {
+    font-family: "Space Grotesk", sans-serif;
+    font-weight: 700;
+    font-size: clamp(54px, 9.4vw, 96px);
+    letter-spacing: 0.02em;
+    margin: 0;
+    display: inline-flex;
+    gap: 0;
+    background: linear-gradient(180deg, #ffffff 0%, #c9eef0 40%, #30d5c8 100%);
+    -webkit-background-clip: text;
+            background-clip: text;
+    color: transparent;
+    -webkit-text-fill-color: transparent;
+    filter: drop-shadow(0 0 24px rgba(48,213,200,.18));
+  }
+  .hero-word span {
+    display: inline-block;
+    transform: translateY(18px);
+    opacity: 0;
+    animation: charRise .9s cubic-bezier(.22,.9,.28,1) forwards;
+  }
+  .hero-word span:nth-child(1){ animation-delay:.05s; }
+  .hero-word span:nth-child(2){ animation-delay:.12s; }
+  .hero-word span:nth-child(3){ animation-delay:.19s; }
+  .hero-word span:nth-child(4){ animation-delay:.26s; }
+  .hero-word span:nth-child(5){ animation-delay:.33s; }
+  .hero-word span:nth-child(6){ animation-delay:.40s; }
+  .hero-word span:nth-child(7){ animation-delay:.47s; }
+  .hero-word span:nth-child(8){ animation-delay:.54s; }
+  @keyframes charRise {
+    to { transform: translateY(0); opacity: 1; }
+  }
+
+  /* chromatic ghost — second copy of the word, shifted + tinted */
+  .hero-word.ghost {
+    position: absolute; inset: 0;
+    background: linear-gradient(180deg, rgba(141,200,221,.0) 0%, rgba(48,213,200,.55) 100%);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent; color: transparent;
+    filter: blur(.6px);
+    transform: translate(2px, 2px);
+    mix-blend-mode: screen;
+    opacity: .55;
+    pointer-events: none;
+    animation: ghostShimmer 4.2s ease-in-out infinite;
+  }
+  @keyframes ghostShimmer {
+    0%, 100% { transform: translate(2px, 2px); opacity: .35; }
+    50%      { transform: translate(-2px, -1px); opacity: .7; }
+  }
+  .hero-word.ghost span { animation: none; transform: none; opacity: 1; }
+
+  /* sweeping highlight across the word */
+  .hero-wrap::after {
+    content: "";
+    position: absolute; inset: -8% 0;
+    background: linear-gradient(110deg, transparent 35%, rgba(255,255,255,.55) 50%, transparent 65%);
+    mix-blend-mode: overlay;
+    -webkit-mask: linear-gradient(#000, #000);
+    pointer-events: none;
+    animation: sheen 5.5s ease-in-out infinite;
+    opacity: .5;
+  }
+  @keyframes sheen {
+    0%   { transform: translateX(-110%); }
+    55%  { transform: translateX(110%); }
+    100% { transform: translateX(110%); }
+  }
+
+  /* ─── Subhead — wireframe + crossed line typography ─────────────── */
+  .sub {
+    font-family: "Space Grotesk", sans-serif;
+    font-weight: 500;
+    font-size: clamp(20px, 2.5vw, 28px);
+    letter-spacing: 0.06em;
+    color: #d2e8ef;
+    margin: 0;
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    opacity: 0; transform: translateY(8px);
+    animation: subFade 1s .9s cubic-bezier(.22,.9,.28,1) forwards;
+  }
+  @keyframes subFade { to { opacity: 1; transform: translateY(0); } }
+
+  .sub-rule {
+    flex: 0 0 56px; height: 1px;
+    background: linear-gradient(90deg, transparent, #30d5c8 60%, #30d5c8);
+    box-shadow: 0 0 8px rgba(48,213,200,.6);
+    transform-origin: left center;
+    animation: ruleDraw 1.4s 1.1s cubic-bezier(.22,.9,.28,1) backwards;
+  }
+  @keyframes ruleDraw { from { transform: scaleX(0); } to { transform: scaleX(1); } }
+
+  /* ─── Operator caption with caret ───────────────────────────────── */
+  .caret-line {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 13px;
+    color: #9dc3cf;
+    letter-spacing: .04em;
+    display: flex; align-items: center; gap: 8px;
+    opacity: 0;
+    animation: subFade 1s 1.5s cubic-bezier(.22,.9,.28,1) forwards;
+  }
+  .caret-line .arrow { color: #30d5c8; }
+  .caret-line .caret {
+    display: inline-block;
+    width: 9px; height: 1.05em;
+    background: #30d5c8;
+    box-shadow: 0 0 10px rgba(48,213,200,.7);
+    animation: caretBlink 1s steps(2) infinite;
+    vertical-align: -2px;
+    margin-left: 2px;
+  }
+  @keyframes caretBlink { 0%,49%{opacity:1;} 50%,100%{opacity:0;} }
+
+  /* ─── Footer scale rail ─────────────────────────────────────────── */
+  .scale {
+    position: relative; z-index: 2;
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: rgba(125,182,202,.18);
+    border: 1px solid rgba(125,182,202,.18);
+    border-radius: 10px;
+    overflow: hidden;
+  }
+  .scale > div {
+    background: rgba(8,18,24,.85);
+    padding: 10px 12px;
+    display: grid; gap: 4px;
+  }
+  .scale .row {
+    display: flex; align-items: baseline; justify-content: space-between; gap: 10px;
+  }
+  .scale .name { font-family:"Space Grotesk"; font-weight:600; color:#e2f1f8; }
+  .scale .meta-mono { font-family:"IBM Plex Mono", monospace; font-size:10px; color:#6fa8b8; letter-spacing:.08em; }
+  .scale .specimen {
+    font-family: "Space Grotesk"; font-weight: 600;
+    color: transparent;
+    background: linear-gradient(180deg,#ffffff,#9dc3cf);
+    -webkit-background-clip: text; background-clip: text;
+    -webkit-text-fill-color: transparent;
+    line-height: 1;
+    letter-spacing: .02em;
+  }
+  .scale .s1 .specimen { font-size: 32px; }
+  .scale .s2 .specimen { font-size: 26px; }
+  .scale .s3 .specimen { font-size: 22px; }
+  .scale .s4 .specimen { font-size: 18px; font-weight: 500; }
+</style>
+</head>
+<body>
+<div class="stage">
+
+  <!-- META -->
+  <div class="meta">
+    <div class="meta-left">
+      <span class="meta-dot"></span>
+      <p class="eyebrow" style="margin:0">DISPLAY · SPACE GROTESK</p>
+    </div>
+    <div class="meta-right">
+      <span>WEIGHT <b>700/600/500</b></span>
+      <span>TRACK <b>+0.02 — +0.06</b></span>
+      <span>OPTICAL <b>54 → 96</b></span>
+    </div>
+  </div>
+
+  <!-- HERO -->
+  <div class="hero">
+    <div class="hero-wrap">
+      <h1 class="hero-word" aria-label="AGENT-33">
+        <span>A</span><span>G</span><span>E</span><span>N</span><span>T</span><span>-</span><span>3</span><span>3</span>
+      </h1>
+      <h1 class="hero-word ghost" aria-hidden="true">
+        <span>A</span><span>G</span><span>E</span><span>N</span><span>T</span><span>-</span><span>3</span><span>3</span>
+      </h1>
+    </div>
+
+    <p class="sub"><span class="sub-rule"></span>Welcome back, operator</p>
+
+    <p class="caret-line"><span class="arrow">›</span> project cockpit · active run<span class="caret"></span></p>
+  </div>
+
+  <!-- SCALE RAIL -->
+  <div class="scale">
+    <div class="s1">
+      <div class="row"><span class="name">Display</span><span class="meta-mono">700 / 32px</span></div>
+      <div class="specimen">Aa</div>
+    </div>
+    <div class="s2">
+      <div class="row"><span class="name">Headline</span><span class="meta-mono">600 / 26px</span></div>
+      <div class="specimen">Aa</div>
+    </div>
+    <div class="s3">
+      <div class="row"><span class="name">Title</span><span class="meta-mono">600 / 22px</span></div>
+      <div class="specimen">Aa</div>
+    </div>
+    <div class="s4">
+      <div class="row"><span class="name">Lede</span><span class="meta-mono">500 / 18px</span></div>
+      <div class="specimen">Aa</div>
+    </div>
+  </div>
+
+</div>
+</body>
+</html>

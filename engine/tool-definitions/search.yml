@@ -1,0 +1,30 @@
+name: search
+description: >
+  Web search via SearXNG. Returns structured search results with titles,
+  URLs, and snippets.
+version: "1.0"
+owner: agent33-core
+provenance:
+  repo_url: https://github.com/mattmre/AGENT33-PUBLIC
+  license: Apache-2.0
+status: active
+
+parameters:
+  query:
+    type: string
+    required: true
+    description: Search query string.
+  num_results:
+    type: integer
+    required: false
+    default: 10
+    description: Maximum number of results to return.
+  categories:
+    type: string
+    required: false
+    default: general
+    description: Search categories (e.g., general, images, news).
+
+governance:
+  required_scope: tools:execute
+  domain_allowlist: []

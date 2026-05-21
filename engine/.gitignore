@@ -1,0 +1,32 @@
+__pycache__/
+*.pyc
+*.pyo
+*.egg-info/
+dist/
+build/
+
+# Virtual environments
+.env
+.venv
+.mypy_cache/
+.ruff_cache/
+.pytest_cache/
+*.egg
+
+# Local LLM Models and Binaries
+models/
+bin/
+
+# Built frontend assets (populated by hatch_build.py during wheel build)
+src/agent33/static/ui/
+
+# Runtime-generated SQLite databases and persisted state
+*.db
+*.db-shm
+*.db-wal
+*.sqlite3
+var/
+
+# Coverage reports
+.coverage
+.coverage.*

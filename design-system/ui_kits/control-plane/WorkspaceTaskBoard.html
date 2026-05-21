@@ -1,0 +1,499 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>AGENT-33 · WorkspaceTaskBoard</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="_kit.css">
+<style>
+  /* ────────────────────────────────────────────────────────────────
+     Recalibrated layout — page is the canvas, three stacked sections
+     with a consistent 40px rhythm: HEAD → ROSTER → STARTERS → BOARD.
+     ──────────────────────────────────────────────────────────────── */
+  body { max-width: 1480px; }
+  .stack > * + * { margin-top: 40px; }
+
+  /* Header strip ─────────────────────────────────────────────────── */
+  .board-head {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    align-items: end;
+    gap: 24px;
+    padding-bottom: 16px;
+    border-bottom: 1px solid var(--line);
+  }
+  .board-head h2 {
+    margin: 6px 0 0;
+    font-size: 1.3rem;
+    color: var(--ice);
+    font-weight: 600;
+    letter-spacing: .02em;
+  }
+  .board-head p {
+    margin: 6px 0 0;
+    color: var(--text-soft);
+    font-size: .86rem;
+    line-height: 1.5;
+    max-width: 64ch;
+  }
+  .board-actions {
+    display: flex;
+    gap: 10px;
+    align-items: center;
+  }
+  .perm-chip {
+    font-family: var(--mono); font-size: 9px;
+    letter-spacing: .14em; text-transform: uppercase;
+    padding: 5px 10px;
+    border: 1px solid currentColor;
+    color: var(--amber);
+    background: var(--amber-soft);
+  }
+
+  /* Section heading shared between roster / starters / board ─────── */
+  .sec {
+    display: flex; align-items: end; justify-content: space-between;
+    gap: 16px;
+    margin-bottom: 14px;
+  }
+  .sec h3 {
+    margin: 6px 0 0;
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: 1rem;
+    color: var(--ice);
+  }
+  .sec p {
+    margin: 4px 0 0;
+    color: var(--text-soft);
+    font-size: .8rem;
+    max-width: 56ch;
+  }
+  .sec .meta {
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: .14em;
+    color: var(--text-mute);
+    text-transform: uppercase;
+  }
+
+  /* Roster strip ─ horizontal, subordinate ───────────────────────── */
+  .roster-strip {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+  }
+  .agent {
+    background: var(--bg-deep);
+    padding: 14px 16px;
+    display: grid;
+    gap: 4px;
+  }
+  .agent-row {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+  }
+  .agent-row strong {
+    color: var(--ice);
+    font-size: .92rem;
+    font-weight: 600;
+  }
+  .agent .role {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: .16em;
+    color: var(--teal);
+    text-transform: uppercase;
+  }
+  .agent p {
+    margin: 4px 0 0;
+    color: var(--text-soft);
+    font-size: .76rem;
+    line-height: 1.5;
+  }
+  .agent .state {
+    margin-top: 6px;
+    display: inline-flex;
+    align-items: center;
+    gap: 6px;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: .14em;
+    color: var(--text-mute);
+    text-transform: uppercase;
+  }
+  .agent .state::before {
+    content: ""; width: 6px; height: 6px;
+    background: currentColor;
+  }
+  .agent.planning  .state { color: var(--text-mute); }
+  .agent.idle      .state { color: var(--text-mute); }
+  .agent.working   .state { color: var(--sky); }
+  .agent.reviewing .state { color: var(--amber); }
+
+  /* Starters ─ 3-up grid, more breathing room ────────────────────── */
+  .starter-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 14px;
+  }
+  .starter-card {
+    background: var(--bg-deep);
+    border: 1px solid var(--line);
+    border-left: 2px solid var(--teal);
+    padding: 16px 18px 18px;
+    display: grid;
+    gap: 8px;
+  }
+  .starter-card .role {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: .18em;
+    text-transform: uppercase;
+    color: var(--teal);
+  }
+  .starter-card strong {
+    color: var(--ice);
+    font-size: 1rem;
+    font-weight: 600;
+  }
+  .starter-card p {
+    margin: 0;
+    font-size: .8rem;
+    color: var(--text-soft);
+    line-height: 1.55;
+  }
+  .starter-card small {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-mute);
+    letter-spacing: .1em;
+    margin-top: 2px;
+  }
+  .starter-card .btn {
+    margin-top: 8px;
+    justify-self: start;
+  }
+
+  /* Kanban ─ full width, 5 lanes, generous tasks ─────────────────── */
+  .kanban {
+    display: grid;
+    grid-template-columns: repeat(5, 1fr);
+    gap: 1px;
+    background: var(--line);
+    border: 1px solid var(--line);
+  }
+  .lane {
+    background: var(--bg-deep);
+    padding: 16px 14px 18px;
+    display: grid;
+    gap: 12px;
+    align-content: start;
+    min-height: 380px;
+  }
+  .lane-head {
+    display: flex;
+    justify-content: space-between;
+    align-items: baseline;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--line);
+    margin-bottom: 2px;
+  }
+  .lane-head h4 {
+    margin: 0;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: .2em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--text-mute);
+  }
+  .lane.todo     h4 { color: var(--text-mute); }
+  .lane.running  h4 { color: var(--sky); }
+  .lane.review   h4 { color: var(--amber); }
+  .lane.complete h4 { color: var(--green); }
+  .lane.blocked  h4 { color: var(--red); }
+  .lane-head .count {
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ice);
+    font-weight: 500;
+  }
+
+  /* Task card ─ clearer hierarchy, more padding ──────────────────── */
+  .task {
+    background: var(--bg-row);
+    border-left: 2px solid var(--line);
+    padding: 11px 13px 12px;
+    display: grid;
+    gap: 6px;
+  }
+  .task.todo     { border-left-color: rgba(125,182,202,.4); }
+  .task.running  { border-left-color: var(--sky); }
+  .task.review   { border-left-color: var(--amber); }
+  .task.complete { border-left-color: var(--green); }
+  .task.blocked  { border-left-color: var(--red); }
+
+  .task .role {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: .16em;
+    color: var(--teal);
+    text-transform: uppercase;
+  }
+  .task h5 {
+    margin: 0;
+    font-size: .88rem;
+    color: var(--ice);
+    font-weight: 600;
+    line-height: 1.3;
+  }
+  .task p {
+    margin: 0;
+    font-size: .76rem;
+    color: var(--text-soft);
+    line-height: 1.5;
+  }
+  .task-gate {
+    margin-top: 4px;
+    padding: 6px 8px;
+    background: var(--bg-deep);
+    border-left: 2px solid var(--line);
+    display: grid;
+    gap: 2px;
+  }
+  .task-gate.allowed { border-left-color: var(--green); }
+  .task-gate.review  { border-left-color: var(--amber); }
+  .task-gate.blocked { border-left-color: var(--red); }
+  .task-gate strong {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    font-weight: 600;
+    color: var(--ice);
+  }
+  .task-gate.allowed strong { color: var(--green); }
+  .task-gate.review  strong { color: var(--amber); }
+  .task-gate.blocked strong { color: var(--red); }
+  .task-gate small {
+    font-family: var(--sans);
+    font-size: .7rem;
+    letter-spacing: 0;
+    text-transform: none;
+    color: var(--text-mute);
+  }
+
+  /* Empty lane state ─────────────────────────────────────────────── */
+  .lane-empty {
+    margin-top: 8px;
+    padding: 18px 10px;
+    text-align: center;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: .14em;
+    color: var(--text-mute);
+    text-transform: uppercase;
+    border: 1px dashed var(--line);
+  }
+</style>
+</head>
+<body>
+
+<div class="kit-head">
+  <div>
+    <p class="eyebrow">▸ COMPONENT · TASK BOARD</p>
+    <h1>WorkspaceTaskBoard</h1>
+  </div>
+  <div class="meta">
+    <span>SOURCE · <b>WorkspaceTaskBoard.tsx</b></span>
+    <span>WORKSPACE · <b>cache-rollout</b></span>
+  </div>
+</div>
+
+<div class="stack">
+
+  <!-- 1. HEADER ─────────────────────────────────────────────── -->
+  <header class="board-head">
+    <div>
+      <p class="eyebrow">▸ WORKSPACE COMMAND BOARD</p>
+      <h2>Drydock · cache-metrics rollout</h2>
+      <p>Coordinator drafts the plan. Scout pulls baseline. Builder ships behind a flag. Reviewer audits cardinality. Every transition between lanes runs through the active permission gate.</p>
+    </div>
+    <div class="board-actions">
+      <button class="btn">Choose workflow</button>
+      <span class="perm-chip">Soft review · 1 pending</span>
+      <button class="btn">Review approvals</button>
+    </div>
+  </header>
+
+  <!-- 2. AGENT ROSTER (horizontal strip) ──────────────────── -->
+  <section>
+    <header class="sec">
+      <div>
+        <p class="eyebrow">▸ ROSTER</p>
+        <h3>Agents on this workspace</h3>
+        <p>Each role owns one starter and one reviewable output.</p>
+      </div>
+      <span class="meta">4 AGENTS · 1 IDLE</span>
+    </header>
+    <div class="roster-strip">
+      <article class="agent planning">
+        <div class="agent-row"><strong>Bridge</strong><span class="role">Coordinator</span></div>
+        <p>Sequences work, owns the plan, manages handoffs.</p>
+        <span class="state">Planning</span>
+      </article>
+      <article class="agent idle">
+        <div class="agent-row"><strong>Vega</strong><span class="role">Scout</span></div>
+        <p>Read-only research, risk surfacing, comparison findings.</p>
+        <span class="state">Idle</span>
+      </article>
+      <article class="agent working">
+        <div class="agent-row"><strong>Forge</strong><span class="role">Builder</span></div>
+        <p>Implementation slices, validation commands, change-set artifacts.</p>
+        <span class="state">Working</span>
+      </article>
+      <article class="agent reviewing">
+        <div class="agent-row"><strong>Hawk</strong><span class="role">Reviewer</span></div>
+        <p>Quality gate, redaction audit, merge recommendation.</p>
+        <span class="state">Reviewing</span>
+      </article>
+    </div>
+  </section>
+
+  <!-- 3. STARTERS ──────────────────────────────────────────── -->
+  <section>
+    <header class="sec">
+      <div>
+        <p class="eyebrow">▸ RECOMMENDED STARTERS</p>
+        <h3>Beginner-safe workflows</h3>
+        <p>Pre-scoped first moves so a new operator can ship a small slice without inventing the plan.</p>
+      </div>
+      <span class="meta">3 STARTERS</span>
+    </header>
+    <div class="starter-grid">
+      <article class="starter-card">
+        <span class="role">Coordinator</span>
+        <strong>Plan rollout sequence</strong>
+        <p>Sequence the rollout, name owners, and pre-write the rollback plan before any builder touches code.</p>
+        <small>Starts with PLAN_DRAFT · Reviewed by reviewer</small>
+        <button class="btn">Use starter</button>
+      </article>
+      <article class="starter-card">
+        <span class="role">Scout</span>
+        <strong>Survey live metrics</strong>
+        <p>Pull current cache hit-rate and miss patterns from prod before proposing the metric set.</p>
+        <small>Starts with SCOUT_REPORT · Hands off to coordinator</small>
+        <button class="btn">Use starter</button>
+      </article>
+      <article class="starter-card">
+        <span class="role">Builder</span>
+        <strong>Wire metric exporters</strong>
+        <p>Add Prometheus counters and dashboards behind a feature flag; ship to staging first.</p>
+        <small>Starts with BUILD_PATCH · Reviewed by reviewer</small>
+        <button class="btn">Use starter</button>
+      </article>
+    </div>
+  </section>
+
+  <!-- 4. KANBAN (full width) ──────────────────────────────── -->
+  <section>
+    <header class="sec">
+      <div>
+        <p class="eyebrow">▸ TASK LANES</p>
+        <h3>Live work in flight</h3>
+        <p>Kanban is the source of truth for who's doing what right now. Permission gates ride along on every card.</p>
+      </div>
+      <span class="meta">7 ACTIVE · 2 COMPLETE</span>
+    </header>
+
+    <div class="kanban">
+      <section class="lane todo">
+        <header class="lane-head"><h4>To do</h4><span class="count">2</span></header>
+        <article class="task todo">
+          <span class="role">Coordinator</span>
+          <h5>Define rollback gates</h5>
+          <p>List measurable conditions that trigger a rollback in the metrics rollout.</p>
+          <div class="task-gate review">
+            <strong>Soft gate</strong>
+            <small>Allowed with reviewer ack</small>
+          </div>
+        </article>
+        <article class="task todo">
+          <span class="role">Scout</span>
+          <h5>Compare counter libs</h5>
+          <p>Bench prom-client against statsd-lite under load; pick winner.</p>
+          <div class="task-gate allowed">
+            <strong>Allowed</strong>
+            <small>Read-only research</small>
+          </div>
+        </article>
+      </section>
+
+      <section class="lane running">
+        <header class="lane-head"><h4>Running</h4><span class="count">1</span></header>
+        <article class="task running">
+          <span class="role">Builder</span>
+          <h5>Wire prom counters</h5>
+          <p>Patch cache layer to emit hits / misses / evictions behind a feature flag.</p>
+          <div class="task-gate review">
+            <strong>Run-command gate</strong>
+            <small>Awaiting reviewer ack</small>
+          </div>
+        </article>
+        <div class="lane-empty">+ deploy a2a subordinate</div>
+      </section>
+
+      <section class="lane review">
+        <header class="lane-head"><h4>Review</h4><span class="count">1</span></header>
+        <article class="task review">
+          <span class="role">Reviewer</span>
+          <h5>Diff metrics PR</h5>
+          <p>Audit cardinality + redaction. Confirm no PII fields leak into labels.</p>
+          <div class="task-gate review">
+            <strong>Approve gate</strong>
+            <small>Operator sign-off required</small>
+          </div>
+        </article>
+      </section>
+
+      <section class="lane complete">
+        <header class="lane-head"><h4>Complete</h4><span class="count">2</span></header>
+        <article class="task complete">
+          <span class="role">Coordinator</span>
+          <h5>Plan handoff</h5>
+          <p>Plan-of-record drafted and accepted by all roles.</p>
+          <div class="task-gate allowed"><strong>Cleared</strong><small>Artifact archived</small></div>
+        </article>
+        <article class="task complete">
+          <span class="role">Scout</span>
+          <h5>Survey baseline</h5>
+          <p>Captured 7-day baseline hit-rate; chart attached to the workspace.</p>
+          <div class="task-gate allowed"><strong>Cleared</strong><small>Artifact archived</small></div>
+        </article>
+      </section>
+
+      <section class="lane blocked">
+        <header class="lane-head"><h4>Blocked</h4><span class="count">1</span></header>
+        <article class="task blocked">
+          <span class="role">Builder</span>
+          <h5>Stage rollout</h5>
+          <p>Cannot stage — secrets broker not provisioned. Waiting on platform.</p>
+          <div class="task-gate blocked">
+            <strong>Hard gate</strong>
+            <small>Secrets broker required</small>
+          </div>
+        </article>
+      </section>
+    </div>
+  </section>
+
+</div>
+
+</body>
+</html>

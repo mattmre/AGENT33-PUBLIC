@@ -1,0 +1,203 @@
+# Weekly SkillsBench full-run evaluation (POST-2.1b)
+# - Runs agent33 bench run against the full 86-task SkillsBench suite
+# - Detects >5pp regression vs committed baseline; auto-opens GitHub issue
+# - Commits results to the benchmarks branch (NOT main)
+# Node.js 24 migration: actions/checkout@v6, actions/setup-python@v6,
+#   actions/upload-artifact@v7, actions/github-script@v9
+name: Benchmarks Weekly
+
+on:
+  schedule:
+    - cron: "0 0 * * 0"  # Every Sunday at 00:00 UTC
+  workflow_dispatch:
+    inputs:
+      model:
+        description: "LLM model to use for evaluation"
+        required: false
+        default: "llama3.2"
+      skillsbench_ref:
+        description: "SkillsBench repo ref to checkout (tag or SHA)"
+        required: false
+        default: "main"
+
+permissions:
+  contents: write   # push to benchmarks branch
+  issues: write     # open regression issues
+
+jobs:
+  bench-full-run:
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+
+    steps:
+      - name: Checkout main
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0  # needed to push to benchmarks branch
+          token: ${{ secrets.GITHUB_TOKEN }}
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install agent33
+        working-directory: engine
+        env:
+          AGENT33_SKIP_FRONTEND_BUILD: "1"
+        run: pip install -e ".[dev]"
+
+      - name: Checkout SkillsBench
+        uses: actions/checkout@v6
+        with:
+          repository: benchflow-ai/skillsbench
+          ref: ${{ inputs.skillsbench_ref || 'main' }}
+          path: skillsbench
+
+      - name: Fetch current baseline
+        run: |
+          git fetch origin benchmarks:refs/remotes/origin/benchmarks || true
+          mkdir -p bench-results
+          if git show origin/benchmarks:baselines/ctrf-baseline-latest.json > bench-results/ctrf-baseline.json 2>/dev/null; then
+            echo "HAVE_BASELINE=true" >> "$GITHUB_ENV"
+            echo "Baseline fetched from benchmarks branch"
+          else
+            echo "HAVE_BASELINE=false" >> "$GITHUB_ENV"
+            echo "No existing baseline -- this run will create it"
+          fi
+
+      - name: Run full SkillsBench suite
+        env:
+          AGENT33_SKIP_FRONTEND_BUILD: "1"
+          OPENAI_API_KEY: ${{ secrets.OPENAI_API_KEY }}
+          OLLAMA_BASE_URL: ${{ secrets.OLLAMA_BASE_URL }}
+        working-directory: engine
+        run: |
+          DATE=$(date +%Y-%m-%d)
+          MODEL="${{ inputs.model || 'llama3.2' }}"
+          agent33 bench run \
+            --skillsbench-root ../skillsbench \
+            --output ../bench-results/ctrf-run-${DATE}.json \
+            --model "${MODEL}"
+          cp ../bench-results/ctrf-run-${DATE}.json ../bench-results/ctrf-run-latest.json
+
+      - name: Summarize SkillsBench report
+        if: always()
+        working-directory: engine
+        run: |
+          if [ -f "../bench-results/ctrf-run-latest.json" ]; then
+            if [ "${HAVE_BASELINE}" = "true" ]; then
+              agent33 bench report \
+                ../bench-results/ctrf-run-latest.json \
+                --baseline ../bench-results/ctrf-baseline.json \
+                --github-step-summary
+            else
+              agent33 bench report \
+                ../bench-results/ctrf-run-latest.json \
+                --github-step-summary
+            fi
+          fi
+
+      - name: Detect regression vs baseline
+        id: regression
+        if: env.HAVE_BASELINE == 'true'
+        run: |
+          python3 - <<'PYEOF'
+          import json, os, sys
+
+          def pass_rate(d):
+              s = d.get("results", {}).get("summary", {})
+              total = s.get("tests", 0)
+              passed = s.get("passed", 0)
+              return (passed / total * 100) if total > 0 else 0.0
+
+          with open("bench-results/ctrf-run-latest.json") as f:
+              current = json.load(f)
+          with open("bench-results/ctrf-baseline.json") as f:
+              baseline = json.load(f)
+
+          cur_rate = pass_rate(current)
+          base_rate = pass_rate(baseline)
+          drop = base_rate - cur_rate
+
+          print(f"Current pass rate:  {cur_rate:.1f}%")
+          print(f"Baseline pass rate: {base_rate:.1f}%")
+          print(f"Drop:               {drop:.1f}pp")
+
+          with open(os.environ["GITHUB_OUTPUT"], "a") as fh:
+              if drop > 5.0:
+                  print(f"REGRESSION DETECTED: {drop:.1f}pp drop exceeds 5pp threshold")
+                  fh.write(f"regression=true\n")
+                  fh.write(f"drop={drop:.1f}\n")
+                  fh.write(f"current_rate={cur_rate:.1f}\n")
+                  fh.write(f"baseline_rate={base_rate:.1f}\n")
+              else:
+                  fh.write(f"regression=false\n")
+                  fh.write(f"drop={drop:.1f}\n")
+          PYEOF
+
+      - name: Open regression issue
+        if: steps.regression.outputs.regression == 'true'
+        uses: actions/github-script@v9
+        with:
+          script: |
+            const drop = '${{ steps.regression.outputs.drop }}';
+            const current = '${{ steps.regression.outputs.current_rate }}';
+            const baseline = '${{ steps.regression.outputs.baseline_rate }}';
+            const runUrl = `${context.serverUrl}/${context.repo.owner}/${context.repo.repo}/actions/runs/${context.runId}`;
+            await github.rest.issues.create({
+              owner: context.repo.owner,
+              repo: context.repo.repo,
+              title: `[SkillsBench Regression] Pass rate dropped ${drop}pp vs baseline`,
+              labels: ['benchmark-regression', 'automated'],
+              body: [
+                '## SkillsBench Regression Detected',
+                '',
+                `| Metric | Value |`,
+                `|---|---|`,
+                `| Current pass rate | ${current}% |`,
+                `| Baseline pass rate | ${baseline}% |`,
+                `| Drop | **${drop}pp** (threshold: 5pp) |`,
+                `| Workflow run | [View run](${runUrl}) |`,
+                '',
+                '## Next Steps',
+                '1. Review the full CTRF report artifact attached to the workflow run',
+                '2. Identify which task categories regressed',
+                '3. Open a fix PR or update the baseline if the regression is expected',
+                '',
+                '_Opened automatically by the Benchmarks Weekly workflow._',
+              ].join('\n'),
+            });
+
+      - name: Commit results to benchmarks branch
+        run: |
+          DATE=$(date +%Y-%m-%d)
+          RUN_SHA=$(git rev-parse --short HEAD)
+
+          # Configure git identity for bot commit
+          git config user.name "agent33-bot"
+          git config user.email "agent33-bot@users.noreply.github.com"
+
+          # Checkout benchmarks branch (orphan-safe)
+          git fetch origin benchmarks
+          git checkout benchmarks
+
+          # Copy results
+          mkdir -p baselines
+          cp bench-results/ctrf-run-latest.json baselines/ctrf-baseline-latest.json
+          cp bench-results/ctrf-run-latest.json baselines/ctrf-baseline-${DATE}.json
+
+          # Commit and push (skip if nothing changed)
+          git add baselines/
+          git diff --cached --quiet || git commit \
+            -m "benchmark(weekly): SkillsBench run ${DATE} from ${RUN_SHA}" \
+            --no-verify
+
+          git push origin benchmarks
+
+      - name: Upload artifacts
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: skillsbench-weekly-results
+          path: bench-results/
+          retention-days: 90

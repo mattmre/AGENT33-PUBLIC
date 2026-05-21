@@ -1,0 +1,152 @@
+{
+  "name": "deep-research",
+  "version": "1.0.0",
+  "description": "Autonomous deep research workflow that searches, reads sources, and synthesizes answers",
+  "triggers": {
+    "manual": true,
+    "on_change": [],
+    "schedule": null,
+    "on_event": []
+  },
+  "inputs": {
+    "query": {
+      "type": "string",
+      "description": "The research question or topic to investigate",
+      "required": true,
+      "default": null
+    }
+  },
+  "outputs": {
+    "answer": {
+      "type": "string",
+      "description": "Synthesized answer based on all retrieved sources"
+    },
+    "sources": {
+      "type": "array",
+      "description": "List of source URLs and excerpts used to construct the answer"
+    }
+  },
+  "steps": [
+    {
+      "id": "search",
+      "name": "Search for relevant sources",
+      "action": "invoke-agent",
+      "agent": "researcher",
+      "command": null,
+      "inputs": {
+        "query": "${inputs.query}"
+      },
+      "outputs": {
+        "urls": "List of discovered source URLs",
+        "snippets": "Preview snippets from search results"
+      },
+      "condition": null,
+      "depends_on": [],
+      "retry": {
+        "max_attempts": 3,
+        "delay_seconds": 5
+      },
+      "timeout_seconds": 120
+    },
+    {
+      "id": "read-sources",
+      "name": "Read and extract content from each source in parallel",
+      "action": "parallel-group",
+      "agent": null,
+      "command": null,
+      "inputs": {
+        "urls": "${search.outputs.urls}"
+      },
+      "outputs": {
+        "documents": "Extracted text content from each source"
+      },
+      "condition": null,
+      "depends_on": ["search"],
+      "retry": {
+        "max_attempts": 2,
+        "delay_seconds": 3
+      },
+      "timeout_seconds": 180,
+      "steps": [
+        {
+          "id": "read-single-source",
+          "name": "Read a single source URL",
+          "action": "invoke-agent",
+          "agent": "reader",
+          "command": null,
+          "inputs": {
+            "url": "${parallel.item}"
+          },
+          "outputs": {
+            "content": "Extracted text from the source"
+          },
+          "condition": null,
+          "depends_on": [],
+          "retry": {
+            "max_attempts": 2,
+            "delay_seconds": 2
+          },
+          "timeout_seconds": 60
+        }
+      ]
+    },
+    {
+      "id": "synthesize",
+      "name": "Synthesize findings into a coherent answer",
+      "action": "invoke-agent",
+      "agent": "orchestrator",
+      "command": null,
+      "inputs": {
+        "query": "${inputs.query}",
+        "documents": "${read-sources.outputs.documents}",
+        "snippets": "${search.outputs.snippets}"
+      },
+      "outputs": {
+        "answer": "Synthesized research answer",
+        "sources_cited": "Sources referenced in the answer"
+      },
+      "condition": null,
+      "depends_on": ["read-sources"],
+      "retry": {
+        "max_attempts": 2,
+        "delay_seconds": 5
+      },
+      "timeout_seconds": 120
+    },
+    {
+      "id": "validate",
+      "name": "Validate the synthesized answer for quality and accuracy",
+      "action": "validate",
+      "agent": null,
+      "command": null,
+      "inputs": {
+        "answer": "${synthesize.outputs.answer}",
+        "sources_cited": "${synthesize.outputs.sources_cited}"
+      },
+      "outputs": {
+        "is_valid": "Whether the answer passes quality checks",
+        "issues": "List of detected issues if any"
+      },
+      "condition": null,
+      "depends_on": ["synthesize"],
+      "retry": {
+        "max_attempts": 1,
+        "delay_seconds": 0
+      },
+      "timeout_seconds": 30
+    }
+  ],
+  "execution": {
+    "mode": "dependency-aware",
+    "parallel_limit": 4,
+    "continue_on_error": false,
+    "fail_fast": true,
+    "timeout_seconds": 600
+  },
+  "metadata": {
+    "author": "agent-33",
+    "created": "2026-01-30T00:00:00Z",
+    "updated": "2026-01-30T00:00:00Z",
+    "tags": ["research", "search", "synthesis", "autonomous"]
+  }
+}

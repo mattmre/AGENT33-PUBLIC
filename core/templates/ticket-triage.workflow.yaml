@@ -1,0 +1,35 @@
+name: ticket-triage
+version: "1.0.0"
+description: "Analyze support tickets or GitHub issues and assign priority, labels, and suggested owner"
+inputs:
+  ticket:
+    type: string
+    required: true
+    description: "Ticket title and description"
+  project_context:
+    type: string
+    required: false
+    default: ""
+    description: "Brief project context to inform triage (optional)"
+outputs:
+  triage:
+    type: string
+    description: "Triage result with priority, labels, and recommendations"
+steps:
+  - id: triage
+    name: "Triage Ticket"
+    action: invoke-agent
+    agent: orchestrator
+    inputs:
+      agent_name: orchestrator
+      message: "Analyze this ticket and provide: 1) Priority (P0-Critical/P1-High/P2-Medium/P3-Low), 2) Type labels (bug/feature/docs/performance/security/question), 3) Suggested owner team (frontend/backend/infra/security/product), 4) Brief analysis (2-3 sentences), 5) Suggested next action. Project context: {{ project_context }}. Ticket: {{ ticket }}"
+    depends_on: []
+execution:
+  mode: sequential
+  fail_fast: false
+metadata:
+  author: agent-33
+  tags: [tickets, triage, issues, prioritization]
+sample_inputs:
+  ticket: "Title: Login page shows blank screen for users with special characters in email. Description: Multiple users reporting they cannot log in. Appears to affect users whose email contains + or . before @. Regular emails work fine. Started after last deploy on Friday."
+  project_context: "SaaS web application, React frontend, FastAPI backend, PostgreSQL"

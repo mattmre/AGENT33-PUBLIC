@@ -1,0 +1,34 @@
+name: web-research
+version: 1.0.0
+description: Web search and research workflow pack. Equips agents to search the web,
+  summarize findings, and extract structured facts with source attribution.
+author: agent33-team
+license: Apache-2.0
+tags:
+  - research
+  - web
+  - search
+  - summarization
+category: research
+skills:
+  - name: search-web
+    path: skills/search-web
+    description: Search the web for information on a topic and return ranked results.
+  - name: summarize-results
+    path: skills/summarize-results
+    description: Synthesize multiple search results into a coherent, cited summary.
+  - name: extract-facts
+    path: skills/extract-facts
+    description: Extract discrete, verifiable facts from web content with citations.
+prompt_addenda:
+  - |
+    When performing web research, always cite your sources by including the URL and
+    retrieval date. Prefer results published within the last 12 months unless the
+    query specifically requires historical data. Cross-reference at least two
+    independent sources before presenting a fact as established. If sources conflict,
+    note the disagreement explicitly rather than silently picking one.
+tool_config:
+  web_fetch:
+    enabled: true
+    timeout_seconds: 30
+    max_response_bytes: 2097152

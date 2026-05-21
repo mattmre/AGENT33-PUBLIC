@@ -1,0 +1,186 @@
+groups:
+  - name: agent33-observability
+    interval: 30s
+    rules:
+      - record: agent33:sli:effort_telemetry_export_failures:count_15m
+        expr: sum(increase(effort_routing_export_failures_total[15m]))
+      - record: agent33:sli:effort_telemetry_export_failures:count_28d
+        expr: sum(increase(effort_routing_export_failures_total[28d]))
+      - record: agent33:sli:high_effort_routing_ratio:ratio_15m
+        expr: >
+          sum(increase(effort_routing_high_effort_total[15m]))
+          / clamp_min(sum(increase(effort_routing_decisions_total[15m])), 1)
+      # Rolling-window observation gauges (P3.6).  The MetricsCollector now
+      # exports *_window_avg gauges that reflect a configurable rolling window
+      # (default 5 min) instead of process-lifetime averages.  The lifetime
+      # gauges (*_avg) remain available for persistent-elevation checks.
+      - record: agent33:sli:estimated_cost_usd_avg:max
+        expr: max(effort_routing_estimated_cost_usd_avg)
+      - record: agent33:sli:estimated_cost_usd_window_avg:max
+        expr: max(effort_routing_estimated_cost_usd_window_avg)
+      - record: agent33:sli:estimated_token_budget_avg:max
+        expr: max(effort_routing_estimated_token_budget_avg)
+      - record: agent33:sli:estimated_token_budget_window_avg:max
+        expr: max(effort_routing_estimated_token_budget_window_avg)
+      - alert: Agent33EffortTelemetryExportFailures
+        expr: agent33:sli:effort_telemetry_export_failures:count_15m > 0
+        for: 5m
+        labels:
+          severity: warning
+          service: agent33-api
+          owner: observability
+        annotations:
+          summary: AGENT-33 effort telemetry exports are failing
+          description: >
+            The API has recorded one or more effort-routing telemetry export
+            failures in the last 15 minutes. Inspect the application logs and
+            `/v1/dashboard/alerts` for local context before the in-memory
+            signals roll over on restart.
+      - alert: Agent33HighEffortRoutingRatio
+        expr: agent33:sli:high_effort_routing_ratio:ratio_15m > 0.5
+        for: 15m
+        labels:
+          severity: warning
+          service: agent33-api
+          owner: platform
+        annotations:
+          summary: AGENT-33 high-effort routing ratio is elevated
+          description: >
+            More than 50% of effort-routing decisions have been high effort for
+            the last 15 minutes. Review workload shape, threshold calibration,
+            and downstream model cost implications.
+      - alert: Agent33EstimatedCostDrift
+        # P3.6: switched from lifetime avg to rolling-window avg so the alert
+        # now detects recent cost spikes rather than persistent elevation only.
+        expr: agent33:sli:estimated_cost_usd_window_avg:max > 0.25
+        for: 15m
+        labels:
+          severity: warning
+          service: agent33-api
+          owner: platform
+        annotations:
+          summary: AGENT-33 estimated routing cost rolling-window average is elevated
+          description: >
+            The rolling-window (default 5 min) average estimated cost per
+            routed invocation has remained above the review threshold for
+            15 minutes. Inspect the Grafana dashboard to identify which
+            effort/source series is driving the spike. The lifetime-average
+            recording rule (agent33:sli:estimated_cost_usd_avg:max) remains
+            available for persistent-elevation checks.
+
+      # --- HTTP Availability & Latency SLO (P3.3) ---
+      - record: agent33:http_requests:error_rate_5m
+        expr: |
+          sum(rate(http_requests_total{status_code=~"5.."}[5m]))
+          /
+          clamp_min(sum(rate(http_requests_total[5m])), 1)
+
+      - record: agent33:http_request_duration_seconds:p99_5m
+        expr: |
+          histogram_quantile(0.99,
+            sum(rate(http_request_duration_seconds_bucket[5m])) by (le, path)
+          )
+
+      - alert: Agent33HighErrorRate
+        expr: agent33:http_requests:error_rate_5m > 0.01
+        for: 5m
+        labels:
+          severity: critical
+          service: agent33-api
+          owner: platform
+        annotations:
+          summary: HTTP error rate exceeds 1% SLO burn threshold
+          description: >
+            5-minute error rate is {{ $value | humanizePercentage }},
+            exceeding the 1% burn-rate threshold for the 99.9%
+            availability SLO.
+
+      - alert: Agent33HighLatency
+        expr: agent33:http_request_duration_seconds:p99_5m > 0.5
+        for: 5m
+        labels:
+          severity: warning
+          service: agent33-api
+          owner: platform
+        annotations:
+          summary: HTTP p99 latency exceeds 500ms SLO threshold
+          description: >
+            5-minute p99 latency is {{ $value | humanizeDuration }},
+            exceeding the 500ms SLO threshold.
+
+      # --- Webhook Delivery SLO (P3.10) ---
+      - record: agent33:webhook_delivery:failure_rate_5m
+        expr: |
+          sum(rate(webhook_delivery_failures_total[5m]))
+          /
+          clamp_min(sum(rate(webhook_delivery_total[5m])), 1)
+
+      - alert: Agent33WebhookDeliveryFailures
+        expr: agent33:webhook_delivery:failure_rate_5m > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          service: agent33-api
+          owner: platform
+        annotations:
+          summary: Webhook delivery failure rate exceeds 5%
+          description: >
+            5-minute webhook failure rate is {{ $value | humanizePercentage }},
+            exceeding the 5% SLO threshold.
+
+      - alert: Agent33DeadLetterQueueGrowing
+        expr: dead_letter_queue_depth > 100
+        for: 10m
+        labels:
+          severity: warning
+          service: agent33-api
+          owner: platform
+        annotations:
+          summary: Dead-letter queue depth exceeds 100
+          description: >
+            Dead-letter queue has {{ $value }} items, indicating
+            persistent delivery failures.
+
+      # --- Evaluation Gate Reliability SLO (P4.7) ---
+      - record: agent33:evaluation:gate_error_rate_5m
+        expr: |
+          sum(rate(evaluation_runs_total{status="fail"}[5m]))
+          /
+          clamp_min(sum(rate(evaluation_runs_total[5m])), 1)
+
+      - alert: Agent33EvaluationGateErrors
+        expr: agent33:evaluation:gate_error_rate_5m > 0.01
+        for: 5m
+        labels:
+          severity: warning
+          service: agent33-api
+          owner: platform
+        annotations:
+          summary: Evaluation gate error rate exceeds 1%
+          description: >
+            5-minute evaluation gate error rate is
+            {{ $value | humanizePercentage }}, exceeding the 1% SLO
+            threshold. Investigate failing golden tasks and gate
+            thresholds.
+
+      # --- Connector Health SLO (P4.7) ---
+      - record: agent33:connector:health_check_failure_rate_5m
+        expr: |
+          sum(rate(connector_health_check_total{status="error"}[5m]))
+          /
+          clamp_min(sum(rate(connector_health_check_total[5m])), 1)
+
+      - alert: Agent33ConnectorUnhealthy
+        expr: agent33:connector:health_check_failure_rate_5m > 0.05
+        for: 5m
+        labels:
+          severity: warning
+          service: agent33-api
+          owner: platform
+        annotations:
+          summary: Connector health check failure rate exceeds 5%
+          description: >
+            5-minute connector health check failure rate is
+            {{ $value | humanizePercentage }}, exceeding the 5% SLO
+            threshold. Check upstream API availability and connector
+            configuration.

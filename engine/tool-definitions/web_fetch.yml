@@ -1,0 +1,40 @@
+name: web_fetch
+description: >
+  Perform HTTP GET or POST requests with domain allowlist enforcement
+  and response size limits.
+version: "1.0"
+owner: agent33-core
+provenance:
+  repo_url: https://github.com/mattmre/AGENT33-PUBLIC
+  license: Apache-2.0
+status: active
+
+parameters:
+  url:
+    type: string
+    required: true
+    description: Target URL to fetch.
+  method:
+    type: string
+    required: false
+    default: GET
+    description: "HTTP method: GET or POST."
+  headers:
+    type: object
+    required: false
+    description: Optional extra HTTP headers.
+  body:
+    type: string
+    required: false
+    description: Optional request body for POST requests.
+  timeout:
+    type: integer
+    required: false
+    default: 30
+    description: Request timeout in seconds.
+
+governance:
+  required_scope: tools:execute
+  domain_allowlist: []
+  max_response_bytes: 5242880
+  max_timeout: 120

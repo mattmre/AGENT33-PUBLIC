@@ -1,0 +1,239 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>AGENT-33 · ExplanationView</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="_kit.css">
+<style>
+  body { max-width: 880px; }
+  .exp-head {
+    display: flex; justify-content: space-between; align-items: center;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--line);
+  }
+  .exp-head h3 {
+    margin: 0; font-size: 1rem; color: var(--ice);
+    font-family: var(--mono); letter-spacing: .04em;
+  }
+  .fc-badge {
+    font-family: var(--mono); font-size: 9px;
+    letter-spacing: .18em; text-transform: uppercase;
+    padding: 4px 10px;
+    border: 1px solid currentColor;
+  }
+  .fc-verified { color: var(--green); background: var(--green-soft); }
+  .fc-pending  { color: var(--sky);   background: var(--sky-soft); }
+  .fc-flagged  { color: var(--red);   background: var(--red-soft); }
+  .fc-skipped  { color: var(--text-mute); }
+
+  .exp-meta {
+    display: flex; gap: 18px;
+    margin-top: 10px;
+    font-family: var(--mono); font-size: 10px;
+    letter-spacing: .12em; color: var(--text-mute);
+    text-transform: uppercase;
+  }
+  .exp-meta b { color: var(--ice); font-weight: 500; }
+
+  .exp-content {
+    margin-top: 14px;
+    background: var(--bg-deep);
+    border: 1px solid var(--line);
+    padding: 14px 16px;
+    color: var(--ice);
+    font-size: .88rem;
+    line-height: 1.6;
+  }
+  .exp-content.html-mode {
+    padding: 0;
+    background: white;
+    color: #0c1015;
+    min-height: 220px;
+    font-family: ui-sans-serif, system-ui, sans-serif;
+  }
+  .exp-content.html-mode .iframe-strip {
+    display: flex; justify-content: space-between; align-items: center;
+    background: var(--bg-deep);
+    color: var(--text-mute);
+    padding: 6px 12px;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+    border-bottom: 1px solid var(--line);
+  }
+  .exp-content.html-mode .iframe-strip b { color: var(--teal); }
+  .exp-content.html-mode .iframe-body { padding: 22px 28px; }
+  .exp-content.html-mode h1 { font-size: 1.15rem; color: #1f2937; margin: 0 0 8px; }
+  .exp-content.html-mode p  { color: #475569; line-height: 1.55; }
+  .exp-content.html-mode .swatch {
+    display: inline-block; width: 10px; height: 10px;
+    background: #16a34a; margin-right: 4px;
+  }
+
+  .claims {
+    margin-top: 14px;
+    background: var(--bg-deep);
+    border: 1px solid var(--line);
+    padding: 12px 14px;
+  }
+  .claims h4 {
+    margin: 0 0 10px;
+    font-family: var(--sans);
+    font-size: .9rem;
+    color: var(--ice);
+  }
+  .claim {
+    padding: 8px 0;
+    border-top: 1px solid var(--line-soft);
+    display: grid; gap: 2px;
+  }
+  .claim:first-of-type { border-top: none; padding-top: 0; }
+  .claim-row { display: flex; justify-content: space-between; align-items: baseline; gap: 12px; }
+  .claim strong { color: var(--ice); font-size: .82rem; }
+  .claim-row span {
+    font-family: var(--mono); font-size: 9px;
+    letter-spacing: .16em; text-transform: uppercase;
+  }
+  .claim p { margin: 2px 0 0; font-size: .78rem; color: var(--text-soft); line-height: 1.45; }
+  .claim small {
+    font-family: var(--mono); font-size: 10px;
+    color: var(--text-mute); letter-spacing: .1em;
+  }
+  .claim.verified span { color: var(--green); }
+  .claim.flagged span  { color: var(--red); }
+  .claim.pending span  { color: var(--sky); }
+
+  .exp-metadata {
+    margin-top: 14px;
+    background: #03080c;
+    border-left: 2px solid var(--teal);
+    padding: 10px 12px;
+  }
+  .exp-metadata h4 {
+    margin: 0 0 6px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: .14em;
+    color: var(--teal);
+    text-transform: uppercase;
+  }
+  .exp-metadata pre {
+    margin: 0;
+    color: #cfeaef;
+    font-family: var(--mono);
+    font-size: 11px;
+    line-height: 1.55;
+    white-space: pre-wrap;
+  }
+
+  .variant-label {
+    font-family: var(--mono); font-size: 9px;
+    letter-spacing: .2em; color: var(--text-mute);
+    text-transform: uppercase;
+    margin: 22px 0 6px;
+  }
+</style>
+</head>
+<body>
+
+<div class="kit-head">
+  <div>
+    <p class="eyebrow">▸ COMPONENT · EXPLANATION</p>
+    <h1>ExplanationView</h1>
+  </div>
+  <div class="meta">
+    <span>SOURCE · <b>ExplanationView.tsx</b></span>
+    <span>MODES · <b>TEXT · HTML</b></span>
+  </div>
+</div>
+
+<section class="panel">
+  <div class="panel-body">
+    <header class="exp-head">
+      <h3>Explanation: exp_4f9ac0</h3>
+      <span class="fc-badge fc-verified">Verified</span>
+    </header>
+
+    <div class="exp-meta">
+      <span>ENTITY · <b>workflow / cache_metrics_rollout</b></span>
+      <span>CREATED · <b>2025-04-29 14:08:21</b></span>
+    </div>
+
+    <div class="exp-content">
+      The cache-metrics rollout v3 adds three Prometheus counters — hits, misses, evictions — behind a <code>METRICS_V2</code> feature flag. The flag is bound to the operator role at runtime; admin override is required to toggle it in production. Reviewer must ack cardinality before merge because the initial label set included a user_id field that has now been replaced with a bucketed key.
+    </div>
+
+    <div class="claims">
+      <h4>Fact-check claims</h4>
+      <div class="claim verified">
+        <div class="claim-row">
+          <strong>cardinality bounded</strong>
+          <span>verified</span>
+        </div>
+        <p>Label set has 12 unique values across all environments — well under the 1k cap.</p>
+        <small>RULE · cardinality-rule / SOURCE · prom-audit</small>
+      </div>
+      <div class="claim verified">
+        <div class="claim-row">
+          <strong>flag operator-bound</strong>
+          <span>verified</span>
+        </div>
+        <p>METRICS_V2 flag config matches role binding rule for operator scope.</p>
+        <small>RULE · flag-binding / SOURCE · settings.yml</small>
+      </div>
+      <div class="claim flagged">
+        <div class="claim-row">
+          <strong>rollback drill recent</strong>
+          <span>flagged</span>
+        </div>
+        <p>Last rollback drill ran 41 days ago; policy requires 30-day cadence.</p>
+        <small>RULE · drill-cadence-30d / EXPECTED · ≤30d / ACTUAL · 41d</small>
+      </div>
+    </div>
+
+    <div class="exp-metadata">
+      <h4>METADATA</h4>
+      <pre>{
+  "model": "claude-haiku-4-5",
+  "tokens_in": 1284,
+  "tokens_out": 312,
+  "trace_id": "tr_8af0c2",
+  "rules_applied": ["cardinality-rule", "flag-binding", "drill-cadence-30d"]
+}</pre>
+    </div>
+  </div>
+</section>
+
+<div class="variant-label">Variant · HTML mode (sandboxed iframe)</div>
+<section class="panel">
+  <div class="panel-body">
+    <header class="exp-head">
+      <h3>Explanation: exp_diff_8821</h3>
+      <span class="fc-badge fc-pending">Pending</span>
+    </header>
+
+    <div class="exp-meta">
+      <span>ENTITY · <b>diff / cache-metrics-v3.patch</b></span>
+      <span>MODE · <b>diff_review</b></span>
+    </div>
+
+    <div class="exp-content html-mode">
+      <div class="iframe-strip">
+        <span>SANDBOXED IFRAME · srcDoc</span>
+        <span>SANDBOX · <b>allow-same-origin</b></span>
+      </div>
+      <div class="iframe-body">
+        <h1>Diff summary</h1>
+        <p><span class="swatch"></span> +124 added · <span class="swatch" style="background:#dc2626"></span> −38 removed across 4 files.</p>
+        <p>Largest change: <code>src/cache/metrics.ts</code> wires three counters and a histogram. New unit tests cover redaction edge cases.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>

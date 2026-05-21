@@ -1,0 +1,112 @@
+# Multi-replica testing override for AGENT-33.
+#
+# Usage:
+#   docker compose -f docker-compose.yml -f docker-compose.multi.yml up -d
+#
+# This file extends the base docker-compose.yml to run two API instances
+# behind an nginx round-robin load balancer.  It is NOT a production
+# deployment configuration.  The single-instance deployment guardrail from
+# docs/operators/horizontal-scaling-architecture.md still applies.
+#
+# After startup, the load balancer is available at http://localhost:8000
+# and the individual instances at http://localhost:8001 and http://localhost:8002.
+
+services:
+  # Disable the default single-instance API service so that requests
+  # go through the load balancer instead.
+  api:
+    profiles:
+      - disabled
+
+  api-1:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: agent33-api-1
+    ports:
+      - "8001:8000"
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://agent33:agent33@postgres:5432/agent33
+      REDIS_URL: redis://redis:6379/0
+      NATS_URL: nats://nats:4222
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      SEARXNG_URL: http://searxng:8080
+      JINA_API_KEY: ${JINA_API_KEY:-}
+      INSTANCE_ID: api-1
+      CONTROL_PLANE_BACKEND: sqlite
+      CONTROL_PLANE_DB_PATH: /data/shared/agent33_control_plane.db
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nats:
+        condition: service_started
+      searxng:
+        condition: service_healthy
+    volumes:
+      - ./agent-definitions:/app/agent-definitions:ro
+      - ./workflow-definitions:/app/workflow-definitions:ro
+      - ./tool-definitions:/app/tool-definitions:ro
+      - shared_data:/data/shared
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8000/healthz || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  api-2:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    container_name: agent33-api-2
+    ports:
+      - "8002:8000"
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://agent33:agent33@postgres:5432/agent33
+      REDIS_URL: redis://redis:6379/0
+      NATS_URL: nats://nats:4222
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      SEARXNG_URL: http://searxng:8080
+      JINA_API_KEY: ${JINA_API_KEY:-}
+      INSTANCE_ID: api-2
+      CONTROL_PLANE_BACKEND: sqlite
+      CONTROL_PLANE_DB_PATH: /data/shared/agent33_control_plane.db
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nats:
+        condition: service_started
+      searxng:
+        condition: service_healthy
+    volumes:
+      - ./agent-definitions:/app/agent-definitions:ro
+      - ./workflow-definitions:/app/workflow-definitions:ro
+      - ./tool-definitions:/app/tool-definitions:ro
+      - shared_data:/data/shared
+    healthcheck:
+      test: ["CMD-SHELL", "curl -sf http://localhost:8000/healthz || exit 1"]
+      interval: 5s
+      timeout: 3s
+      retries: 10
+
+  lb:
+    image: nginx:alpine
+    container_name: agent33-lb
+    ports:
+      - "${API_PORT:-8000}:80"
+    volumes:
+      - ./nginx-multi.conf:/etc/nginx/nginx.conf:ro
+    depends_on:
+      api-1:
+        condition: service_healthy
+      api-2:
+        condition: service_healthy

@@ -1,0 +1,27 @@
+name: hive-family
+version: 1.0.0
+description: Goal-driven agent development capability pack imported from the EVOKORE skill library.
+author: AGENT-33
+license: Apache-2.0
+tags:
+  - imported
+  - evokore
+  - agents
+  - workflow
+category: agent-development
+skills:
+  - name: hive
+    path: skills/core/hive
+    description: End-to-end Hive workflow router.
+  - name: hive-concepts
+    path: skills/concepts/hive-concepts
+    description: Core concepts for goal-driven agents.
+  - name: hive-create
+    path: skills/build/hive-create
+    description: Guided agent creation workflow.
+  - name: hive-patterns
+    path: skills/patterns/hive-patterns
+    description: Best practices and patterns for Hive agents.
+  - name: hive-test
+    path: skills/testing/hive-test
+    description: Iterative testing workflow for Hive agents.

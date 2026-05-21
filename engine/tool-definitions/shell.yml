@@ -1,0 +1,68 @@
+name: shell
+description: >
+  Execute shell commands in a sandboxed environment with an explicit
+  command allowlist.  Only the executables listed below may be invoked.
+version: "1.0"
+owner: agent33-core
+provenance:
+  repo_url: https://github.com/mattmre/AGENT33-PUBLIC
+  license: Apache-2.0
+status: active
+
+parameters:
+  command:
+    type: string
+    required: true
+    description: The full command string to execute.
+  timeout:
+    type: integer
+    required: false
+    default: 30
+    description: Maximum seconds to wait before killing the process.
+
+governance:
+  required_scope: tools:execute
+  command_allowlist:
+    - ls
+    - cat
+    - head
+    - tail
+    - grep
+    - find
+    - wc
+    - sort
+    - uniq
+    - diff
+    - echo
+    - date
+    - whoami
+    - pwd
+    - git
+    - python
+    - pip
+    - node
+    - npm
+    - curl
+    - wget
+    - docker
+    - docker-compose
+    - make
+    - cargo
+    - go
+
+  # Commands that are explicitly forbidden regardless of allowlist.
+  deny_list:
+    - rm
+    - rmdir
+    - mkfs
+    - dd
+    - shutdown
+    - reboot
+    - kill
+    - killall
+    - passwd
+    - su
+    - sudo
+
+  max_timeout: 120
+  max_output_bytes: 1048576  # 1 MB

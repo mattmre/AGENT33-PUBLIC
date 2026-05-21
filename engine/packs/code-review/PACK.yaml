@@ -1,0 +1,39 @@
+name: code-review
+version: 1.0.0
+description: Automated code review pack covering correctness, security, and readability.
+  Equips agents to review diffs, flag security issues, and suggest targeted improvements.
+author: agent33-team
+license: Apache-2.0
+tags:
+  - code-review
+  - security
+  - quality
+  - engineering
+category: engineering
+skills:
+  - name: review-diff
+    path: skills/review-diff
+    description: Review a code diff for correctness, logic errors, and style issues.
+  - name: check-security
+    path: skills/check-security
+    description: Scan code for security vulnerabilities and unsafe patterns.
+  - name: suggest-improvements
+    path: skills/suggest-improvements
+    description: Propose targeted refactoring and readability improvements.
+prompt_addenda:
+  - |
+    When reviewing code, prioritize in this order: correctness first, security second,
+    readability third. Flag anti-patterns explicitly by name (e.g., SQL injection risk,
+    missing error handling, mutable default argument). For every issue found, provide
+    a concrete suggested fix — do not report problems without a proposed remedy.
+    Distinguish between blocking issues (must fix before merge) and advisory issues
+    (should fix but non-blocking) using the labels [BLOCKING] and [ADVISORY].
+tool_config:
+  file_ops:
+    enabled: true
+  shell:
+    enabled: true
+    allowed_commands:
+      - git diff
+      - git log
+      - git show

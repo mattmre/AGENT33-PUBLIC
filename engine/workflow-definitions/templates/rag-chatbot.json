@@ -1,0 +1,116 @@
+{
+  "name": "rag-chatbot",
+  "version": "1.0.0",
+  "description": "RAG-based chatbot workflow for document Q&A",
+  "triggers": {
+    "manual": true,
+    "on_change": [],
+    "schedule": null,
+    "on_event": ["session-start"]
+  },
+  "inputs": {
+    "documents": {
+      "type": "array",
+      "description": "List of document paths or URLs to use as the knowledge base",
+      "required": true,
+      "default": null
+    },
+    "question": {
+      "type": "string",
+      "description": "The user question to answer using the provided documents",
+      "required": true,
+      "default": null
+    }
+  },
+  "outputs": {
+    "answer": {
+      "type": "string",
+      "description": "Generated answer based on retrieved document context"
+    },
+    "context_chunks": {
+      "type": "array",
+      "description": "Relevant document chunks used to generate the answer"
+    }
+  },
+  "steps": [
+    {
+      "id": "ingest",
+      "name": "Ingest and index documents into the vector store",
+      "action": "run-command",
+      "agent": null,
+      "command": "python -m agent33.memory.ingest --documents '${inputs.documents}'",
+      "inputs": {
+        "documents": "${inputs.documents}"
+      },
+      "outputs": {
+        "index_id": "Identifier for the created vector index",
+        "chunk_count": "Number of chunks indexed"
+      },
+      "condition": null,
+      "depends_on": [],
+      "retry": {
+        "max_attempts": 2,
+        "delay_seconds": 5
+      },
+      "timeout_seconds": 60
+    },
+    {
+      "id": "search-context",
+      "name": "Search the vector store for relevant context",
+      "action": "invoke-agent",
+      "agent": "researcher",
+      "command": null,
+      "inputs": {
+        "question": "${inputs.question}",
+        "index_id": "${ingest.outputs.index_id}"
+      },
+      "outputs": {
+        "chunks": "Top matching document chunks",
+        "scores": "Relevance scores for each chunk"
+      },
+      "condition": null,
+      "depends_on": ["ingest"],
+      "retry": {
+        "max_attempts": 2,
+        "delay_seconds": 3
+      },
+      "timeout_seconds": 30
+    },
+    {
+      "id": "respond",
+      "name": "Generate an answer using retrieved context",
+      "action": "invoke-agent",
+      "agent": "code-worker",
+      "command": null,
+      "inputs": {
+        "question": "${inputs.question}",
+        "chunks": "${search-context.outputs.chunks}",
+        "scores": "${search-context.outputs.scores}"
+      },
+      "outputs": {
+        "answer": "Generated answer grounded in the retrieved context",
+        "confidence": "Confidence score of the generated answer"
+      },
+      "condition": null,
+      "depends_on": ["search-context"],
+      "retry": {
+        "max_attempts": 2,
+        "delay_seconds": 3
+      },
+      "timeout_seconds": 60
+    }
+  ],
+  "execution": {
+    "mode": "sequential",
+    "parallel_limit": 1,
+    "continue_on_error": false,
+    "fail_fast": true,
+    "timeout_seconds": 120
+  },
+  "metadata": {
+    "author": "agent-33",
+    "created": "2026-01-30T00:00:00Z",
+    "updated": "2026-01-30T00:00:00Z",
+    "tags": ["rag", "chatbot", "qa", "documents"]
+  }
+}

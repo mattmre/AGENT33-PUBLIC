@@ -1,0 +1,30 @@
+# Docker Compose E2E smoke test
+# Validates the full API stack boots and serves health/metrics/docs endpoints.
+# Runs on PRs that touch Dockerfile, docker-compose, deployment manifests,
+# the smoke script itself, or this workflow.
+
+name: Docker Smoke
+
+on:
+  pull_request:
+    paths:
+      - 'engine/Dockerfile'
+      - 'engine/docker-compose.yml'
+      - 'engine/src/agent33/main.py'
+      - 'engine/src/agent33/config.py'
+      - 'deploy/**'
+      - 'scripts/docker-smoke-test.sh'
+      - '.github/workflows/docker-smoke.yml'
+  workflow_dispatch:
+
+jobs:
+  docker-smoke:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Run Docker Compose smoke test
+        run: |
+          chmod +x scripts/docker-smoke-test.sh
+          scripts/docker-smoke-test.sh engine/docker-compose.yml

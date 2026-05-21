@@ -1,0 +1,89 @@
+schema_version: "1"
+name: founder-mvp-builder
+version: 1.0.0
+kind: outcome-pack
+description: Turn a product idea into a scoped MVP plan, implementation roadmap, and first reviewable build slice.
+author: AGENT-33
+category: startup
+tags:
+  - founder
+  - mvp
+  - product
+  - build
+workflows:
+  - name: founder-mvp-builder
+    description: Shape a product idea into a gated MVP build plan and first implementation slice.
+    path: workflows/founder-mvp-builder.yaml
+presentation:
+  title: Founder MVP Builder
+  audience: Non-technical founders and product operators
+  summary: Describe an idea in plain language and receive a scoped MVP plan, core user journey, first sprint, and review-gated build path.
+  difficulty: beginner
+  estimated_duration: 45-90 minutes for planning, then iterative build sprints
+  expected_deliverables:
+    - MVP brief with target user and problem statement
+    - Feature cutline for version one
+    - First sprint implementation plan
+    - Review checklist before code changes
+  sample_inputs:
+    product_idea: A booking app for mobile mechanics
+    target_user: Busy vehicle owners who need at-home repairs
+customization:
+  required_inputs:
+    - product_idea
+    - target_user
+  preset_values:
+    delivery_mode: review-gated
+    scope: first-mvp-slice
+requirements:
+  - kind: llm
+    name: chat-model
+    required: true
+    preferences:
+      - openrouter
+      - ollama
+      - lm-studio
+    capabilities:
+      - chat
+      - planning
+      - coding
+    setup_hint: Connect a chat-capable model before launching the MVP builder.
+  - kind: tool
+    name: file-ops
+    required: false
+    capabilities:
+      - read
+      - write
+    setup_hint: Enable file operations only when you are ready to create or edit project files.
+governance:
+  approval_required: true
+  risk_level: medium
+  max_parallel_runs: 1
+  max_daily_executions: 10
+  allowed_tools:
+    - file_ops
+    - apply_patch
+provenance:
+  trust_tier: official
+  license: Apache-2.0
+  signer_id: AGENT-33
+installation:
+  setup_steps:
+    - Connect a chat-capable model.
+    - Pick or create a project workspace.
+    - Provide the product idea and target user.
+    - Review the plan before creating files or code.
+  required_runtime_features:
+    - workflow-launch
+    - review-gates
+  dry_run_supported: true
+  auto_enable: false
+artifacts:
+  - name: MVP brief
+    description: Plain-language scope, users, problem, and success criteria.
+    drawer_section: plan
+    required: true
+  - name: First sprint plan
+    description: Reviewable first implementation slice and validation checklist.
+    drawer_section: plan
+    required: true

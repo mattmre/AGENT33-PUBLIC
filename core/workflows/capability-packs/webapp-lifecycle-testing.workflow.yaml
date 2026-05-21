@@ -1,0 +1,31 @@
+name: webapp-lifecycle-testing
+version: 1.0.0
+description: Exercise a local web application lifecycle using the imported Playwright testing capability.
+inputs:
+  target:
+    type: string
+    description: Local web application target or base URL.
+    required: true
+outputs:
+  result:
+    type: object
+    description: Test execution summary.
+steps:
+  - id: test
+    name: Run the webapp testing workflow
+    action: invoke-agent
+    agent: qa
+    inputs:
+      agent_name: qa
+      target: target
+      active_skills:
+        - workflow-ops/webapp-testing
+execution:
+  mode: dependency-aware
+  fail_fast: true
+metadata:
+  author: agent-33
+  tags:
+    - capability-pack
+    - testing
+    - workflow-ops

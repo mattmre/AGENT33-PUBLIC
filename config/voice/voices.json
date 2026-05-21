@@ -1,0 +1,20 @@
+{
+  "voices": [
+    {
+      "id": "default",
+      "name": "AGENT-33 Default",
+      "provider": "stub",
+      "voice_id": "agent33-default",
+      "style": "balanced",
+      "description": "Default local fallback voice persona."
+    },
+    {
+      "id": "operator",
+      "name": "Operator Briefing",
+      "provider": "elevenlabs",
+      "voice_id": "21m00Tcm4TlvDq8ikWAM",
+      "style": "concise",
+      "description": "Short operational responses for status and review loops."
+    }
+  ]
+}

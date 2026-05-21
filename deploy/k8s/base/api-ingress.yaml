@@ -1,0 +1,36 @@
+apiVersion: networking.k8s.io/v1
+kind: Ingress
+metadata:
+  name: agent33-api
+  annotations:
+    # Session affinity via cookie — ensures WebSocket, SSE, browser, voice,
+    # and kernel sessions return to the same backend pod.
+    nginx.ingress.kubernetes.io/affinity: "cookie"
+    nginx.ingress.kubernetes.io/session-cookie-name: "AGENT33_AFFINITY"
+    nginx.ingress.kubernetes.io/session-cookie-expires: "3600"
+    nginx.ingress.kubernetes.io/session-cookie-max-age: "3600"
+    nginx.ingress.kubernetes.io/session-cookie-change-on-failure: "true"
+    # WebSocket support — extended timeouts for long-lived connections.
+    nginx.ingress.kubernetes.io/proxy-read-timeout: "3600"
+    nginx.ingress.kubernetes.io/proxy-send-timeout: "3600"
+    # --- Traefik alternative (uncomment if using Traefik instead of nginx) ---
+    # traefik.ingress.kubernetes.io/service.sticky.cookie: "true"
+    # traefik.ingress.kubernetes.io/service.sticky.cookie.name: "AGENT33_AFFINITY"
+    # traefik.ingress.kubernetes.io/service.sticky.cookie.httponly: "true"
+spec:
+  ingressClassName: nginx
+  rules:
+    - http:
+        paths:
+          - path: /
+            pathType: Prefix
+            backend:
+              service:
+                name: agent33-api
+                port:
+                  number: 8000
+  # TLS configuration — uncomment and configure for production
+  # tls:
+  #   - hosts:
+  #       - agent33.example.com
+  #     secretName: agent33-tls

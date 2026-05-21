@@ -1,0 +1,35 @@
+name: research-assistant
+version: "1.0.0"
+description: "Research a topic and produce a structured report with key findings and sources"
+inputs:
+  topic:
+    type: string
+    required: true
+    description: "Topic to research"
+  depth:
+    type: string
+    required: false
+    default: "comprehensive"
+    description: "Research depth: brief, standard, or comprehensive"
+outputs:
+  report:
+    type: string
+    description: "Structured research report"
+steps:
+  - id: research
+    name: "Research Topic"
+    action: invoke-agent
+    agent: researcher
+    inputs:
+      agent_name: researcher
+      message: "Research the following topic with {{ depth }} depth and produce a structured report with key findings, analysis, and recommendations: {{ topic }}"
+    depends_on: []
+execution:
+  mode: sequential
+  fail_fast: false
+metadata:
+  author: agent-33
+  tags: [research, report, analysis]
+sample_inputs:
+  topic: "The impact of large language models on software development productivity"
+  depth: "standard"

@@ -1,0 +1,138 @@
+{
+  "name": "web-scrape-extract",
+  "version": "1.0.0",
+  "description": "Parallel web scraping pipeline with structured data extraction",
+  "triggers": {
+    "manual": true,
+    "on_change": [],
+    "schedule": null,
+    "on_event": []
+  },
+  "inputs": {
+    "urls": {
+      "type": "array",
+      "description": "List of URLs to scrape",
+      "required": true,
+      "default": null
+    },
+    "extraction_schema": {
+      "type": "object",
+      "description": "JSON schema defining the structure of data to extract from each page",
+      "required": false,
+      "default": null
+    }
+  },
+  "outputs": {
+    "extracted_data": {
+      "type": "array",
+      "description": "Array of structured data objects extracted from each page"
+    },
+    "validation_report": {
+      "type": "object",
+      "description": "Report of validation results including any errors or warnings"
+    }
+  },
+  "steps": [
+    {
+      "id": "fetch-pages",
+      "name": "Fetch all target pages in parallel",
+      "action": "parallel-group",
+      "agent": null,
+      "command": null,
+      "inputs": {
+        "urls": "${inputs.urls}"
+      },
+      "outputs": {
+        "pages": "Raw HTML content from each fetched page"
+      },
+      "condition": null,
+      "depends_on": [],
+      "retry": {
+        "max_attempts": 3,
+        "delay_seconds": 5
+      },
+      "timeout_seconds": 120,
+      "steps": [
+        {
+          "id": "fetch-single-page",
+          "name": "Fetch a single page by URL",
+          "action": "invoke-agent",
+          "agent": "researcher",
+          "command": null,
+          "inputs": {
+            "url": "${parallel.item}"
+          },
+          "outputs": {
+            "html": "Raw HTML content of the page",
+            "status_code": "HTTP status code of the response"
+          },
+          "condition": null,
+          "depends_on": [],
+          "retry": {
+            "max_attempts": 2,
+            "delay_seconds": 3
+          },
+          "timeout_seconds": 30
+        }
+      ]
+    },
+    {
+      "id": "extract-data",
+      "name": "Extract structured data from fetched pages",
+      "action": "transform",
+      "agent": null,
+      "command": null,
+      "inputs": {
+        "pages": "${fetch-pages.outputs.pages}",
+        "schema": "${inputs.extraction_schema}"
+      },
+      "outputs": {
+        "records": "Array of extracted data records matching the schema"
+      },
+      "condition": null,
+      "depends_on": ["fetch-pages"],
+      "retry": {
+        "max_attempts": 1,
+        "delay_seconds": 0
+      },
+      "timeout_seconds": 60
+    },
+    {
+      "id": "validate-output",
+      "name": "Validate extracted data against the schema",
+      "action": "validate",
+      "agent": null,
+      "command": null,
+      "inputs": {
+        "records": "${extract-data.outputs.records}",
+        "schema": "${inputs.extraction_schema}"
+      },
+      "outputs": {
+        "is_valid": "Whether all records pass schema validation",
+        "errors": "List of validation errors if any",
+        "valid_count": "Number of valid records",
+        "invalid_count": "Number of invalid records"
+      },
+      "condition": null,
+      "depends_on": ["extract-data"],
+      "retry": {
+        "max_attempts": 1,
+        "delay_seconds": 0
+      },
+      "timeout_seconds": 30
+    }
+  ],
+  "execution": {
+    "mode": "dependency-aware",
+    "parallel_limit": 8,
+    "continue_on_error": true,
+    "fail_fast": false,
+    "timeout_seconds": 300
+  },
+  "metadata": {
+    "author": "agent-33",
+    "created": "2026-01-30T00:00:00Z",
+    "updated": "2026-01-30T00:00:00Z",
+    "tags": ["scraping", "extraction", "parallel", "web"]
+  }
+}

@@ -1,0 +1,57 @@
+name: repository-security-review
+version: 1.0.0
+description: Review repository security posture and produce prioritized remediation guidance.
+inputs:
+  repository_path:
+    type: string
+    description: Repository or workspace path to review.
+    required: true
+    default: .
+  focus:
+    type: string
+    description: Optional security focus areas such as secrets, auth, dependencies, or CI.
+    required: false
+outputs:
+  findings:
+    type: object
+    description: Risk-ranked security findings with evidence and remediation notes.
+  verification_checklist:
+    type: object
+    description: Checks to verify remediation.
+steps:
+  - id: inventory
+    name: Inventory security surfaces
+    action: invoke-agent
+    agent: reviewer
+    inputs:
+      repository_path: ${inputs.repository_path}
+      focus: ${inputs.focus}
+      instruction: Identify languages, dependency files, auth surfaces, config files, and sensitive paths.
+  - id: analyze-risk
+    name: Analyze risky patterns
+    action: invoke-agent
+    agent: reviewer
+    depends_on:
+      - inventory
+    inputs:
+      inventory: ${steps.inventory.outputs}
+      instruction: Produce findings with severity, evidence, exploitability, and recommended fixes.
+  - id: verify-plan
+    name: Build verification plan
+    action: invoke-agent
+    agent: validator
+    depends_on:
+      - analyze-risk
+    inputs:
+      findings: ${steps.analyze-risk.outputs}
+      instruction: Create a safe validation checklist using existing project checks when possible.
+execution:
+  mode: dependency-aware
+  fail_fast: true
+metadata:
+  author: AGENT-33
+  tags:
+    - official
+    - security
+    - repository
+    - review-gated

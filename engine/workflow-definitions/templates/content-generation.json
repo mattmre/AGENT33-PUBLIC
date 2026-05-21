@@ -1,0 +1,203 @@
+{
+  "name": "content-generation",
+  "version": "1.0.0",
+  "description": "Content generation pipeline with research, drafting, review, and formatting",
+  "triggers": {
+    "manual": true,
+    "on_change": [],
+    "schedule": null,
+    "on_event": []
+  },
+  "inputs": {
+    "topic": {
+      "type": "string",
+      "description": "The topic or subject to generate content about",
+      "required": true,
+      "default": null
+    },
+    "style": {
+      "type": "string",
+      "description": "Writing style for the generated content",
+      "required": false,
+      "default": "informative"
+    }
+  },
+  "outputs": {
+    "content": {
+      "type": "string",
+      "description": "Final formatted content output"
+    },
+    "review_score": {
+      "type": "string",
+      "description": "Quality score from the review step"
+    }
+  },
+  "steps": [
+    {
+      "id": "research",
+      "name": "Research the topic for background material",
+      "action": "invoke-agent",
+      "agent": "researcher",
+      "command": null,
+      "inputs": {
+        "topic": "${inputs.topic}"
+      },
+      "outputs": {
+        "findings": "Background research and key points",
+        "references": "Reference material discovered"
+      },
+      "condition": null,
+      "depends_on": [],
+      "retry": {
+        "max_attempts": 2,
+        "delay_seconds": 5
+      },
+      "timeout_seconds": 120
+    },
+    {
+      "id": "draft",
+      "name": "Draft the content based on research findings",
+      "action": "invoke-agent",
+      "agent": "code-worker",
+      "command": null,
+      "inputs": {
+        "topic": "${inputs.topic}",
+        "style": "${inputs.style}",
+        "findings": "${research.outputs.findings}",
+        "references": "${research.outputs.references}"
+      },
+      "outputs": {
+        "draft_text": "Initial draft of the content"
+      },
+      "condition": null,
+      "depends_on": ["research"],
+      "retry": {
+        "max_attempts": 2,
+        "delay_seconds": 5
+      },
+      "timeout_seconds": 180
+    },
+    {
+      "id": "review",
+      "name": "Review the draft for quality and accuracy",
+      "action": "invoke-agent",
+      "agent": "code-worker",
+      "command": null,
+      "inputs": {
+        "draft_text": "${draft.outputs.draft_text}",
+        "style": "${inputs.style}"
+      },
+      "outputs": {
+        "quality_score": "Numeric quality score from 0 to 100",
+        "feedback": "Detailed review feedback",
+        "revised_text": "Revised text with corrections applied"
+      },
+      "condition": null,
+      "depends_on": ["draft"],
+      "retry": {
+        "max_attempts": 1,
+        "delay_seconds": 0
+      },
+      "timeout_seconds": 120
+    },
+    {
+      "id": "quality-gate",
+      "name": "Check if the review quality meets the threshold",
+      "action": "conditional",
+      "agent": null,
+      "command": null,
+      "inputs": {
+        "quality_score": "${review.outputs.quality_score}"
+      },
+      "outputs": {
+        "passed": "Whether the quality gate was passed"
+      },
+      "condition": "${review.outputs.quality_score} >= 70",
+      "depends_on": ["review"],
+      "retry": {
+        "max_attempts": 1,
+        "delay_seconds": 0
+      },
+      "timeout_seconds": 10,
+      "then": [
+        {
+          "id": "accept-draft",
+          "name": "Accept the reviewed draft",
+          "action": "transform",
+          "agent": null,
+          "command": null,
+          "inputs": {
+            "text": "${review.outputs.revised_text}"
+          },
+          "outputs": {
+            "accepted_text": "The accepted content"
+          },
+          "condition": null,
+          "depends_on": [],
+          "retry": {
+            "max_attempts": 1,
+            "delay_seconds": 0
+          },
+          "timeout_seconds": 10
+        }
+      ],
+      "else": [
+        {
+          "id": "revise-draft",
+          "name": "Send back for revision based on feedback",
+          "action": "invoke-agent",
+          "agent": "code-worker",
+          "command": null,
+          "inputs": {
+            "draft_text": "${review.outputs.revised_text}",
+            "feedback": "${review.outputs.feedback}"
+          },
+          "outputs": {
+            "accepted_text": "Revised content after addressing feedback"
+          },
+          "condition": null,
+          "depends_on": [],
+          "retry": {
+            "max_attempts": 2,
+            "delay_seconds": 5
+          },
+          "timeout_seconds": 180
+        }
+      ]
+    },
+    {
+      "id": "format-output",
+      "name": "Apply final formatting to the content",
+      "action": "transform",
+      "agent": null,
+      "command": null,
+      "inputs": {
+        "text": "${quality-gate.outputs.accepted_text}",
+        "style": "${inputs.style}"
+      },
+      "outputs": {
+        "formatted_content": "Final formatted content ready for delivery"
+      },
+      "condition": null,
+      "depends_on": ["quality-gate"],
+      "retry": {
+        "max_attempts": 1,
+        "delay_seconds": 0
+      },
+      "timeout_seconds": 30
+    }
+  ],
+  "execution": {
+    "mode": "sequential",
+    "parallel_limit": 1,
+    "continue_on_error": false,
+    "fail_fast": true,
+    "timeout_seconds": 600
+  },
+  "metadata": {
+    "author": "agent-33",
+    "created": "2026-01-30T00:00:00Z",
+    "updated": "2026-01-30T00:00:00Z",
+    "tags": ["content", "generation", "writing", "review"]
+  }
+}

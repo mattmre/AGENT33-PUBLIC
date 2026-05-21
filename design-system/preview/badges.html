@@ -1,0 +1,150 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="_card.css">
+<style>
+  body { background: #0c1015; }
+  .dsp { padding: 22px 26px; }
+
+  .row {
+    display: flex; flex-wrap: wrap; gap: 12px;
+    margin-top: 16px;
+  }
+
+  /* ── Chip core — chamfered, no rounding ─────────────────────── */
+  .chip {
+    --c: #8be9a8;
+    --c-soft: rgba(139,233,168,.14);
+    --c-line: rgba(139,233,168,.5);
+
+    position: relative;
+    isolation: isolate;
+    display: inline-flex; align-items: center; gap: 8px;
+    padding: .42rem .85rem .42rem .75rem;
+    font-family: "Space Grotesk", sans-serif;
+    font-weight: 600;
+    font-size: .76rem;
+    letter-spacing: .06em;
+    color: var(--c);
+    background: var(--c-soft);
+    cursor: pointer;
+    user-select: none;
+    /* chamfered hex-ish silhouette: notched left, angled right */
+    clip-path: polygon(
+      8px 0,
+      calc(100% - 4px) 0,
+      100% 50%,
+      calc(100% - 4px) 100%,
+      8px 100%,
+      0 50%
+    );
+    transition:
+      transform .25s cubic-bezier(.22,.9,.28,1),
+      filter .25s ease,
+      letter-spacing .35s ease;
+  }
+
+  /* 1px chamfered border, drawn via gradient + mask */
+  .chip::before {
+    content: "";
+    position: absolute; inset: 0;
+    background: linear-gradient(135deg, var(--c), transparent 50%, var(--c-line));
+    clip-path: polygon(
+      8px 0, calc(100% - 4px) 0, 100% 50%, calc(100% - 4px) 100%, 8px 100%, 0 50%
+    );
+    z-index: -1;
+    padding: 1px;
+    -webkit-mask: linear-gradient(#000,#000) content-box, linear-gradient(#000,#000);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+  }
+
+  /* leading status notch — small accent mark inside the left chevron */
+  .chip::after {
+    content: "";
+    width: 5px; height: 5px;
+    background: var(--c);
+    box-shadow: 0 0 8px var(--c);
+    flex: 0 0 5px;
+    transform: rotate(45deg);
+    transition: transform .25s ease, box-shadow .25s ease;
+  }
+
+  /* ── Hover — custom: lift, glow expands, tracking opens ──── */
+  .chip:hover {
+    transform: translateY(-2px);
+    letter-spacing: .12em;
+    filter: brightness(1.15) drop-shadow(0 6px 14px var(--c-line));
+  }
+  .chip:hover::after {
+    transform: rotate(225deg) scale(1.2);
+    box-shadow: 0 0 14px var(--c), 0 0 4px var(--c);
+  }
+
+  /* ── Active / press — depth inversion ─────────────────────── */
+  .chip:active {
+    transform: translateY(0);
+    filter: brightness(.85);
+  }
+
+  /* ── Variants ─────────────────────────────────────────────── */
+  .chip.warn  { --c:#f6bd60; --c-soft:rgba(246,189,96,.14); --c-line:rgba(246,189,96,.5); }
+  .chip.err   { --c:#ff6b6b; --c-soft:rgba(255,107,107,.14); --c-line:rgba(255,107,107,.5); }
+  .chip.info  { --c:#7dd3fc; --c-soft:rgba(125,211,252,.14); --c-line:rgba(125,211,252,.5); }
+  .chip.live  { --c:#30d5c8; --c-soft:rgba(48,213,200,.14); --c-line:rgba(48,213,200,.55); }
+
+  /* live state — pulsing ambient glow underneath */
+  .chip.live {
+    animation: liveGlow 2.6s ease-in-out infinite;
+  }
+  @keyframes liveGlow {
+    0%, 100% { box-shadow: 0 0 0 rgba(48,213,200,0); }
+    50%      { box-shadow: 0 0 18px rgba(48,213,200,.35); }
+  }
+  .chip.live::after {
+    animation: liveDot 1.4s ease-in-out infinite;
+  }
+  @keyframes liveDot {
+    0%, 100% { transform: rotate(45deg) scale(1); }
+    50%      { transform: rotate(45deg) scale(1.4); box-shadow: 0 0 12px #30d5c8; }
+  }
+
+  /* ── Selected token caption row ───────────────────────────── */
+  .token-row {
+    display:flex; gap:18px; align-items:center;
+    padding: 10px 12px;
+    border: 1px solid rgba(125,182,202,.16);
+    background: rgba(8,18,24,.55);
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px;
+    color: #9dc3cf;
+    letter-spacing: .04em;
+    margin-top: 18px;
+    clip-path: polygon(8px 0, 100% 0, 100% calc(100% - 8px), calc(100% - 8px) 100%, 0 100%, 0 8px);
+  }
+  .token-row b { color: #30d5c8; font-weight: 500; }
+  .token-row .sep { color: rgba(125,182,202,.3); }
+</style>
+</head>
+<body>
+<div class="dsp">
+  <p class="eyebrow">PERMISSION CHIPS</p>
+
+  <div class="row">
+    <span class="chip">Allowed</span>
+    <span class="chip warn">Approval required</span>
+    <span class="chip err">Hard gate</span>
+    <span class="chip info">Soft gate</span>
+    <span class="chip live">Active run</span>
+  </div>
+
+  <div class="token-row">
+    <span><b>shape</b> chamfered hex</span><span class="sep">·</span>
+    <span><b>border</b> 1px gradient</span><span class="sep">·</span>
+    <span><b>hover</b> lift + track-open + glow</span><span class="sep">·</span>
+    <span><b>live</b> pulsing aura</span>
+  </div>
+</div>
+</body>
+</html>

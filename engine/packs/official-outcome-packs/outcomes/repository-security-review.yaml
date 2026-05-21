@@ -1,0 +1,92 @@
+schema_version: "1"
+name: repository-security-review
+version: 1.0.0
+kind: outcome-pack
+description: Review repository security posture and produce prioritized, reviewable fixes.
+author: AGENT-33
+category: security
+tags:
+  - repository
+  - security
+  - review
+  - hardening
+workflows:
+  - name: repository-security-review
+    description: Inspect code, configuration, dependency posture, and risky patterns before proposing fixes.
+    path: workflows/repository-security-review.yaml
+presentation:
+  title: Repository Security Review
+  audience: Solo developers, maintainers, security reviewers, and DevOps operators
+  summary: Point AGENT33 at a repository and receive a prioritized security review with safe fix recommendations.
+  difficulty: beginner
+  estimated_duration: 30-90 minutes depending on repository size
+  expected_deliverables:
+    - Risk-ranked findings
+    - Secret and dependency review notes
+    - Suggested remediation plan
+    - Verification checklist
+  sample_inputs:
+    repository_path: .
+    focus: authentication, secrets, dependency risk
+customization:
+  required_inputs:
+    - repository_path
+  preset_values:
+    mode: read-first
+    remediation: review-before-edit
+requirements:
+  - kind: llm
+    name: chat-model
+    required: true
+    preferences:
+      - openrouter
+      - ollama
+      - lm-studio
+    capabilities:
+      - chat
+      - code-review
+    setup_hint: Connect a model that can reason over code and security findings.
+  - kind: tool
+    name: file-ops
+    required: true
+    capabilities:
+      - read
+    setup_hint: Allow repository read access so the review can inspect files.
+  - kind: tool
+    name: shell
+    required: false
+    capabilities:
+      - scan
+    setup_hint: Optional shell access can run existing repository checks when available.
+governance:
+  approval_required: true
+  risk_level: medium
+  max_parallel_runs: 1
+  max_daily_executions: 10
+  allowed_tools:
+    - file_ops
+    - shell
+provenance:
+  trust_tier: official
+  license: Apache-2.0
+  signer_id: AGENT-33
+installation:
+  setup_steps:
+    - Connect a code-capable model.
+    - Select a repository workspace.
+    - Review proposed scans before any shell command runs.
+  required_runtime_features:
+    - workflow-launch
+    - review-gates
+    - artifacts
+  dry_run_supported: true
+  auto_enable: false
+artifacts:
+  - name: Security findings
+    description: Prioritized findings with severity, evidence, and remediation guidance.
+    drawer_section: security
+    required: true
+  - name: Verification checklist
+    description: Commands or manual checks to confirm fixes.
+    drawer_section: validation
+    required: true

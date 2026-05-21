@@ -1,0 +1,200 @@
+name: review-improve
+version: 1.0.0
+description: >
+  Review → improve workflow covering outcome assessment, lessons-learned capture,
+  checklist completion, and roadmap update. Intended as the closing half of a
+  full improvement cycle after observe-decide-execute has run.
+triggers:
+  manual: true
+  on_event:
+    - webhook
+inputs:
+  cycle_id:
+    type: string
+    description: Improvement cycle being reviewed (matches observe-decide-execute cycle_id).
+    required: true
+  execution_outcome:
+    type: string
+    description: Summary of what the execute step produced.
+    required: true
+  reviewers:
+    type: array
+    description: Roles or agent IDs that must sign off on the improvement.
+    default:
+      - director
+      - qa
+  evidence_sources:
+    type: array
+    description: Artifacts used as evidence during the review.
+    default:
+      - trace-summary
+      - evaluation-run
+      - lessons-learned
+  checklist_ids:
+    type: array
+    description: Improvement checklist item IDs to mark complete (CI-01..CI-15).
+    default: []
+  roadmap_update_needed:
+    type: boolean
+    description: Whether the review should trigger a roadmap refresh record.
+    default: false
+outputs:
+  result:
+    type: object
+    description: >
+      Review outcome including signoff status, captured lessons, completed
+      checklist items, and optional roadmap record.
+steps:
+  - id: validate_inputs
+    name: Validate review inputs
+    action: validate
+    inputs:
+      data: cycle_id
+      expression: "'data'"
+
+  - id: assess_outcome
+    name: Assess execution outcome and surface lessons
+    action: transform
+    depends_on:
+      - validate_inputs
+    inputs:
+      data:
+        cycle_id: cycle_id
+        execution_outcome: execution_outcome
+        evidence_sources: evidence_sources
+        assessment_prompts:
+          - "Did the action achieve its stated goal?"
+          - "What unintended consequences, if any, occurred?"
+          - "What would you do differently next cycle?"
+        lesson_template:
+          event_type: improvement-cycle-review
+          phase: "{{ cycle_id }}"
+          recorded_by: director
+          what_happened: "{{ execution_outcome }}"
+          insight: Operator must fill this in during review.
+          recommendation: Operator must fill this in during review.
+
+  - id: capture_lesson
+    name: Record lesson-learned entry via improvement intake
+    action: invoke-agent
+    depends_on:
+      - assess_outcome
+    inputs:
+      agent_id: director
+      task: >
+        Record a lesson-learned entry for improvement cycle {{ cycle_id }}.
+        Outcome summary: {{ execution_outcome }}.
+        Assessment prompts answered: {{ assess_outcome.result.assessment_prompts }}.
+        Submit to /v1/improvements/lessons with event_type=improvement-cycle-review.
+
+  - id: signoff
+    name: Collect reviewer signoff
+    action: transform
+    depends_on:
+      - capture_lesson
+    inputs:
+      data:
+        cycle_id: cycle_id
+        reviewers: reviewers
+        signoff_required: true
+        signoff_status: pending
+        signoff_prompts:
+          - "Confirm the lesson-learned entry is accurate."
+          - "Confirm all checklist items have been addressed."
+          - "Confirm no follow-on actions are missing an owner."
+
+  - id: complete_checklist
+    name: Mark improvement checklist items complete
+    action: transform
+    depends_on:
+      - signoff
+    inputs:
+      data:
+        cycle_id: cycle_id
+        checklist_ids: checklist_ids
+        status: "{{ 'completed' if checklist_ids else 'no-items' }}"
+        note: >
+          Operators should call POST /v1/improvements/checklists/<id>/complete
+          for each CI-xx item listed in checklist_ids.
+
+  - id: update_roadmap
+    name: Conditionally create roadmap refresh record
+    action: conditional
+    condition: "roadmap_update_needed"
+    depends_on:
+      - complete_checklist
+    then:
+      - id: create_roadmap_record
+        name: Create roadmap refresh record for this cycle
+        action: invoke-agent
+        inputs:
+          agent_id: director
+          task: >
+            Create a roadmap refresh record for improvement cycle {{ cycle_id }}.
+            Record the key change introduced, the evidence source, and the next
+            scheduled review date. Submit via POST /v1/improvements/refreshes.
+    else:
+      - id: skip_roadmap
+        name: Skip roadmap update (not required for this cycle)
+        action: transform
+        inputs:
+          data:
+            status: skipped
+            reason: roadmap_update_needed is false
+
+  - id: summarize
+    name: Produce final review-improve report
+    action: transform
+    depends_on:
+      - update_roadmap
+    inputs:
+      data:
+        cycle_id: cycle_id
+        status: completed
+        report_markdown: |
+          ## Review-Improve: {{ cycle_id }}
+
+          ### Execution outcome reviewed
+          {{ execution_outcome }}
+
+          ### Evidence sources
+          {% for source in evidence_sources or ['trace-summary', 'evaluation-run', 'lessons-learned'] %}
+          - {{ source }}
+          {% endfor %}
+
+          ### Reviewers
+          {% for reviewer in reviewers or ['director', 'qa'] %}
+          - {{ reviewer }}
+          {% endfor %}
+
+          ### Checklist items addressed
+          {% if checklist_ids %}
+          {% for item in checklist_ids %}
+          - [x] {{ item }}
+          {% endfor %}
+          {% else %}
+          - No specific checklist items were provided for this cycle.
+          {% endif %}
+
+          ### Roadmap update
+          - Required: {{ roadmap_update_needed }}
+          - Status: {{ create_roadmap_record.result.status or skip_roadmap.result.status }}
+
+          ### Next actions
+          1. Confirm all assigned owners have acknowledged their action items.
+          2. Schedule the next observe-decide-execute cycle if signals remain elevated.
+          3. Archive this cycle record to docs/progress/ if it spans a session boundary.
+
+execution:
+  mode: dependency-aware
+  fail_fast: false
+metadata:
+  author: implementer
+  created: "2026-05-16"
+  updated: "2026-05-16"
+  tags:
+    - improvement-cycle
+    - review
+    - improve
+    - lessons-learned
+    - template

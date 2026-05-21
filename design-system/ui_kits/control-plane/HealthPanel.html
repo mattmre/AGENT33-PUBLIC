@@ -1,0 +1,150 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>HealthPanel — AGENT-33 UI Kit</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="_kit.css">
+<style>
+  .rh-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(180px, 1fr));
+    gap: 1px;
+    margin-top: 14px;
+    background: var(--line);
+  }
+  .rh-card {
+    position: relative;
+    background: var(--bg-deep);
+    padding: 14px 14px 12px;
+    border-left: 2px solid var(--line);
+    display: grid; gap: 6px;
+  }
+  .rh-card.ok       { border-left-color: var(--green); }
+  .rh-card.degraded { border-left-color: var(--amber); }
+  .rh-card.error    { border-left-color: var(--red); }
+  .rh-card.config   { border-left-color: var(--sky); }
+  .rh-card.inactive { border-left-color: var(--line); }
+
+  .rh-card h3 {
+    margin: 0;
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: .22em;
+    color: var(--text-mute);
+    text-transform: uppercase;
+    font-weight: 500;
+  }
+  .rh-state {
+    display: flex; align-items: center; gap: 8px;
+    margin-top: 2px;
+  }
+  .rh-pulse {
+    width: 10px; height: 10px;
+    border-radius: 50%;
+    position: relative;
+  }
+  .rh-card.ok       .rh-pulse { background: var(--green); box-shadow: 0 0 8px var(--green); }
+  .rh-card.degraded .rh-pulse { background: var(--amber); box-shadow: 0 0 8px var(--amber); }
+  .rh-card.error    .rh-pulse { background: var(--red);   box-shadow: 0 0 8px var(--red); }
+  .rh-card.config   .rh-pulse { background: var(--sky);   box-shadow: 0 0 8px var(--sky); }
+  .rh-card.inactive .rh-pulse { background: var(--text-mute); }
+  .rh-pulse::after {
+    content: ""; position: absolute; inset: -4px;
+    border-radius: 50%;
+    border: 1px solid currentColor;
+    opacity: .25;
+    animation: ping 2s ease-out infinite;
+  }
+  .rh-card.inactive .rh-pulse::after { animation: none; opacity: 0; }
+  @keyframes ping {
+    0%   { transform: scale(.8); opacity: .5; }
+    100% { transform: scale(1.6); opacity: 0; }
+  }
+  .rh-text {
+    font-family: var(--sans);
+    font-weight: 600;
+    font-size: .82rem;
+    text-transform: capitalize;
+  }
+  .rh-card.ok       .rh-text { color: var(--green); }
+  .rh-card.degraded .rh-text { color: var(--amber); }
+  .rh-card.error    .rh-text { color: var(--red); }
+  .rh-card.config   .rh-text { color: var(--sky); }
+  .rh-card.inactive .rh-text { color: var(--text-mute); }
+
+  .rh-card .latency {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-mute);
+    letter-spacing: .12em;
+  }
+</style>
+</head>
+<body>
+<div class="kit-head">
+  <div>
+    <p class="eyebrow">▸ COMPONENT · OBSERVABILITY</p>
+    <h1>HealthPanel</h1>
+  </div>
+  <div class="meta">
+    <span>POLL <b>5s</b></span>
+    <span>SOURCE <b>/health</b></span>
+    <span>STATUS <b>OK</b></span>
+  </div>
+</div>
+
+<section class="panel">
+  <div class="panel-body">
+    <p class="eyebrow">▸ RUNTIME HEALTH</p>
+    <h2>Service status grid</h2>
+    <p>Live snapshot of every backend service the cockpit depends on. Auto-refreshes every five seconds while the panel is mounted.</p>
+
+    <div class="rh-grid">
+      <div class="rh-card ok">
+        <h3>OVERALL</h3>
+        <div class="rh-state"><span class="rh-pulse"></span><span class="rh-text">Healthy</span></div>
+        <span class="latency">UPTIME · 14d 02:11</span>
+      </div>
+      <div class="rh-card ok">
+        <h3>API</h3>
+        <div class="rh-state"><span class="rh-pulse"></span><span class="rh-text">OK</span></div>
+        <span class="latency">P95 · 84ms</span>
+      </div>
+      <div class="rh-card ok">
+        <h3>POSTGRES</h3>
+        <div class="rh-state"><span class="rh-pulse"></span><span class="rh-text">Healthy</span></div>
+        <span class="latency">CONN · 12/40</span>
+      </div>
+      <div class="rh-card ok">
+        <h3>PGVECTOR</h3>
+        <div class="rh-state"><span class="rh-pulse"></span><span class="rh-text">Healthy</span></div>
+        <span class="latency">INDEX · WARM</span>
+      </div>
+      <div class="rh-card degraded">
+        <h3>REDIS</h3>
+        <div class="rh-state"><span class="rh-pulse"></span><span class="rh-text">Degraded</span></div>
+        <span class="latency">EVICTIONS · 3.4/s</span>
+      </div>
+      <div class="rh-card config">
+        <h3>SLACK BRIDGE</h3>
+        <div class="rh-state"><span class="rh-pulse"></span><span class="rh-text">Configured</span></div>
+        <span class="latency">NOT CONNECTED</span>
+      </div>
+      <div class="rh-card error">
+        <h3>JIRA EXPORT</h3>
+        <div class="rh-state"><span class="rh-pulse"></span><span class="rh-text">Error</span></div>
+        <span class="latency">429 · BACKOFF 60s</span>
+      </div>
+      <div class="rh-card inactive">
+        <h3>S3 ARCHIVE</h3>
+        <div class="rh-state"><span class="rh-pulse"></span><span class="rh-text">Unconfigured</span></div>
+        <span class="latency">NOT SET UP</span>
+      </div>
+    </div>
+  </div>
+</section>
+</body>
+</html>

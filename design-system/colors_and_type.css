@@ -1,0 +1,254 @@
+/* AGENT-33 Design System — Tokens
+ * Source: frontend/src/styles.css :root + observed patterns across the codebase
+ * Theme: dark, "neumorphic" with soft inset/outset shadows, teal accent.
+ */
+
+:root {
+  /* ───────── Color: surface ───────── */
+  --bg-main: #1a1d21;        /* primary canvas */
+  --bg-elevated: #1a1d21;    /* same hue — depth comes from shadow, not value */
+  --bg-card: #1a1d21;
+  --bg-deep: #0b1f29;        /* darker code/response wells */
+  --bg-deeper: #06131b;      /* observation rows, deepest wells */
+  --bg-tinted: rgba(11, 30, 39, 0.64);    /* translucent panel tint */
+  --bg-tinted-strong: rgba(8, 24, 32, 0.74);
+
+  /* ───────── Color: text ───────── */
+  --text-main: #e2e8f0;      /* primary copy */
+  --text-soft: #94a3b8;      /* secondary/labels */
+  --text-muted: #6fa8b8;     /* eyebrow / nav-group labels */
+  --text-mono: #8dc8dd;      /* mono code accents */
+  --text-link: #9fd5e4;      /* code/source refs */
+
+  /* ───────── Color: brand + semantic ───────── */
+  --accent: #30d5c8;          /* TEAL — the AGENT-33 signature */
+  --accent-soft: #60b2a8;
+  --accent-deep: #184e68;
+  --accent-warm: #f6bd60;     /* warning yellow */
+  --danger: #ff6b6b;          /* error red */
+  --ok: #8be9a8;              /* success green */
+  --info: #7dd3fc;            /* sky-blue info */
+
+  /* HTTP method swatches (used for API badges) */
+  --method-get: #14394b;
+  --method-post: #27481e;
+  --method-delete: #542728;
+  --method-patch: #423520;
+  --method-put: #2d2d55;
+
+  /* Borders */
+  --border: rgba(255, 255, 255, 0.02);
+  --border-card: #315365;          /* operation cards */
+  --border-soft: rgba(125, 211, 252, 0.16);
+  --border-accent: rgba(48, 213, 200, 0.28);
+
+  /* ───────── Shadow / elevation system (neumorphic) ───────── */
+  --shadow-outer: 6px 6px 14px rgba(0, 0, 0, 0.45),
+                  -6px -6px 14px rgba(255, 255, 255, 0.04);
+  --shadow-outer-sm: 4px 4px 8px rgba(0, 0, 0, 0.4),
+                     -4px -4px 8px rgba(255, 255, 255, 0.04);
+  --shadow-inner: inset 4px 4px 8px rgba(0, 0, 0, 0.45),
+                  inset -4px -4px 8px rgba(255, 255, 255, 0.04);
+  --shadow-active: inset 6px 6px 12px rgba(0, 0, 0, 0.5),
+                   inset -6px -6px 12px rgba(255, 255, 255, 0.03);
+  --shadow-flat: 0 0 0 rgba(0, 0, 0, 0);
+  --shadow-glow: 0 0 15px rgba(48, 213, 200, 0.5);
+  --shadow-card: 0 4px 12px rgba(48, 213, 200, 0.3);
+
+  /* ───────── Radii ───────── */
+  --radius-xs: 4px;
+  --radius-sm: 6px;
+  --radius-md: 8px;
+  --radius-lg: 12px;
+  --radius-xl: 16px;
+  --radius-pill: 999px;
+  --radius-button: 4px;
+  --radius-input: 4px;
+
+  /* ───────── Spacing scale (rem-based, matches in-source values) ───────── */
+  --space-1: 0.2rem;
+  --space-2: 0.35rem;
+  --space-3: 0.5rem;
+  --space-4: 0.65rem;
+  --space-5: 0.85rem;
+  --space-6: 1rem;
+  --space-7: 1.2rem;
+  --space-8: 1.4rem;
+
+  /* ───────── Typography ───────── */
+  --sans: "Space Grotesk", "Segoe UI", system-ui, sans-serif;
+  --mono: "IBM Plex Mono", Consolas, Menlo, Monaco, monospace;
+
+  /* Type scale (clamps used in the App; concrete sizes here for reference) */
+  --type-eyebrow: 0.74rem;          /* uppercase, letter-spaced 0.12em */
+  --type-label: 0.68rem;            /* uppercase nav labels, 0.08em tracking */
+  --type-meta: 0.78rem;
+  --type-body-sm: 0.84rem;
+  --type-body: 0.9rem;
+  --type-body-lg: 1rem;
+  --type-h3: 1.02rem;
+  --type-h2: 1.4rem;
+  --type-h1-min: 1.3rem;
+  --type-h1-max: 1.9rem;
+
+  /* Tracking */
+  --track-eyebrow: 0.12em;
+  --track-label: 0.08em;
+  --track-button: 0.05em;
+
+  /* Motion */
+  --ease: cubic-bezier(0.4, 0, 0.2, 1);
+  --dur-fast: 0.2s;
+  --dur-base: 0.25s;
+  --dur-slow: 0.6s;
+  --dur-orb: 4s;        /* logo-orb pulse */
+}
+
+/* ───────── Base elements ───────── */
+
+html, body {
+  margin: 0;
+  background: var(--bg-main);
+  color: var(--text-main);
+  font-family: var(--sans);
+  -webkit-font-smoothing: antialiased;
+}
+
+* { box-sizing: border-box; }
+
+/* ───────── Semantic type classes ───────── */
+
+.eyebrow {
+  margin: 0;
+  letter-spacing: var(--track-eyebrow);
+  font-size: var(--type-eyebrow);
+  color: var(--accent);
+  text-transform: none;
+}
+
+.label-uppercase {
+  color: var(--text-muted);
+  font-size: var(--type-label);
+  font-weight: 700;
+  letter-spacing: var(--track-label);
+  text-transform: uppercase;
+}
+
+h1, .h1 {
+  font-size: clamp(var(--type-h1-min), 3vw, var(--type-h1-max));
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+h2, .h2 {
+  font-size: var(--type-h2);
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  margin: 0;
+}
+
+h3, .h3 {
+  font-size: var(--type-h3);
+  margin: 0;
+}
+
+p, .p {
+  margin: 0;
+  font-size: var(--type-body-sm);
+  color: var(--text-soft);
+  line-height: 1.5;
+}
+
+code, .code, pre {
+  font-family: var(--mono);
+  color: var(--text-mono);
+  font-size: var(--type-meta);
+}
+
+.brand-wordmark {
+  font-weight: 600;
+  letter-spacing: 0.05em;
+  background: linear-gradient(135deg, #fff, #9dc3cf);
+  background-clip: text;
+  -webkit-background-clip: text;
+  -webkit-text-fill-color: transparent;
+}
+
+/* ───────── Component primitives ───────── */
+
+.ds-card {
+  background: var(--bg-main);
+  border: 1px solid transparent;
+  border-radius: var(--radius-xl);
+  padding: var(--space-7);
+  box-shadow: var(--shadow-outer);
+}
+
+.ds-button {
+  border: 1px solid transparent;
+  background: var(--bg-main);
+  color: var(--text-main);
+  border-radius: var(--radius-button);
+  padding: 0.6rem 1rem;
+  cursor: pointer;
+  box-shadow: var(--shadow-outer-sm);
+  transition: all var(--dur-base) ease;
+  font-weight: 600;
+  letter-spacing: var(--track-button);
+}
+.ds-button:hover { box-shadow: var(--shadow-outer); color: var(--accent); }
+.ds-button:active { box-shadow: var(--shadow-inner); }
+.ds-button:disabled { opacity: 0.5; cursor: not-allowed; box-shadow: var(--shadow-flat); }
+
+.ds-button--primary {
+  background: var(--accent);
+  color: #03080c;
+  box-shadow: var(--shadow-card);
+}
+.ds-button--primary:hover { color: #03080c; filter: brightness(1.05); }
+
+.ds-input {
+  width: 100%;
+  border: 1px solid transparent;
+  background: var(--bg-main);
+  color: var(--text-main);
+  border-radius: var(--radius-input);
+  padding: 0.7rem 1rem;
+  box-shadow: var(--shadow-inner);
+  transition: all var(--dur-base) ease;
+  font-family: inherit;
+}
+.ds-input:focus {
+  outline: none;
+  box-shadow: var(--shadow-active);
+  border-color: var(--border-accent);
+}
+
+.ds-method-badge {
+  padding: 0.2rem 0.45rem;
+  border-radius: var(--radius-pill);
+  font-size: 0.68rem;
+  font-family: var(--mono);
+  border: 1px solid #3b7085;
+  color: var(--text-main);
+}
+.ds-method-badge.get    { background: var(--method-get); }
+.ds-method-badge.post   { background: var(--method-post); }
+.ds-method-badge.delete { background: var(--method-delete); }
+.ds-method-badge.patch  { background: var(--method-patch); }
+.ds-method-badge.put    { background: var(--method-put); }
+
+/* ───────── Logo orb ───────── */
+.logo-orb {
+  width: 24px;
+  height: 24px;
+  border-radius: 50%;
+  background: conic-gradient(from 180deg at 50% 50%, #30d5c8 0deg, #184e68 180deg, #30d5c8 360deg);
+  box-shadow: var(--shadow-glow);
+  animation: pulse-orb var(--dur-orb) infinite ease-in-out;
+}
+@keyframes pulse-orb {
+  0%, 100% { transform: scale(1); opacity: 0.8; }
+  50%      { transform: scale(1.1); opacity: 1; }
+}

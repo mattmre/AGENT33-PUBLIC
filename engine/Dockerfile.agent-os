@@ -1,0 +1,89 @@
+FROM docker:cli AS docker_cli
+
+FROM ubuntu:24.04
+
+ARG USERNAME=agentos
+ARG USER_UID=10001
+ARG USER_GID=10001
+
+ENV DEBIAN_FRONTEND=noninteractive
+ENV PIP_BREAK_SYSTEM_PACKAGES=1
+ENV PIP_DISABLE_PIP_VERSION_CHECK=1
+ENV PATH="/home/${USERNAME}/.local/bin:${PATH}"
+ENV AGENT33_HOME=/home/${USERNAME}/.agent33
+ENV AGENT33_WORKSPACE=/workspace
+
+RUN apt-get update && apt-get install -y --no-install-recommends \
+    bash \
+    build-essential \
+    ca-certificates \
+    cargo \
+    cmake \
+    curl \
+    dnsutils \
+    fd-find \
+    file \
+    git \
+    git-lfs \
+    gh \
+    gnupg \
+    golang-go \
+    jq \
+    less \
+    make \
+    nano \
+    netcat-openbsd \
+    openssh-client \
+    pkg-config \
+    postgresql-client \
+    procps \
+    python3 \
+    python3-pip \
+    python3-venv \
+    redis-tools \
+    ripgrep \
+    rsync \
+    rustc \
+    shellcheck \
+    sqlite3 \
+    sudo \
+    tmux \
+    tree \
+    unzip \
+    wget \
+    xz-utils \
+    zip \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN ln -sf /usr/bin/fdfind /usr/local/bin/fd
+
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - \
+    && apt-get update \
+    && apt-get install -y --no-install-recommends nodejs \
+    && corepack enable \
+    && corepack prepare pnpm@latest --activate \
+    && corepack prepare yarn@stable --activate \
+    && apt-get clean \
+    && rm -rf /var/lib/apt/lists/*
+
+RUN python3 -m pip install --no-cache-dir PyJWT uv poetry
+
+COPY --from=docker_cli /usr/local/bin/docker /usr/local/bin/docker
+COPY --from=docker_cli /usr/local/libexec/docker/cli-plugins/ /usr/local/libexec/docker/cli-plugins/
+
+RUN groupadd --gid "${USER_GID}" "${USERNAME}" \
+    && useradd --uid "${USER_UID}" --gid "${USER_GID}" --create-home --shell /bin/bash "${USERNAME}" \
+    && mkdir -p /workspace /data/shared "${AGENT33_HOME}" \
+    && chown -R "${USERNAME}:${USERNAME}" /workspace /data/shared "/home/${USERNAME}" \
+    && echo "${USERNAME} ALL=(root) NOPASSWD: /usr/bin/apt-get, /usr/bin/apt, /usr/bin/dpkg" > "/etc/sudoers.d/${USERNAME}" \
+    && chmod 0440 "/etc/sudoers.d/${USERNAME}"
+
+COPY docker/agent-os-entrypoint.sh /usr/local/bin/agent-os
+COPY docker/agent33-health docker/agent33-token docker/agent33-tools /usr/local/bin/
+RUN chmod 0755 /usr/local/bin/agent-os /usr/local/bin/agent33-health /usr/local/bin/agent33-token /usr/local/bin/agent33-tools
+
+USER ${USERNAME}
+WORKDIR /workspace
+
+CMD ["agent-os"]

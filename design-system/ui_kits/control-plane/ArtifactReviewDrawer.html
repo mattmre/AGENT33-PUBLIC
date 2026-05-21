@@ -1,0 +1,198 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>AGENT-33 · ArtifactReviewDrawer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="_kit.css">
+<style>
+  body { max-width: 980px; }
+  .drawer {
+    background: var(--bg-deep);
+    border: 1px solid var(--line);
+    display: grid;
+    grid-template-rows: auto auto 1fr;
+  }
+  .drawer-head {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--line);
+    display: grid; gap: 4px;
+  }
+  .drawer-head h2 { margin: 4px 0 0; color: var(--ice); font-size: 1.1rem; font-weight: 600; }
+  .drawer-head p { margin: 4px 0 0; color: var(--text-soft); font-size: .82rem; }
+  .drawer-body { padding: 16px 18px; display: grid; gap: 14px; }
+  .artifact-card {
+    background: var(--bg-row);
+    border-left: 3px solid var(--teal);
+    padding: 12px 14px;
+    display: grid; gap: 6px;
+  }
+  .artifact-card strong { color: var(--ice); font-size: .94rem; }
+  .artifact-card p { margin: 0; color: var(--text-soft); font-size: .82rem; line-height: 1.5; }
+  .artifact-card dl {
+    margin: 8px 0 0;
+    display: grid;
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+    gap: 8px;
+  }
+  .artifact-card dl > div { display: grid; gap: 1px; }
+  .artifact-card dt {
+    font-family: var(--mono); font-size: 9px;
+    letter-spacing: .14em; color: var(--text-mute);
+    text-transform: uppercase;
+  }
+  .artifact-card dd { margin: 0; color: var(--ice); font-size: .8rem; }
+
+  .evidence h4 {
+    margin: 0 0 8px;
+    font-family: var(--sans);
+    font-size: .88rem;
+    color: var(--ice);
+    padding-bottom: 6px;
+    border-bottom: 1px solid var(--line);
+  }
+  .evidence article {
+    background: var(--bg-row);
+    border-left: 2px solid var(--line);
+    padding: 9px 11px;
+    margin-bottom: 6px;
+    display: grid; gap: 3px;
+  }
+  .evidence article strong { color: var(--ice); font-size: .84rem; }
+  .evidence article p { margin: 0; color: var(--text-soft); font-size: .76rem; line-height: 1.45; }
+  .evidence article small {
+    font-family: var(--mono); font-size: 9px;
+    letter-spacing: .12em; color: var(--text-mute);
+    text-transform: uppercase;
+  }
+  .gate-context {
+    background: var(--amber-soft);
+    border-left: 3px solid var(--amber);
+    padding: 9px 12px;
+    margin-bottom: 8px;
+    display: grid; gap: 2px;
+  }
+  .gate-context span {
+    font-family: var(--mono); font-size: 9px;
+    letter-spacing: .14em; color: var(--amber);
+    text-transform: uppercase;
+  }
+  .gate-context strong { color: var(--ice); font-size: .9rem; }
+  .gate-context p { margin: 2px 0 0; color: var(--text-soft); font-size: .78rem; }
+
+  .group-review article { border-left-color: var(--amber); }
+  .group-block article  { border-left-color: var(--red); }
+</style>
+</head>
+<body>
+
+<div class="kit-head">
+  <div>
+    <p class="eyebrow">▸ COMPONENT · REVIEW</p>
+    <h1>ArtifactReviewDrawer</h1>
+  </div>
+  <div class="meta">
+    <span>SOURCE · <b>ArtifactReviewDrawer.tsx</b></span>
+    <span>SECTION · <b>VALIDATION</b></span>
+  </div>
+</div>
+
+<div class="drawer">
+  <header class="drawer-head">
+    <span class="eyebrow">▸ REVIEW DRAWER</span>
+    <h2>Drydock · cache-rollout</h2>
+    <p>Operator · Soft gate: reviewer ack required for any merge.</p>
+  </header>
+
+  <div class="tabs" role="tablist" aria-label="Drawer sections">
+    <button>Plan</button>
+    <button>Activity</button>
+    <button class="active">Validation</button>
+    <button>Diff</button>
+    <button>Outcome</button>
+  </div>
+
+  <div class="drawer-body">
+    <div>
+      <span class="eyebrow">▸ VALIDATION</span>
+      <h3 style="margin: 4px 0 0; color: var(--ice);">Validation evidence</h3>
+      <p style="margin: 4px 0 0; color: var(--text-soft); font-size: .82rem;">Every commit on this branch with its test, lint, and security results — plus reviewer notes.</p>
+    </div>
+
+    <article class="artifact-card">
+      <strong>cache-metrics-v3.patch</strong>
+      <p>Wires Prometheus counters for cache hits / misses / evictions behind <code>METRICS_V2</code> feature flag. Adds redaction unit tests.</p>
+      <dl>
+        <div><dt>Status</dt><dd>Needs review</dd></div>
+        <div><dt>Owner</dt><dd>Forge · Builder</dd></div>
+        <div><dt>Source</dt><dd>cli · agent33-cli 0.4.2</dd></div>
+        <div><dt>Updated</dt><dd>2 min ago</dd></div>
+        <div><dt>Review</dt><dd>1 of 2 acks</dd></div>
+        <div><dt>Next</dt><dd>Reviewer sign-off</dd></div>
+      </dl>
+    </article>
+
+    <section class="evidence">
+      <h4>Validation status</h4>
+      <article>
+        <strong>Unit tests</strong>
+        <p>1 248 / 1 248 passing on staging.</p>
+        <small>SUCCESS / 00:42</small>
+      </article>
+      <article>
+        <strong>Lint</strong>
+        <p>0 errors, 3 warnings (all in test fixtures).</p>
+        <small>SUCCESS / 00:11</small>
+      </article>
+      <article style="border-left-color: var(--amber);">
+        <strong>Cardinality audit</strong>
+        <p>Reviewer paused — label set has one user-id field that needs explicit redaction confirmation.</p>
+        <small>NEEDS REVIEW / 00:08</small>
+      </article>
+      <article>
+        <strong>Secrets scan</strong>
+        <p>No secrets matched. Vault references resolved at build.</p>
+        <small>SUCCESS / 00:04</small>
+      </article>
+    </section>
+
+    <section class="evidence">
+      <h4>Activity events</h4>
+      <article>
+        <strong>Builder requested review</strong>
+        <p>Forge → Hawk · "Cache metrics ready for cardinality audit before staging."</p>
+        <small>14:01 / OPERATOR / SUBMITTED</small>
+      </article>
+      <article>
+        <strong>Reviewer flagged label cardinality</strong>
+        <p>Hawk → Forge · "Drop user_id from labels or redact to bucket."</p>
+        <small>14:08 / OPERATOR / NEEDS REVIEW</small>
+      </article>
+      <article>
+        <strong>Mailbox handoff #4</strong>
+        <p>Coordinator captured the redaction note in plan-of-record.</p>
+        <small>14:09 / COORDINATOR / ACKED</small>
+      </article>
+    </section>
+
+    <section class="evidence group-review">
+      <div class="gate-context">
+        <span>PERMISSION GATE</span>
+        <strong>Operator · Soft gate</strong>
+        <p>Reviewer ack required for any artifact merge.</p>
+      </div>
+      <h4>Safety records · Needs review</h4>
+      <article>
+        <strong>Cardinality drift on cache_hits</strong>
+        <p>Label set includes user_id. Soft gate blocks merge until redacted or replaced with a bucketed key.</p>
+        <p style="color: var(--amber); font-size: .76rem;">Next: Forge replaces label · Hawk re-acks</p>
+        <small>NEEDS REVIEW / cardinality-rule</small>
+      </article>
+    </section>
+  </div>
+</div>
+
+</body>
+</html>

@@ -1,0 +1,87 @@
+# Node.js 24 migration: COMPLETE (all actions Node 24 ready)
+# - actions/checkout: v6
+# - actions/setup-python: v6
+# - actions/upload-artifact: v7
+name: Post-Merge Smoke
+
+on:
+  push:
+    branches: [main]
+
+jobs:
+  targeted-smoke:
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        working-directory: engine
+    steps:
+      - uses: actions/checkout@v6
+
+      - uses: actions/setup-python@v6
+        with:
+          python-version: "3.11"
+
+      - name: Install dependencies
+        run: pip install -e ".[dev]"
+
+      - name: Run targeted smoke checks
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p smoke-results
+          summary="smoke-results/smoke-summary.md"
+
+          {
+            echo "# Post-merge smoke summary"
+            echo
+            echo "- Branch: ${GITHUB_REF_NAME}"
+            echo "- Commit: ${GITHUB_SHA}"
+            echo
+          } > "${summary}"
+
+          run_suite() {
+            local name="$1"
+            shift
+            local logfile="smoke-results/${name}.log"
+            local cmd="pytest $* -q --maxfail=1"
+
+            echo "## ${name}" >> "${summary}"
+            echo "- command: \`${cmd}\`" >> "${summary}"
+
+            set +e
+            pytest "$@" -q --maxfail=1 > "${logfile}" 2>&1
+            local status=$?
+            set -e
+
+            if [ "${status}" -eq 0 ]; then
+              echo "- status: PASS" >> "${summary}"
+            else
+              echo "- status: FAIL (exit ${status})" >> "${summary}"
+            fi
+            echo "- log: $(basename "${logfile}")" >> "${summary}"
+            echo >> "${summary}"
+
+            return "${status}"
+          }
+
+          failures=0
+          run_suite "phase30" tests/test_phase30_effort_routing.py || failures=$((failures + 1))
+          run_suite "phase31" tests/test_phase31_learning_signals.py || failures=$((failures + 1))
+          run_suite "phase32" tests/test_phase32_connector_boundary.py || failures=$((failures + 1))
+          run_suite "connector-regression" tests -k connector || failures=$((failures + 1))
+          run_suite "integration-wiring" tests/test_integration_wiring.py || failures=$((failures + 1))
+
+          if [ "${failures}" -eq 0 ]; then
+            echo "Overall: PASS" >> "${summary}"
+          else
+            echo "Overall: FAIL (${failures} suite(s) failed)" >> "${summary}"
+            exit 1
+          fi
+
+      - name: Upload smoke summary artifact
+        if: always()
+        uses: actions/upload-artifact@v7
+        with:
+          name: post-merge-smoke-summary
+          path: engine/smoke-results/
+          retention-days: 30

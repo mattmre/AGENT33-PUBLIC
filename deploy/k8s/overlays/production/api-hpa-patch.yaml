@@ -1,0 +1,8 @@
+apiVersion: autoscaling/v2
+kind: HorizontalPodAutoscaler
+metadata:
+  name: agent33-api
+spec:
+  # WARNING: Do not increase maxReplicas until all single-instance blockers
+  # documented in horizontal-scaling-architecture.md are resolved.
+  maxReplicas: 1

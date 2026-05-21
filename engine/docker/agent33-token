@@ -1,0 +1,37 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+python3 - <<'PY'
+import os
+import time
+import warnings
+
+import jwt
+
+warnings.filterwarnings("ignore", message=".*below the minimum recommended length.*")
+
+now = int(time.time())
+payload = {
+    "sub": "agent-os-operator",
+    "scopes": [
+        "admin",
+        "agents:read",
+        "agents:write",
+        "agents:invoke",
+        "workflows:read",
+        "workflows:write",
+        "workflows:execute",
+        "tools:execute",
+    ],
+    "iat": now,
+    "exp": now + 3600,
+}
+
+print(
+    jwt.encode(
+        payload,
+        os.getenv("JWT_SECRET", "change-me-in-production"),
+        algorithm=os.getenv("JWT_ALGORITHM", "HS256"),
+    )
+)
+PY

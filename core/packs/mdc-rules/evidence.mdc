@@ -1,0 +1,190 @@
+---
+description: Rules for capturing verification evidence in AGENT-33
+globs:
+  - "core/orchestrator/handoff/**/*.md"
+  - "core/logs/**/*.md"
+role: system
+alwaysApply: false
+---
+
+# Evidence Capture Rules
+
+These rules guide AI agents when capturing verification evidence during AGENT-33 workflows.
+
+## Evidence Requirements
+
+Every completed task must include evidence:
+
+1. **Command Evidence** - What commands were run
+2. **Test Evidence** - What tests passed/failed
+3. **Artifact Evidence** - What artifacts were created/modified
+4. **Review Evidence** - What reviews were conducted
+
+## Evidence Format
+
+### Command Evidence
+
+```markdown
+### Commands Executed
+
+| Command | Result | Notes |
+|---------|--------|-------|
+| `agent-33 validate` | ✅ Pass | All schemas valid |
+| `agent-33 check-links` | ✅ Pass | No broken links |
+| `npm run lint` | ⚠️ Warnings | 3 style warnings (non-blocking) |
+```
+
+### Test Evidence
+
+```markdown
+### Test Results
+
+**Suite**: orchestrator-tests
+**Run**: 2026-01-20T15:30:00Z
+**Result**: ✅ 47/47 passed
+
+Notable tests:
+- `test_change_detection` - Verified incremental detection
+- `test_parallel_execution` - Verified semaphore limits
+```
+
+### Artifact Evidence
+
+```markdown
+### Artifacts Modified
+
+| Path | Change Type | Verification |
+|------|-------------|--------------|
+| `core/orchestrator/incremental/README.md` | Created | Schema validates |
+| `core/schemas/agent.schema.json` | Created | JSON valid |
+| `core/ORCHESTRATION_INDEX.md` | Updated | Links resolve |
+```
+
+### Review Evidence
+
+```markdown
+### Review Outcomes
+
+**Reviewer**: refinement-agent
+**Date**: 2026-01-20
+**Verdict**: Approved with notes
+
+Findings:
+1. ✅ Structure follows conventions
+2. ✅ Relationships documented
+3. ⚠️ Consider adding more examples (future task)
+```
+
+## Evidence Location
+
+Evidence should be captured in:
+
+| Context | Location |
+|---------|----------|
+| Task completion | `core/orchestrator/handoff/TASKS.md` (in task entry) |
+| Formal review | `core/orchestrator/handoff/REVIEW_CAPTURE.md` |
+| Session wrap | `core/orchestrator/handoff/SESSION_WRAP.md` |
+| Persistent logs | `core/logs/YYYY-MM-DD_evidence.md` |
+
+## Minimum Evidence
+
+At minimum, every completed task needs:
+
+```markdown
+## Evidence
+
+- **Verified by**: [command/test/manual review]
+- **Result**: [pass/fail with details]
+- **Artifacts**: [list of affected files]
+```
+
+## Anti-Patterns
+
+### ❌ No Evidence
+
+```markdown
+<!-- BAD -->
+Completed: Added new schema
+Status: Done
+
+<!-- GOOD -->
+Completed: Added new schema
+Status: Done
+Evidence:
+- Validated with `jsonschema validate agent.schema.json` ✅
+- Tested in VS Code - IntelliSense works ✅
+```
+
+### ❌ Vague Evidence
+
+```markdown
+<!-- BAD -->
+Tested and it works.
+
+<!-- GOOD -->
+Tested:
+- Ran `agent-33 run --dry-run` - plan generated correctly
+- Ran `agent-33 run --parallel-limit 2` - 8 tasks completed in 4 batches
+- Verified output in `execution.log` - timing metrics captured
+```
+
+### ❌ Missing Failure Details
+
+```markdown
+<!-- BAD -->
+Test failed. Will retry.
+
+<!-- GOOD -->
+Test failed:
+- Command: `agent-33 validate --schema workflow`
+- Error: "Invalid step action 'unknown-action'"
+- Root cause: Typo in workflow definition
+- Fix: Changed to 'invoke-agent'
+- Retest: ✅ Pass
+```
+
+## Structured Evidence Schema
+
+For automated processing, evidence can be captured in structured format:
+
+```json
+{
+  "task_id": "CA-007",
+  "completed_at": "2026-01-20T15:30:00Z",
+  "evidence": {
+    "commands": [
+      {
+        "command": "agent-33 validate",
+        "exit_code": 0,
+        "duration_ms": 1234
+      }
+    ],
+    "tests": {
+      "passed": 47,
+      "failed": 0,
+      "skipped": 2
+    },
+    "artifacts": {
+      "created": ["core/orchestrator/incremental/README.md"],
+      "modified": ["core/ORCHESTRATION_INDEX.md"],
+      "deleted": []
+    },
+    "reviews": [
+      {
+        "reviewer": "refinement-agent",
+        "verdict": "approved",
+        "notes": "Structure follows conventions"
+      }
+    ]
+  }
+}
+```
+
+## Evidence Retention
+
+| Evidence Type | Retention |
+|---------------|-----------|
+| Task evidence | Kept in TASKS.md until task archived |
+| Session evidence | Kept in SESSION_WRAP.md for 30 days |
+| Review evidence | Kept permanently in REVIEW_CAPTURE.md |
+| Log evidence | Rotated after 90 days |

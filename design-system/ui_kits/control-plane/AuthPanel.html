@@ -1,0 +1,135 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>AGENT-33 · AuthPanel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="_kit.css">
+<style>
+  body { max-width: 720px; }
+  .auth-grid {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 12px;
+  }
+  .auth-grid .field-full { grid-column: 1 / -1; }
+  .auth-actions {
+    display: flex; gap: 10px; align-items: center;
+    margin-top: 8px;
+  }
+  .auth-actions .help {
+    font-family: var(--mono); font-size: 9px;
+    letter-spacing: .18em; text-transform: uppercase;
+    color: var(--text-mute);
+  }
+  .scope-strip {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1px;
+    background: var(--line);
+    margin-top: 14px;
+  }
+  .scope-cell {
+    background: var(--bg-deep);
+    padding: 8px 10px;
+    display: grid; gap: 2px;
+    border-left: 2px solid var(--line);
+  }
+  .scope-cell.live { border-left-color: var(--teal); }
+  .scope-cell.warn { border-left-color: var(--amber); }
+  .scope-cell span {
+    font-family: var(--mono); font-size: 9px;
+    letter-spacing: .14em; color: var(--text-mute);
+    text-transform: uppercase;
+  }
+  .scope-cell strong { font-family: var(--sans); font-size: .82rem; color: var(--ice); }
+  .scope-cell.live strong { color: var(--teal); }
+  .err-box {
+    background: var(--red-soft);
+    border-left: 2px solid var(--red);
+    padding: 9px 12px;
+    color: var(--red);
+    font-family: var(--mono);
+    font-size: 11px;
+    margin-top: 10px;
+    display: none;
+  }
+  .err-box.show { display: block; }
+</style>
+</head>
+<body>
+
+<div class="kit-head">
+  <div>
+    <p class="eyebrow">▸ COMPONENT · ACCESS CONTROL</p>
+    <h1>AuthPanel</h1>
+  </div>
+  <div class="meta">
+    <span>SOURCE · <b>AuthPanel.tsx</b></span>
+    <span>STATE · <b>SIGNED IN</b></span>
+  </div>
+</div>
+
+<section class="panel">
+  <div class="deco"><div class="grid"></div></div>
+  <div class="panel-body">
+    <p class="eyebrow">▸ ACCESS CONTROL</p>
+    <h2>Sign in or paste a token</h2>
+    <p>Use login for seeded local credentials, or paste a token / API key for shared and production environments.</p>
+
+    <div class="auth-grid" style="margin-top: 14px;">
+      <label class="field">
+        Username
+        <input id="user" type="text" value="admin" autocomplete="username">
+      </label>
+      <label class="field">
+        Password
+        <input id="pass" type="password" value="••••••••" autocomplete="current-password">
+      </label>
+
+      <label class="field field-full">
+        Bearer Token
+        <textarea rows="3" placeholder="Paste JWT token">demo-jwt-token-placeholder</textarea>
+      </label>
+      <label class="field field-full">
+        API Key (optional)
+        <input type="text" placeholder="a33_xxx..." value="demo-api-key-placeholder">
+      </label>
+    </div>
+
+    <div class="auth-actions">
+      <button class="btn primary" id="signin">Sign in</button>
+      <button class="btn">Use token only</button>
+      <span class="help">JWT · 8h ttl · refresh-on-use</span>
+    </div>
+
+    <div class="err-box" id="err">Login failed (401) — credentials rejected.</div>
+
+    <div class="scope-strip">
+      <div class="scope-cell live">
+        <span>SCOPE</span>
+        <strong>operator</strong>
+      </div>
+      <div class="scope-cell live">
+        <span>SUBJECT</span>
+        <strong>admin@agent33</strong>
+      </div>
+      <div class="scope-cell warn">
+        <span>EXPIRES</span>
+        <strong>06h 42m</strong>
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+document.getElementById('signin').addEventListener('click', () => {
+  const e = document.getElementById('err');
+  e.classList.toggle('show');
+});
+</script>
+
+</body>
+</html>

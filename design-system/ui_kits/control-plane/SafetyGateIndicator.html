@@ -1,0 +1,156 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>AGENT-33 · SafetyGateIndicator</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="_kit.css">
+<style>
+  body { max-width: 880px; }
+  .indicator-stack { display: grid; gap: 18px; margin-top: 12px; }
+
+  .indicator {
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 18px;
+    align-items: center;
+    background: var(--bg-row);
+    border: 1px solid var(--line);
+    border-left: 4px solid var(--teal);
+    padding: 14px 16px;
+  }
+  .indicator.tone-clear  { border-left-color: var(--green); }
+  .indicator.tone-watch  { border-left-color: var(--sky); }
+  .indicator.tone-review { border-left-color: var(--amber); }
+  .indicator.tone-block  { border-left-color: var(--red); }
+
+  .indicator .copy span {
+    font-family: var(--mono); font-size: 9px;
+    letter-spacing: .18em; color: var(--text-mute);
+    text-transform: uppercase;
+  }
+  .indicator .copy strong {
+    display: block;
+    font-family: var(--sans); font-size: 1rem;
+    color: var(--ice);
+    margin-top: 2px;
+  }
+  .indicator .copy p {
+    margin: 4px 0 0; font-size: .82rem;
+    color: var(--text-soft); line-height: 1.5;
+  }
+
+  .badges {
+    display: flex; gap: 6px;
+    flex-wrap: wrap;
+    justify-content: end;
+  }
+
+  .indicator.compact {
+    grid-template-columns: 1fr auto;
+    padding: 8px 12px;
+  }
+  .indicator.compact .copy strong { font-size: .9rem; }
+  .indicator.compact .copy p { display: none; }
+
+  .variant-label {
+    font-family: var(--mono); font-size: 9px;
+    letter-spacing: .2em; color: var(--text-mute);
+    text-transform: uppercase;
+    margin-bottom: 6px;
+  }
+</style>
+</head>
+<body>
+
+<div class="kit-head">
+  <div>
+    <p class="eyebrow">▸ COMPONENT · SAFETY</p>
+    <h1>SafetyGateIndicator</h1>
+  </div>
+  <div class="meta">
+    <span>SOURCE · <b>SafetyGateIndicator.tsx</b></span>
+    <span>VARIANTS · <b>4 TONES · COMPACT</b></span>
+  </div>
+</div>
+
+<div class="indicator-stack">
+  <div>
+    <div class="variant-label">Tone · CLEAR · all gates green</div>
+    <section class="indicator tone-clear">
+      <div class="copy">
+        <span>Permission gate</span>
+        <strong>Operator · Soft gate</strong>
+        <p>No outstanding reviews. Last sweep 38 seconds ago. Continue.</p>
+      </div>
+      <div class="badges">
+        <span class="badge ok"><span class="dot"></span>Clear · 12</span>
+      </div>
+    </section>
+  </div>
+
+  <div>
+    <div class="variant-label">Tone · WATCH · low-risk drift</div>
+    <section class="indicator tone-watch">
+      <div class="copy">
+        <span>Permission gate</span>
+        <strong>Operator · Soft gate</strong>
+        <p>Three artifacts drifted into watch since the last review. No action required yet — surfaced for awareness.</p>
+      </div>
+      <div class="badges">
+        <span class="badge info"><span class="dot"></span>Watching · 3</span>
+        <span class="badge ok">Clear · 9</span>
+      </div>
+    </section>
+  </div>
+
+  <div>
+    <div class="variant-label">Tone · REVIEW · operator action needed</div>
+    <section class="indicator tone-review">
+      <div class="copy">
+        <span>Permission gate</span>
+        <strong>Operator · Soft gate</strong>
+        <p>Two artifacts need a reviewer ack before merge. Workflow paused; safe to resume after sign-off.</p>
+      </div>
+      <div class="badges">
+        <span class="badge warn"><span class="dot"></span>Needs review · 2</span>
+        <span class="badge info">Watching · 1</span>
+      </div>
+    </section>
+  </div>
+
+  <div>
+    <div class="variant-label">Tone · BLOCK · hard gate engaged</div>
+    <section class="indicator tone-block">
+      <div class="copy">
+        <span>Permission gate</span>
+        <strong>Pro · Hard gate</strong>
+        <p>Builder paused. One operation requires admin override; secrets broker reachability test failed twice.</p>
+      </div>
+      <div class="badges">
+        <span class="badge danger"><span class="dot"></span>Blocked · 1</span>
+        <span class="badge warn">Needs review · 2</span>
+        <span class="badge info">Watching · 1</span>
+      </div>
+    </section>
+  </div>
+
+  <div>
+    <div class="variant-label">Compact · for sidebars and topbar slots</div>
+    <section class="indicator tone-review compact">
+      <div class="copy">
+        <span>Permission gate</span>
+        <strong>Operator · Soft gate</strong>
+      </div>
+      <div class="badges">
+        <span class="badge warn">Needs review · 2</span>
+        <span class="badge info">Watching · 1</span>
+      </div>
+    </section>
+  </div>
+</div>
+
+</body>
+</html>

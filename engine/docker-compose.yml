@@ -1,0 +1,238 @@
+services:
+  frontend:
+    build:
+      context: ..
+      dockerfile: frontend/Dockerfile
+    ports:
+      - "${FRONTEND_PORT:-3000}:80"
+    environment:
+      API_BASE_URL: ${FRONTEND_API_BASE_URL:-http://localhost:8000}
+    depends_on:
+      api:
+        condition: service_started
+
+  api:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    ports:
+      - "${API_PORT:-8000}:8000"
+    env_file: .env
+    environment:
+      DATABASE_URL: postgresql+asyncpg://agent33:agent33@postgres:5432/agent33
+      REDIS_URL: redis://redis:6379/0
+      NATS_URL: nats://nats:4222
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      SEARXNG_URL: http://searxng:8080
+      JINA_API_KEY: ${JINA_API_KEY:-}
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nats:
+        condition: service_started
+      searxng:
+        condition: service_healthy
+    volumes:
+      - ./agent-definitions:/app/agent-definitions:ro
+      - ./workflow-definitions:/app/workflow-definitions:ro
+      - ./tool-definitions:/app/tool-definitions:ro
+      - shared_data:/data/shared
+
+  ollama:
+    image: ollama/ollama:latest
+    ports:
+      - "${OLLAMA_PORT:-11434}:11434"
+    environment:
+      OLLAMA_CONTEXT_LENGTH: "${OLLAMA_CONTEXT_LENGTH:-32768}"
+      OLLAMA_KV_CACHE_TYPE: "${OLLAMA_KV_CACHE_TYPE:-q8_0}"
+      OLLAMA_FLASH_ATTENTION: "${OLLAMA_FLASH_ATTENTION:-1}"
+    volumes:
+      - ollama_data:/root/.ollama
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    profiles:
+      - local-ollama
+
+  postgres:
+    image: pgvector/pgvector:pg16
+    environment:
+      POSTGRES_USER: agent33          # WARNING: change in production
+      POSTGRES_PASSWORD: agent33      # WARNING: change in production
+      POSTGRES_DB: agent33
+    ports:
+      - "${POSTGRES_PORT:-5432}:5432"
+    volumes:
+      - postgres_data:/var/lib/postgresql/data
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U agent33"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  redis:
+    image: redis:7-alpine
+    ports:
+      - "${REDIS_PORT:-6379}:6379"
+    volumes:
+      - redis_data:/data
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 5s
+      timeout: 3s
+      retries: 5
+
+  nats:
+    image: nats:2-alpine
+    ports:
+      - "${NATS_PORT:-4222}:4222"
+      - "127.0.0.1:8222:8222"
+    command: ["--jetstream", "--http_port", "8222"]
+
+  searxng:
+    image: searxng/searxng:latest
+    ports:
+      - "${SEARXNG_PORT:-8888}:8080"
+    volumes:
+      - searxng_data:/etc/searxng
+      - shared_data:/data/shared
+    healthcheck:
+      test: ["CMD", "wget", "--spider", "-q", "http://localhost:8080"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  devbox:
+    build:
+      context: .
+      dockerfile: Dockerfile.devbox
+    working_dir: /workspace
+    command: ["sleep", "infinity"]
+    stdin_open: true
+    tty: true
+    environment:
+      AGENT33_API_URL: http://api:8000
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      DATABASE_URL: postgresql://agent33:agent33@postgres:5432/agent33
+      REDIS_URL: redis://redis:6379/0
+      NATS_URL: nats://nats:4222
+      DOCKER_HOST: unix:///var/run/docker.sock
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      api:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nats:
+        condition: service_started
+    volumes:
+      - ..:/workspace
+      - shared_data:/data/shared
+      - /var/run/docker.sock:/var/run/docker.sock
+      - devbox_home:/root
+    profiles:
+      - dev
+
+  agent-os:
+    build:
+      context: .
+      dockerfile: Dockerfile.agent-os
+    working_dir: /workspace
+    stdin_open: true
+    tty: true
+    env_file: .env
+    environment:
+      AGENT33_API_URL: http://api:8000
+      AGENT33_HOME: /home/agentos/.agent33
+      AGENT33_SESSION: ${AGENT_OS_SESSION_NAME:-default}
+      AGENT33_WORKSPACE: /agent-workspace
+      OLLAMA_BASE_URL: ${OLLAMA_BASE_URL:-http://host.docker.internal:11434}
+      DATABASE_URL: postgresql://agent33:agent33@postgres:5432/agent33
+      REDIS_URL: redis://redis:6379/0
+      NATS_URL: nats://nats:4222
+      DOCKER_HOST: unix:///var/run/docker.sock
+    extra_hosts:
+      - "host.docker.internal:host-gateway"
+    depends_on:
+      api:
+        condition: service_started
+      postgres:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
+      nats:
+        condition: service_started
+      searxng:
+        condition: service_healthy
+    volumes:
+      - ..:/workspace
+      - shared_data:/data/shared
+      - agent_os_home:/home/agentos
+      - ${AGENT_OS_SESSION_WORKSPACE:-agent_os_workspace}:/agent-workspace
+      - /var/run/docker.sock:/var/run/docker.sock
+    profiles:
+      - agent-os
+
+  n8n:
+    image: n8nio/n8n:latest
+    ports:
+      - "${N8N_PORT:-5678}:5678"
+    environment:
+      N8N_HOST: 0.0.0.0
+      WEBHOOK_URL: http://n8n:5678
+      N8N_ENCRYPTION_KEY: ${N8N_ENCRYPTION_KEY:-change-me}
+    volumes:
+      - n8n_data:/home/node/.n8n
+      - shared_data:/data/shared
+    profiles:
+      - integrations
+    healthcheck:
+      test: ["CMD-SHELL", "wget --spider -q http://localhost:5678/healthz || exit 1"]
+      interval: 10s
+      timeout: 5s
+      retries: 3
+
+  airllm:
+    build:
+      context: .
+      dockerfile: Dockerfile.airllm
+    volumes:
+      - model_cache:/models
+    deploy:
+      resources:
+        reservations:
+          devices:
+            - driver: nvidia
+              count: all
+              capabilities: [gpu]
+    environment:
+      AIRLLM_ENABLED: "true"
+      AIRLLM_MODEL_PATH: /models/meta-llama/Meta-Llama-3-70B-Instruct
+      AIRLLM_DEVICE: cuda:0
+      DATABASE_URL: postgresql+asyncpg://agent33:agent33@postgres:5432/agent33
+      REDIS_URL: redis://redis:6379/0
+    profiles:
+      - gpu
+
+volumes:
+  ollama_data:
+  postgres_data:
+  redis_data:
+  model_cache:
+  searxng_data:
+  n8n_data:
+  shared_data:
+  devbox_home:
+  agent_os_home:
+  agent_os_workspace:

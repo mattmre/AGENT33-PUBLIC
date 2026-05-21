@@ -1,0 +1,210 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "./orchestrator.schema.json",
+  "title": "AGENT-33 Orchestrator Configuration Schema",
+  "description": "Schema for configuring the AGENT-33 orchestration engine",
+  "type": "object",
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Reference to this schema for IDE support"
+    },
+    "version": {
+      "type": "string",
+      "description": "Configuration version",
+      "pattern": "^\\d+\\.\\d+$",
+      "default": "1.0"
+    },
+    "project": {
+      "type": "object",
+      "description": "Project-level settings",
+      "properties": {
+        "name": {
+          "type": "string",
+          "description": "Project name"
+        },
+        "root": {
+          "type": "string",
+          "description": "Project root directory (relative to config file)"
+        },
+        "target_branch": {
+          "type": "string",
+          "description": "Branch to compare against for change detection",
+          "default": "main"
+        }
+      }
+    },
+    "incremental": {
+      "type": "object",
+      "description": "Incremental processing settings",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable incremental processing",
+          "default": true
+        },
+        "include_staged": {
+          "type": "boolean",
+          "description": "Include staged changes",
+          "default": true
+        },
+        "include_unstaged": {
+          "type": "boolean",
+          "description": "Include unstaged changes",
+          "default": true
+        },
+        "include_branch_diff": {
+          "type": "boolean",
+          "description": "Include branch diff",
+          "default": true
+        }
+      }
+    },
+    "execution": {
+      "type": "object",
+      "description": "Execution settings",
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["sequential", "parallel", "dependency-aware"],
+          "default": "sequential"
+        },
+        "parallel_limit": {
+          "type": "integer",
+          "description": "Maximum concurrent tasks",
+          "minimum": 1,
+          "maximum": 32,
+          "default": 4
+        },
+        "continue_on_error": {
+          "type": "boolean",
+          "description": "Continue execution after failures",
+          "default": false
+        },
+        "fail_fast": {
+          "type": "boolean",
+          "description": "Stop on first failure",
+          "default": true
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "description": "Global timeout for all tasks",
+          "minimum": 60,
+          "maximum": 86400,
+          "default": 3600
+        },
+        "task_timeout_seconds": {
+          "type": "integer",
+          "description": "Per-task timeout",
+          "minimum": 10,
+          "maximum": 3600,
+          "default": 300
+        }
+      }
+    },
+    "triggers": {
+      "type": "object",
+      "description": "Trigger settings",
+      "properties": {
+        "full_refresh_patterns": {
+          "type": "array",
+          "description": "Patterns that trigger full refresh",
+          "items": {"type": "string"}
+        },
+        "category_triggers": {
+          "type": "array",
+          "description": "Category-specific triggers",
+          "items": {
+            "type": "object",
+            "properties": {
+              "patterns": {
+                "type": "array",
+                "items": {"type": "string"}
+              },
+              "categories": {
+                "type": "array",
+                "items": {"type": "string"}
+              }
+            }
+          }
+        }
+      }
+    },
+    "filters": {
+      "type": "object",
+      "description": "Artifact filtering settings",
+      "properties": {
+        "include": {
+          "type": "array",
+          "description": "Glob patterns to include",
+          "items": {"type": "string"}
+        },
+        "exclude": {
+          "type": "array",
+          "description": "Glob patterns to exclude",
+          "items": {"type": "string"}
+        }
+      }
+    },
+    "dry_run": {
+      "type": "object",
+      "description": "Dry run settings",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable dry run mode",
+          "default": false
+        },
+        "output_plan": {
+          "type": "boolean",
+          "description": "Output execution plan",
+          "default": true
+        },
+        "output_file": {
+          "type": "string",
+          "description": "File to write dry run output"
+        }
+      }
+    },
+    "analytics": {
+      "type": "object",
+      "description": "Analytics and metrics settings",
+      "properties": {
+        "enabled": {
+          "type": "boolean",
+          "description": "Enable analytics collection",
+          "default": true
+        },
+        "output_file": {
+          "type": "string",
+          "description": "File to write metrics"
+        },
+        "include_timing": {
+          "type": "boolean",
+          "description": "Include timing metrics",
+          "default": true
+        }
+      }
+    },
+    "logging": {
+      "type": "object",
+      "description": "Logging settings",
+      "properties": {
+        "level": {
+          "type": "string",
+          "enum": ["debug", "info", "warning", "error"],
+          "default": "info"
+        },
+        "format": {
+          "type": "string",
+          "enum": ["text", "json"],
+          "default": "text"
+        },
+        "file": {
+          "type": "string",
+          "description": "Log file path"
+        }
+      }
+    }
+  }
+}

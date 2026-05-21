@@ -1,0 +1,61 @@
+name: release-readiness-checklist
+version: 1.0.0
+description: Build a release checklist with validation, risks, rollback notes, and go/no-go guidance.
+inputs:
+  release_goal:
+    type: string
+    description: What is being released and why.
+    required: true
+  target_version:
+    type: string
+    description: Optional version, tag, or milestone.
+    required: false
+  release_notes:
+    type: string
+    description: Existing release notes or changelog draft.
+    required: false
+outputs:
+  release_checklist:
+    type: object
+    description: Ordered readiness checklist with owners and gates.
+  decision_summary:
+    type: object
+    description: Go or no-go recommendation with blockers and rollback notes.
+steps:
+  - id: collect-context
+    name: Collect release context
+    action: invoke-agent
+    agent: orchestrator
+    inputs:
+      release_goal: ${inputs.release_goal}
+      target_version: ${inputs.target_version}
+      release_notes: ${inputs.release_notes}
+      instruction: Summarize release scope, impacted users, known risks, and missing context.
+  - id: validation-plan
+    name: Plan validation gates
+    action: invoke-agent
+    agent: validator
+    depends_on:
+      - collect-context
+    inputs:
+      context: ${steps.collect-context.outputs}
+      instruction: Identify required tests, builds, manual checks, monitoring, and rollback triggers.
+  - id: decision
+    name: Prepare launch decision
+    action: invoke-agent
+    agent: reviewer
+    depends_on:
+      - validation-plan
+    inputs:
+      validation_plan: ${steps.validation-plan.outputs}
+      instruction: Produce a go or no-go summary with blockers, owners, and rollback notes.
+execution:
+  mode: dependency-aware
+  fail_fast: true
+metadata:
+  author: AGENT-33
+  tags:
+    - official
+    - release
+    - checklist
+    - validation

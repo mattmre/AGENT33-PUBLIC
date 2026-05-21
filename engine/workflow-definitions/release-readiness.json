@@ -1,0 +1,101 @@
+{
+  "$schema": "../core/schemas/workflow.schema.json",
+  "name": "release-readiness-gate",
+  "version": "1.0.0",
+  "description": "Release readiness flow that gathers evidence, runs smoke checks, reviews risk, and publishes a release checklist.",
+  "triggers": {
+    "manual": true,
+    "on_event": ["review-complete"]
+  },
+  "inputs": {
+    "release_id": {
+      "type": "string",
+      "description": "Identifier of the release candidate",
+      "required": true
+    },
+    "environment": {
+      "type": "string",
+      "description": "Environment under review",
+      "default": "staging"
+    }
+  },
+  "outputs": {
+    "release_decision": {
+      "type": "object",
+      "description": "Release approval summary"
+    }
+  },
+  "steps": [
+    {
+      "id": "collect-evidence",
+      "name": "Collect Release Evidence",
+      "action": "run-command",
+      "command": "echo release-evidence",
+      "outputs": {
+        "evidence": "stdout"
+      }
+    },
+    {
+      "id": "run-smoke",
+      "name": "Run Smoke Checks",
+      "action": "run-command",
+      "depends_on": ["collect-evidence"],
+      "command": "echo smoke-passed",
+      "outputs": {
+        "smoke_result": "stdout"
+      }
+    },
+    {
+      "id": "review-risk",
+      "name": "Review Release Risk",
+      "action": "invoke-agent",
+      "agent": "security-scanner",
+      "depends_on": ["collect-evidence"],
+      "inputs": {
+        "release_evidence": "{{ steps['collect-evidence'].evidence }}"
+      },
+      "outputs": {
+        "risk_findings": "findings"
+      }
+    },
+    {
+      "id": "approval-decision",
+      "name": "Make Approval Decision",
+      "action": "conditional",
+      "depends_on": ["run-smoke", "review-risk"],
+      "condition": "run-smoke.smoke_result == 'smoke-passed' and not review-risk.get('risk_findings')",
+      "outputs": {
+        "approved": "condition_result"
+      }
+    },
+    {
+      "id": "publish-checklist",
+      "name": "Publish Release Checklist",
+      "action": "transform",
+      "depends_on": ["approval-decision"],
+      "inputs": {
+        "template": {
+          "release": "{{ inputs.release_id }}",
+          "approved": "{{ approval-decision.condition_result }}",
+          "environment": "{{ inputs.environment }}"
+        }
+      },
+      "outputs": {
+        "release_decision": "result"
+      }
+    }
+  ],
+  "execution": {
+    "mode": "dependency-aware",
+    "parallel_limit": 3,
+    "continue_on_error": false,
+    "fail_fast": true,
+    "timeout_seconds": 300,
+    "dry_run": false
+  },
+  "metadata": {
+    "author": "agent-33",
+    "created": "2026-03-04",
+    "tags": ["release", "quality", "synthetic"]
+  }
+}

@@ -1,0 +1,44 @@
+name: developer-assistant
+version: 1.0.0
+description: Developer workflow pack covering test execution, linting, git operations,
+  and error diagnosis. Designed to assist developers with common engineering tasks.
+author: agent33-team
+license: Apache-2.0
+tags:
+  - developer
+  - testing
+  - git
+  - linting
+  - debugging
+category: engineering
+skills:
+  - name: run-tests
+    path: skills/run-tests
+    description: Run project tests and report results with failure diagnostics.
+  - name: lint-code
+    path: skills/lint-code
+    description: Lint source code and auto-fix safe violations.
+  - name: git-workflow
+    path: skills/git-workflow
+    description: Assist with common git operations including branching, committing, and PRs.
+  - name: explain-error
+    path: skills/explain-error
+    description: Diagnose and explain error messages with actionable fix steps.
+prompt_addenda:
+  - |
+    When assisting with developer tasks, always show the exact command before
+    running it. Prefer minimal, targeted changes — do not refactor code beyond
+    the scope of the immediate task. When a command fails, read the full error
+    output before suggesting a fix. Never run destructive commands (rm -rf,
+    git reset --hard, git push --force) without explicit user confirmation.
+    Prefer additive solutions over deletions when both achieve the goal.
+tool_config:
+  shell:
+    enabled: true
+    require_confirmation_for:
+      - git push
+      - git reset
+      - rm
+      - git clean
+  file_ops:
+    enabled: true

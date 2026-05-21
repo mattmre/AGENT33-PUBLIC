@@ -1,0 +1,106 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="_card.css">
+<style>
+  .dsp { padding: 22px 26px; }
+  .grid {
+    display: grid; gap: 14px;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    margin-top: 14px;
+    max-width: 640px;
+  }
+  label {
+    display: grid; gap: .4rem;
+    color: #94a3b8; font-size: .82rem;
+    font-family: "Space Grotesk", sans-serif;
+  }
+  label .row {
+    display: flex; justify-content: space-between; align-items: baseline;
+  }
+  label .hint {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: .68rem; color: #6fa8b8; letter-spacing: .08em;
+  }
+  .field {
+    width: 100%;
+    border: 1px solid transparent;
+    background: #1a1d21;
+    color: #e2e8f0;
+    border-radius: 4px;
+    padding: .65rem .85rem;
+    box-shadow: inset 4px 4px 8px rgba(0,0,0,.45), inset -4px -4px 8px rgba(255,255,255,.04);
+    font-family: "Space Grotesk", sans-serif;
+    font-size: .9rem;
+    outline: none;
+  }
+  .field.mono { font-family: "IBM Plex Mono", monospace; font-size: .82rem; }
+  .field.focus {
+    border-color: rgba(48,213,200,.55);
+    box-shadow:
+      inset 6px 6px 12px rgba(0,0,0,.5),
+      inset -6px -6px 12px rgba(255,255,255,.03),
+      0 0 0 2px rgba(48,213,200,.18);
+  }
+  .field.error { border-color: rgba(255,107,107,.55); }
+  .field.disabled { opacity: .42; }
+
+  .err-msg {
+    color: #ff6b6b; font-size: .72rem;
+    font-family: "IBM Plex Mono", monospace; letter-spacing: .04em;
+  }
+
+  .token-row {
+    display:flex; gap:18px; align-items:center;
+    padding: 10px 12px;
+    border: 1px solid rgba(125,182,202,.16);
+    border-radius: 4px;
+    background: rgba(8,18,24,.55);
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px;
+    color: #9dc3cf;
+    letter-spacing: .04em;
+    margin-top: 16px;
+    max-width: 640px;
+  }
+  .token-row b { color: #30d5c8; font-weight: 500; }
+  .token-row .sep { color: rgba(125,182,202,.3); }
+</style>
+</head>
+<body>
+<div class="dsp">
+  <p class="eyebrow">INPUTS · STATES</p>
+
+  <div class="grid">
+    <label>
+      <div class="row"><span>Username</span><span class="hint">REST</span></div>
+      <input class="field" value="admin">
+    </label>
+
+    <label>
+      <div class="row"><span>Bearer token</span><span class="hint">FOCUS</span></div>
+      <input class="field mono focus" value="demo-jwt-token-placeholder">
+    </label>
+
+    <label>
+      <div class="row"><span>Run ID</span><span class="hint">ERROR</span></div>
+      <input class="field mono error" value="run_">
+      <span class="err-msg">› expected format run_xxxxxxxx</span>
+    </label>
+
+    <label>
+      <div class="row"><span>Trace ID</span><span class="hint">DISABLED</span></div>
+      <input class="field mono disabled" value="tr_8af0c2" disabled>
+    </label>
+  </div>
+
+  <div class="token-row">
+    <span><b>radius</b> 4px</span><span class="sep">·</span>
+    <span><b>padding</b> .65rem .85rem</span><span class="sep">·</span>
+    <span><b>shadow</b> none · hairline border</span><span class="sep">·</span>
+    <span><b>focus</b> teal ring 2px</span>
+  </div>
+</div>
+</body>
+</html>

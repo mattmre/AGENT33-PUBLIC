@@ -1,0 +1,176 @@
+name: observe-decide-execute
+version: 1.0.0
+description: >
+  Full observe → decide → execute improvement cycle. Covers signal collection,
+  root-cause triage, action selection, controlled execution, and verification.
+  Maps to the human cadence described in Phase 27 Stage 3.
+triggers:
+  manual: true
+  on_event:
+    - webhook
+inputs:
+  cycle_id:
+    type: string
+    description: Unique identifier for this improvement cycle run.
+    required: true
+  observe_period:
+    type: string
+    description: Time window used for signal collection (e.g. "last-7d").
+    default: last-7d
+  signal_sources:
+    type: array
+    description: Subsystems from which signals are pulled.
+    default:
+      - traces
+      - evaluations
+      - improvements
+      - releases
+  decision_threshold:
+    type: string
+    description: Minimum confidence level required before approving an action.
+    default: medium
+  dry_run:
+    type: boolean
+    description: When true, the execute step plans but does not apply changes.
+    default: false
+outputs:
+  result:
+    type: object
+    description: >
+      Cycle result containing observed signals, decided action, execution
+      outcome, and verification status.
+steps:
+  - id: validate_inputs
+    name: Validate cycle inputs
+    action: validate
+    inputs:
+      data: cycle_id
+      expression: "'data'"
+
+  - id: observe
+    name: Collect and normalize signals
+    action: transform
+    depends_on:
+      - validate_inputs
+    inputs:
+      data:
+        cycle_id: cycle_id
+        observe_period: observe_period
+        signal_sources: signal_sources
+        # Downstream steps consume this normalized context object.
+        # In a live environment, a preceding invoke_agent step would pull
+        # real metrics; the transform here shapes whatever was pre-collected.
+        signals:
+          - source: traces
+            label: Recent trace failure rate
+            prompt: "What fraction of traces in the period ended in failure?"
+          - source: evaluations
+            label: Regression indicator
+            prompt: "Are any evaluation gates currently failing?"
+          - source: improvements
+            label: Overdue intake items
+            prompt: "Are there accepted intake items with no assigned owner?"
+          - source: releases
+            label: Rollback risk
+            prompt: "Was any release rolled back during the observe period?"
+
+  - id: decide
+    name: Triage signals and select action
+    action: transform
+    depends_on:
+      - observe
+    inputs:
+      data:
+        cycle_id: cycle_id
+        decision_threshold: decision_threshold
+        signals: observe.result.signals
+        decision_prompts:
+          - "Score each signal: high / medium / low urgency."
+          - "Select the one action most likely to reduce the top signal."
+          - "Record the rationale in 1-2 sentences."
+        decision:
+          action_type: unset
+          confidence: unset
+          rationale: "Operator must complete this triage step before execute runs."
+          approved: false
+
+  - id: execute
+    name: Execute the decided improvement action
+    action: conditional
+    condition: "decide.result.decision.approved"
+    depends_on:
+      - decide
+    then:
+      - id: execute_action
+        name: Apply improvement action (or plan it in dry-run mode)
+        action: invoke-agent
+        inputs:
+          agent_id: director
+          task: >
+            Execute the improvement action selected in the decide step.
+            Cycle: {{ cycle_id }}.
+            Action type: {{ decide.result.decision.action_type }}.
+            Rationale: {{ decide.result.decision.rationale }}.
+            Dry run: {{ dry_run }}.
+            Record the outcome, any blockers, and whether a follow-on review is needed.
+    else:
+      - id: skip_execute
+        name: Record that execute was skipped (not approved)
+        action: transform
+        inputs:
+          data:
+            status: skipped
+            reason: "Decision step returned approved=false; no action was applied."
+
+  - id: verify
+    name: Verify improvement outcome
+    action: transform
+    depends_on:
+      - execute
+    inputs:
+      data:
+        cycle_id: cycle_id
+        status: "{{ execute_action.result.status or skip_execute.result.status }}"
+        verification_prompts:
+          - "Did the primary signal improve after the action?"
+          - "Were any regressions introduced?"
+          - "Is a follow-up cycle needed?"
+        report_markdown: |
+          ## Observe-Decide-Execute Cycle: {{ cycle_id }}
+
+          ### Observe period
+          - {{ observe_period }}
+
+          ### Signal sources
+          {% for source in signal_sources or ['traces', 'evaluations', 'improvements', 'releases'] %}
+          - {{ source }}
+          {% endfor %}
+
+          ### Decided action
+          - Type: {{ decide.result.decision.action_type }}
+          - Confidence: {{ decide.result.decision.confidence }}
+          - Rationale: {{ decide.result.decision.rationale }}
+          - Approved: {{ decide.result.decision.approved }}
+
+          ### Execution outcome
+          - Status: {{ status }}
+          - Dry run: {{ dry_run }}
+
+          ### Verification checklist
+          1. Confirm the primary signal improved.
+          2. Confirm no regressions were introduced.
+          3. Decide whether a follow-up cycle is needed.
+
+execution:
+  mode: dependency-aware
+  fail_fast: false
+metadata:
+  author: implementer
+  created: "2026-05-16"
+  updated: "2026-05-16"
+  tags:
+    - improvement-cycle
+    - observe
+    - decide
+    - execute
+    - template

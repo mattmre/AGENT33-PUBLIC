@@ -1,0 +1,29 @@
+name: personal-assistant
+version: "1.0.0"
+description: "General-purpose personal assistant for task management, questions, and planning"
+inputs:
+  request:
+    type: string
+    required: true
+    description: "Your question, task, or request"
+outputs:
+  response:
+    type: string
+    description: "Assistant response"
+steps:
+  - id: assist
+    name: "Personal Assistant"
+    action: invoke-agent
+    agent: orchestrator
+    inputs:
+      agent_name: orchestrator
+      message: "You are a helpful personal assistant. Please help with: {{ request }}"
+    depends_on: []
+execution:
+  mode: sequential
+  fail_fast: false
+metadata:
+  author: agent-33
+  tags: [personal, assistant, general]
+sample_inputs:
+  request: "Help me plan my week. I have a project deadline Friday, a team meeting Tuesday, and need to review 3 pull requests."

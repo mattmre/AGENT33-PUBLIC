@@ -1,0 +1,35 @@
+name: document-summarizer
+version: "1.0.0"
+description: "Summarize a document or URL into key points, action items, and a brief overview"
+inputs:
+  content:
+    type: string
+    required: true
+    description: "Document text or URL to summarize"
+  format:
+    type: string
+    required: false
+    default: "bullet-points"
+    description: "Output format: bullet-points, paragraph, or executive-summary"
+outputs:
+  summary:
+    type: string
+    description: "Document summary"
+steps:
+  - id: summarize
+    name: "Summarize Document"
+    action: invoke-agent
+    agent: orchestrator
+    inputs:
+      agent_name: orchestrator
+      message: "Summarize the following content in {{ format }} format. Include key points, important decisions, and any action items: {{ content }}"
+    depends_on: []
+execution:
+  mode: sequential
+  fail_fast: false
+metadata:
+  author: agent-33
+  tags: [document, summary, productivity]
+sample_inputs:
+  content: "The quarterly business review showed that revenue grew 23% year-over-year, driven primarily by enterprise subscription growth. Key challenges include customer churn in the SMB segment (up 8%) and rising cloud infrastructure costs. The board approved a $2M investment in sales tooling and a new customer success program targeting accounts with under 90-day tenure. Next quarter targets: 15% revenue growth, reduce SMB churn to 5%, achieve SOC2 Type II certification."
+  format: "bullet-points"

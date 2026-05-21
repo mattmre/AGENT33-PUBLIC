@@ -1,0 +1,56 @@
+name: test-generation-sprint
+version: 1.0.0
+description: Plan and execute a focused test-generation sprint around a target area.
+inputs:
+  target_area:
+    type: string
+    description: Feature, module, route, or behavior to cover with tests.
+    required: true
+  test_goal:
+    type: string
+    description: Desired coverage, cases, or regressions to protect.
+    required: false
+outputs:
+  test_plan:
+    type: object
+    description: Prioritized cases and fixture needs.
+  validation_summary:
+    type: object
+    description: Test implementation and validation results.
+steps:
+  - id: discover-patterns
+    name: Discover test patterns
+    action: invoke-agent
+    agent: researcher
+    inputs:
+      target_area: ${inputs.target_area}
+      test_goal: ${inputs.test_goal}
+      instruction: Find existing test conventions, commands, fixtures, and gaps for the target area.
+  - id: plan-cases
+    name: Plan high-value cases
+    action: invoke-agent
+    agent: reviewer
+    depends_on:
+      - discover-patterns
+    inputs:
+      patterns: ${steps.discover-patterns.outputs}
+      instruction: Prioritize test cases by user impact, risk, and implementation cost.
+  - id: implementation-slice
+    name: Prepare first test slice
+    action: invoke-agent
+    agent: orchestrator
+    depends_on:
+      - plan-cases
+    inputs:
+      test_plan: ${steps.plan-cases.outputs}
+      instruction: Draft a review-gated first test implementation and validation command.
+execution:
+  mode: dependency-aware
+  fail_fast: true
+metadata:
+  author: AGENT-33
+  tags:
+    - official
+    - testing
+    - quality
+    - review-gated

@@ -1,0 +1,207 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "$id": "./workflow.schema.json",
+  "title": "AGENT-33 Workflow Definition Schema",
+  "description": "Schema for defining workflows in the AGENT-33 orchestration framework",
+  "type": "object",
+  "required": ["name", "version", "steps"],
+  "properties": {
+    "$schema": {
+      "type": "string",
+      "description": "Reference to this schema for IDE support"
+    },
+    "name": {
+      "type": "string",
+      "description": "Unique identifier for the workflow",
+      "pattern": "^[a-z][a-z0-9-]*$",
+      "minLength": 2,
+      "maxLength": 64
+    },
+    "version": {
+      "type": "string",
+      "description": "Semantic version of the workflow definition",
+      "pattern": "^\\d+\\.\\d+\\.\\d+$"
+    },
+    "description": {
+      "type": "string",
+      "description": "Human-readable description of the workflow's purpose",
+      "maxLength": 500
+    },
+    "triggers": {
+      "type": "object",
+      "description": "Events that trigger this workflow",
+      "properties": {
+        "manual": {
+          "type": "boolean",
+          "description": "Can be triggered manually",
+          "default": true
+        },
+        "on_change": {
+          "type": "array",
+          "description": "Glob patterns that trigger on file change",
+          "items": {"type": "string"}
+        },
+        "schedule": {
+          "type": "string",
+          "description": "Cron expression for scheduled runs"
+        },
+        "on_event": {
+          "type": "array",
+          "description": "System events that trigger this workflow",
+          "items": {
+            "type": "string",
+            "enum": ["session-start", "session-end", "artifact-created", "review-complete"]
+          }
+        }
+      }
+    },
+    "inputs": {
+      "type": "object",
+      "description": "Input parameters for the workflow",
+      "additionalProperties": {
+        "$ref": "#/$defs/parameterDef"
+      }
+    },
+    "outputs": {
+      "type": "object",
+      "description": "Output parameters from the workflow",
+      "additionalProperties": {
+        "$ref": "#/$defs/parameterDef"
+      }
+    },
+    "steps": {
+      "type": "array",
+      "description": "Ordered list of workflow steps",
+      "minItems": 1,
+      "items": {
+        "$ref": "#/$defs/stepDef"
+      }
+    },
+    "execution": {
+      "type": "object",
+      "description": "Execution configuration",
+      "properties": {
+        "mode": {
+          "type": "string",
+          "enum": ["sequential", "parallel", "dependency-aware"],
+          "default": "sequential"
+        },
+        "parallel_limit": {
+          "type": "integer",
+          "minimum": 1,
+          "maximum": 32,
+          "default": 4
+        },
+        "continue_on_error": {
+          "type": "boolean",
+          "default": false
+        },
+        "fail_fast": {
+          "type": "boolean",
+          "default": true
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 60,
+          "maximum": 86400
+        },
+        "dry_run": {
+          "type": "boolean",
+          "description": "Simulate without side effects",
+          "default": false
+        }
+      }
+    },
+    "metadata": {
+      "type": "object",
+      "properties": {
+        "author": {"type": "string"},
+        "created": {"type": "string", "format": "date"},
+        "updated": {"type": "string", "format": "date"},
+        "tags": {
+          "type": "array",
+          "items": {"type": "string"}
+        }
+      }
+    }
+  },
+  "$defs": {
+    "parameterDef": {
+      "type": "object",
+      "required": ["type"],
+      "properties": {
+        "type": {
+          "type": "string",
+          "enum": ["string", "number", "boolean", "array", "object", "path"]
+        },
+        "description": {"type": "string"},
+        "required": {"type": "boolean", "default": false},
+        "default": {}
+      }
+    },
+    "stepDef": {
+      "type": "object",
+      "required": ["id", "action"],
+      "properties": {
+        "id": {
+          "type": "string",
+          "description": "Unique step identifier",
+          "pattern": "^[a-z][a-z0-9-]*$"
+        },
+        "name": {
+          "type": "string",
+          "description": "Human-readable step name"
+        },
+        "action": {
+          "type": "string",
+          "description": "Action to perform",
+          "enum": [
+            "invoke-agent",
+            "run-command",
+            "validate",
+            "transform",
+            "conditional",
+            "parallel-group",
+            "wait"
+          ]
+        },
+        "agent": {
+          "type": "string",
+          "description": "Agent to invoke (for invoke-agent action)"
+        },
+        "command": {
+          "type": "string",
+          "description": "Command to run (for run-command action)"
+        },
+        "inputs": {
+          "type": "object",
+          "description": "Input mapping for this step"
+        },
+        "outputs": {
+          "type": "object",
+          "description": "Output mapping from this step"
+        },
+        "condition": {
+          "type": "string",
+          "description": "Expression to evaluate for conditional execution"
+        },
+        "depends_on": {
+          "type": "array",
+          "description": "Step IDs this step depends on",
+          "items": {"type": "string"}
+        },
+        "retry": {
+          "type": "object",
+          "properties": {
+            "max_attempts": {"type": "integer", "minimum": 1, "maximum": 10},
+            "delay_seconds": {"type": "integer", "minimum": 1}
+          }
+        },
+        "timeout_seconds": {
+          "type": "integer",
+          "minimum": 10
+        }
+      }
+    }
+  }
+}

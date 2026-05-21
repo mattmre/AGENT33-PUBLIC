@@ -1,0 +1,30 @@
+# AGENT-33 Load Test Scenario: Standard
+#
+# Purpose: Realistic single-instance workload representing normal production
+# traffic. Validates SLO-adjacent latencies and confirms no resource
+# exhaustion under sustained moderate load.
+#
+# Usage:
+#   locust -f locustfile.py --config scenarios/standard.yaml
+#   locust -f locustfile.py --config scenarios/standard.yaml --auth-token "$TOKEN"
+
+# Target host (override with --host on CLI or LOCUST_HOST env var)
+host: http://localhost:8000
+
+# Concurrency profile
+users: 50
+spawn-rate: 5
+run-time: 120s
+
+# Headless mode for CI / scripted runs
+headless: true
+
+# Acceptance criteria (documented, not enforced by Locust natively):
+#   - Failure rate < 1% across all endpoints
+#   - /healthz p95 < 50ms
+#   - /health p95 < 100ms
+#   - /readyz p95 < 200ms
+#   - /metrics p95 < 200ms
+#   - Agent invoke p95 < 5s (LLM-dependent)
+#   - Session lifecycle p95 < 2s (excluding agent invoke)
+#   - No HTTP 5xx errors on health or metrics endpoints

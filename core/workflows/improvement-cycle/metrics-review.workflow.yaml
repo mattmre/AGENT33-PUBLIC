@@ -1,0 +1,99 @@
+name: improvement-cycle-metrics-review
+version: 1.0.0
+description: Deterministic metrics review scaffold for recurring improvement checkpoints.
+triggers:
+  manual: true
+  schedule: weekly
+inputs:
+  review_period:
+    type: string
+    description: Time range being reviewed.
+    required: true
+  baseline_period:
+    type: string
+    description: Optional comparison period.
+    default: previous comparable period
+  focus_areas:
+    type: array
+    description: Metric categories to prioritize.
+    default:
+      - build-health
+      - test-coverage
+      - api-alignment
+  metrics_snapshot:
+    type: object
+    description: Optional structured metric values already collected for the review.
+    default: {}
+  regression_threshold_percent:
+    type: integer
+    description: Threshold for flagging regressions.
+    default: 10
+outputs:
+  result:
+    type: object
+    description: Prepared metrics review scaffold with summary, prompts, and markdown output.
+steps:
+  - id: validate
+    name: Validate required review period input
+    action: validate
+    inputs:
+      data: review_period
+      expression: "'data'"
+  - id: collect
+    name: Normalize metrics review context
+    action: transform
+    depends_on:
+      - validate
+    inputs:
+      data:
+        review_period: review_period
+        baseline_period: baseline_period
+        focus_areas: focus_areas
+        metrics_snapshot: metrics_snapshot
+        regression_threshold_percent: regression_threshold_percent
+  - id: summarize
+    name: Produce metrics review scaffold outputs
+    action: transform
+    depends_on:
+      - collect
+    inputs:
+      data:
+        status: "'ready'"
+        summary: "'Metrics review scaffold prepared for ' ~ collect.result.review_period"
+        recommendation_prompts:
+          - "'Investigate regressions above the agreed threshold.'"
+          - "'Record one concrete recommendation for the next review.'"
+        report_markdown: |
+          ## Metrics Review: {{ collect.result.review_period }}
+
+          ### Baseline
+          - {{ collect.result.baseline_period or 'previous comparable period' }}
+
+          ### Focus Areas
+          {% for area in collect.result.focus_areas or ['build-health', 'test-coverage', 'api-alignment'] %}
+          - {{ area }}
+          {% endfor %}
+
+          ### Metrics Snapshot
+          {% if collect.result.metrics_snapshot %}
+          {% for key, value in collect.result.metrics_snapshot.items() %}
+          - **{{ key }}**: {{ value }}
+          {% endfor %}
+          {% else %}
+          - Add collected metric values for this review period.
+          {% endif %}
+
+          ### Review Prompts
+          1. Flag regressions greater than {{ collect.result.regression_threshold_percent or 10 }}%.
+          2. Record one concrete recommendation for each focus area.
+execution:
+  mode: dependency-aware
+  fail_fast: true
+metadata:
+  author: implementer
+  created: "2026-03-06"
+  updated: "2026-03-06"
+  tags:
+    - improvement-cycle
+    - metrics
+    - template

@@ -1,0 +1,202 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>AGENT-33 · ObservationStream</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="_kit.css">
+<style>
+  body { max-width: 980px; }
+  .stream-head {
+    display: flex; justify-content: space-between; align-items: end;
+    padding-bottom: 10px;
+    border-bottom: 1px solid var(--line);
+  }
+  .stream-head h3 { margin: 4px 0 0; color: var(--ice); font-size: 1rem; }
+  .stream-head .live {
+    display: inline-flex; align-items: center; gap: 6px;
+    font-family: var(--mono); font-size: 10px;
+    letter-spacing: .16em; color: var(--teal);
+    text-transform: uppercase;
+  }
+  .stream-head .live::before {
+    content: ""; width: 8px; height: 8px;
+    background: var(--teal); border-radius: 50%;
+    animation: livepulse 1.4s ease-in-out infinite;
+  }
+  @keyframes livepulse {
+    0%, 100% { opacity: 1; transform: scale(1); }
+    50%      { opacity: .35; transform: scale(.6); }
+  }
+  .stream {
+    margin-top: 12px;
+    display: grid; gap: 8px;
+  }
+  .obs {
+    background: var(--bg-deep);
+    border-left: 2px solid var(--line);
+    padding: 9px 12px;
+    display: grid; gap: 6px;
+  }
+  .obs.handoff_context_wipe { border-left-color: var(--amber); }
+  .obs.tool_call            { border-left-color: var(--teal); }
+  .obs.tool_call.a2a        { border-left-color: var(--sky); }
+  .obs.tool_call.tldr       { border-left-color: var(--green); }
+  .obs.error                { border-left-color: var(--red); }
+
+  .obs-head {
+    display: flex; gap: 12px; align-items: center;
+    font-family: var(--mono); font-size: 9px;
+    letter-spacing: .14em; text-transform: uppercase;
+  }
+  .obs-head .time  { color: var(--text-mute); }
+  .obs-head .agent { color: var(--ice); font-weight: 500; }
+  .obs-head .type  {
+    margin-left: auto;
+    background: var(--teal-soft);
+    color: var(--teal);
+    padding: 2px 8px;
+  }
+  .obs.handoff_context_wipe .obs-head .type { background: var(--amber-soft); color: var(--amber); }
+  .obs.tool_call.a2a       .obs-head .type { background: var(--sky-soft); color: var(--sky); }
+  .obs.tool_call.tldr      .obs-head .type { background: var(--green-soft); color: var(--green); }
+  .obs.error               .obs-head .type { background: var(--red-soft);   color: var(--red); }
+
+  .obs-content {
+    margin: 0;
+    font-family: var(--mono);
+    font-size: 11px;
+    color: #cfeaef;
+    line-height: 1.5;
+    white-space: pre-wrap;
+    background: #03080c;
+    padding: 8px 10px;
+    border-left: 1px solid var(--line);
+  }
+  .obs-meta {
+    display: flex; gap: 12px;
+    font-family: var(--mono); font-size: 9px;
+    letter-spacing: .12em; color: var(--text-mute);
+    text-transform: uppercase;
+  }
+  .obs-meta b { color: var(--ice); font-weight: 500; }
+
+  .empty {
+    margin-top: 14px;
+    padding: 22px;
+    text-align: center;
+    font-family: var(--mono); font-size: 11px;
+    letter-spacing: .14em; color: var(--text-mute);
+    text-transform: uppercase;
+    border: 1px dashed var(--line);
+  }
+  .variant-label {
+    font-family: var(--mono); font-size: 9px;
+    letter-spacing: .2em; color: var(--text-mute);
+    text-transform: uppercase;
+    margin: 22px 0 6px;
+  }
+</style>
+</head>
+<body>
+
+<div class="kit-head">
+  <div>
+    <p class="eyebrow">▸ COMPONENT · LIVE STREAM</p>
+    <h1>ObservationStream</h1>
+  </div>
+  <div class="meta">
+    <span>SOURCE · <b>ObservationStream.tsx</b></span>
+    <span>SSE · <b>/v1/operations/stream</b></span>
+  </div>
+</div>
+
+<section class="panel">
+  <div class="panel-body">
+    <header class="stream-head">
+      <div>
+        <span class="eyebrow">▸ LIVE CORE MECHANICS</span>
+        <h3>Phase-34 stream</h3>
+      </div>
+      <span class="live">streaming · 4 events</span>
+    </header>
+
+    <div class="stream">
+      <article class="obs handoff_context_wipe">
+        <div class="obs-head">
+          <span class="time">14:09:42</span>
+          <span class="agent">orchestrator</span>
+          <span class="type">↻ Handoff wipe</span>
+        </div>
+        <pre class="obs-content">{
+  "from": "scout",
+  "to":   "builder",
+  "preserved": ["plan_of_record", "redaction_rules"],
+  "wiped_keys": 14
+}</pre>
+        <div class="obs-meta">
+          <span>TRACE · <b>tr_8af0c2</b></span>
+          <span>WORKSPACE · <b>cache-rollout</b></span>
+        </div>
+      </article>
+
+      <article class="obs tool_call a2a">
+        <div class="obs-head">
+          <span class="time">14:09:38</span>
+          <span class="agent">orchestrator</span>
+          <span class="type">⌬ A2A subordinate</span>
+        </div>
+        <pre class="obs-content">deploy_a2a_subordinate(
+  agent="forge",
+  task="wire_prom_counters",
+  budget_tokens=8000,
+  budget_seconds=120
+)</pre>
+        <div class="obs-meta">
+          <span>TRACE · <b>tr_8af0c2</b></span>
+          <span>RETURNS · <b>run_id rn_22f9</b></span>
+        </div>
+      </article>
+
+      <article class="obs tool_call tldr">
+        <div class="obs-head">
+          <span class="time">14:09:11</span>
+          <span class="agent">scout</span>
+          <span class="type">▸ TLDR enforcer</span>
+        </div>
+        <pre class="obs-content">tldr_read_enforcer(
+  source="postmortem/482.md",
+  max_tokens=512,
+  preserve=["root_cause", "mitigation"]
+)</pre>
+        <div class="obs-meta">
+          <span>SAVED · <b>4.2k tokens</b></span>
+          <span>SUMMARY · <b>184 tokens</b></span>
+        </div>
+      </article>
+
+      <article class="obs error">
+        <div class="obs-head">
+          <span class="time">14:08:50</span>
+          <span class="agent">trace-exporter</span>
+          <span class="type">✕ Stream error</span>
+        </div>
+        <pre class="obs-content">otlp_export → 503 Service Unavailable
+endpoint: https://otlp.internal:4318
+retry: 2/3, next in 4s</pre>
+        <div class="obs-meta">
+          <span>SEVERITY · <b>WARN</b></span>
+          <span>OWNER · <b>platform</b></span>
+        </div>
+      </article>
+    </div>
+  </div>
+</section>
+
+<div class="variant-label">Variant · EMPTY · no Phase-34 events yet</div>
+<div class="empty">awaiting handoff_context_wipe / a2a_subordinate / tldr_read_enforcer</div>
+
+</body>
+</html>

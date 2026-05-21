@@ -1,0 +1,19 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+printf 'python: '
+python3 --version
+printf 'node: '
+node --version
+printf 'npm: '
+npm --version
+printf 'uv: '
+uv --version
+printf 'git: '
+git --version
+printf 'gh: '
+gh --version | head -1
+printf 'docker: '
+docker --version
+printf 'rg: '
+rg --version | head -1

@@ -1,0 +1,74 @@
+{
+  "$schema": "./schemas/agent.schema.json",
+  "name": "browser-agent",
+  "version": "1.0.0",
+  "role": "worker",
+  "description": "Autonomous browser agent that decomposes web tasks into steps, navigates pages, interacts with elements, and extracts results using a planner/navigator pattern.",
+  "status": "active",
+  "capabilities": [
+    "api-calls"
+  ],
+  "spec_capabilities": [],
+  "governance": {
+    "scope": "browser-sandbox",
+    "commands": "none",
+    "network": "external-read",
+    "approval_required": []
+  },
+  "ownership": {
+    "owner": "platform-team",
+    "escalation_target": "orchestrator"
+  },
+  "inputs": {
+    "task": {
+      "type": "string",
+      "description": "The web task to perform",
+      "required": true
+    },
+    "url": {
+      "type": "string",
+      "description": "Starting URL for the browser task",
+      "required": true
+    },
+    "max_steps": {
+      "type": "integer",
+      "description": "Maximum number of browser interaction steps",
+      "required": false,
+      "default": 10
+    }
+  },
+  "outputs": {
+    "result": {
+      "type": "string",
+      "description": "Extracted result from the browser task"
+    },
+    "screenshots": {
+      "type": "array",
+      "description": "Screenshots captured during task execution"
+    }
+  },
+  "dependencies": [
+    {
+      "agent": "orchestrator",
+      "optional": true,
+      "purpose": "Receives browser task assignments from the orchestrator"
+    }
+  ],
+  "prompts": {
+    "system": "prompts/browser-agent/system.md",
+    "user": "prompts/browser-agent/user.md",
+    "examples": []
+  },
+  "constraints": {
+    "max_tokens": 16384,
+    "timeout_seconds": 300,
+    "max_retries": 2,
+    "parallel_allowed": true
+  },
+  "metadata": {
+    "author": "agent-33",
+    "created": "2025-01-01",
+    "updated": "2026-01-30",
+    "tags": ["browser", "automation", "scraping"]
+  }
+}

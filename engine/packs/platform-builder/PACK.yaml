@@ -1,0 +1,19 @@
+name: platform-builder
+version: 1.0.0
+description: Platform integration and research capabilities imported from the EVOKORE skill library.
+author: AGENT-33
+license: Apache-2.0
+tags:
+  - imported
+  - evokore
+  - mcp
+  - research
+  - platform
+category: platform-integration
+skills:
+  - name: mcp-builder
+    path: skills/integration/mcp-builder
+    description: MCP server design and implementation guidance.
+  - name: repo-ingestor
+    path: skills/research/repo-ingestor
+    description: Multi-repo and benchmark ingestion workflow.

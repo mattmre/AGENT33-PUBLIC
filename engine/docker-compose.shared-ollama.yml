@@ -1,0 +1,12 @@
+services:
+  api:
+    environment:
+      OLLAMA_BASE_URL: ${SHARED_OLLAMA_BASE_URL:-http://shared-ollama:11434}
+    networks:
+      - default
+      - shared_ollama
+
+networks:
+  shared_ollama:
+    external: true
+    name: ${SHARED_OLLAMA_NETWORK:-shared_ollama_default}

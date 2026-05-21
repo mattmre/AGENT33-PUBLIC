@@ -1,0 +1,302 @@
+<!doctype html>
+<html>
+<head>
+<meta charset="utf-8">
+<link rel="stylesheet" href="_card.css">
+<style>
+  body { background: #0c1015; }
+  .dsp { padding: 18px 22px; }
+
+  .op {
+    position: relative;
+    margin-top: 12px;
+    --cut: 10px;
+    clip-path: polygon(
+      var(--cut) 0, 100% 0,
+      100% calc(100% - var(--cut)),
+      calc(100% - var(--cut)) 100%,
+      0 100%, 0 var(--cut)
+    );
+    background: linear-gradient(180deg, rgba(8,24,32,.92), rgba(8,24,32,.78));
+    max-width: 540px;
+    isolation: isolate;
+  }
+  .op::before {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(135deg, rgba(48,213,200,.55), rgba(48,213,200,.06) 40%, rgba(141,200,221,.18) 80%, rgba(48,213,200,.4));
+    clip-path: polygon(
+      var(--cut) 0, 100% 0,
+      100% calc(100% - var(--cut)),
+      calc(100% - var(--cut)) 100%,
+      0 100%, 0 var(--cut)
+    );
+    z-index: -1;
+    padding: 1px;
+    -webkit-mask: linear-gradient(#000,#000) content-box, linear-gradient(#000,#000);
+    -webkit-mask-composite: xor;
+            mask-composite: exclude;
+  }
+
+  .op-grid {
+    display: grid;
+    grid-template-columns: 36px 1fr auto;
+    align-items: stretch;
+    position: relative;
+    z-index: 2;
+  }
+
+  /* ── Cyberpunk back-layer: race stripes + vector accents + smoke ─── */
+  .deco {
+    position: absolute; inset: 0;
+    pointer-events: none;
+    overflow: hidden;
+    z-index: 1;
+    /* keep deco from bleeding past chamfer */
+    clip-path: polygon(
+      var(--cut) 0, 100% 0,
+      100% calc(100% - var(--cut)),
+      calc(100% - var(--cut)) 100%,
+      0 100%, 0 var(--cut)
+    );
+  }
+
+  /* twin race stripes — diagonal, low-opacity, behind everything */
+  .deco .stripes {
+    position: absolute;
+    top: -20%; bottom: -20%;
+    right: 18%;
+    width: 28px;
+    transform: skewX(-22deg);
+    background:
+      linear-gradient(90deg,
+        transparent 0,
+        transparent 4px,
+        rgba(48,213,200,.16) 4px,
+        rgba(48,213,200,.16) 6px,
+        transparent 6px,
+        transparent 14px,
+        rgba(48,213,200,.32) 14px,
+        rgba(48,213,200,.32) 18px,
+        transparent 18px);
+    box-shadow: 38px 0 0 rgba(48,213,200,.04);
+  }
+  /* second pair, tighter and further left */
+  .deco .stripes-2 {
+    position: absolute;
+    top: -20%; bottom: -20%;
+    right: 32%;
+    width: 6px;
+    transform: skewX(-22deg);
+    background: linear-gradient(90deg,
+      rgba(125,211,252,.14) 0,
+      rgba(125,211,252,.14) 1px,
+      transparent 1px,
+      transparent 4px,
+      rgba(125,211,252,.18) 4px,
+      rgba(125,211,252,.18) 5px,
+      transparent 5px);
+  }
+
+  /* hairline grid — vector schematic vibe */
+  .deco .grid {
+    position: absolute; inset: 0;
+    background-image:
+      linear-gradient(rgba(141,200,221,.06) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(141,200,221,.06) 1px, transparent 1px);
+    background-size: 22px 22px;
+    background-position: -1px -1px;
+    mask-image: linear-gradient(90deg, transparent 0%, #000 30%, #000 75%, transparent 100%);
+    opacity: .6;
+  }
+
+  /* corner chevron tick marks — vector accents top-right + bottom-left */
+  .deco svg {
+    position: absolute;
+    color: rgba(48,213,200,.55);
+  }
+  .deco .tick-tr { top: 6px; right: 110px; }
+  .deco .tick-bl { bottom: 6px; left: 56px; }
+
+  /* tiny mono coordinate labels — like HUD readouts */
+  .deco .coord {
+    position: absolute;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 8px;
+    letter-spacing: .18em;
+    color: rgba(141,200,221,.42);
+  }
+  .deco .coord.tr { top: 5px; right: 12px; }
+  .deco .coord.bl { bottom: 5px; left: 50px; }
+
+  /* subtle teal smoke — single drifting puff, never aggressive */
+  .deco .smoke {
+    position: absolute;
+    width: 240px; height: 240px;
+    top: -80%;
+    right: -10%;
+    border-radius: 50%;
+    background: radial-gradient(circle at 50% 50%,
+      rgba(48,213,200,.22) 0%,
+      rgba(48,213,200,.08) 35%,
+      transparent 70%);
+    filter: blur(28px);
+    mix-blend-mode: screen;
+    animation: smokeDrift 14s ease-in-out infinite;
+  }
+  .deco .smoke.b { width: 160px; height: 160px; top: 30%; right: 30%; animation-duration: 18s; animation-delay: -6s; opacity: .6; }
+  @keyframes smokeDrift {
+    0%   { transform: translate(0%, 0%) scale(1);   opacity: 0; }
+    20%  { opacity: 1; }
+    50%  { transform: translate(-180%, 12%) scale(1.1); opacity: .9; }
+    80%  { opacity: .4; }
+    100% { transform: translate(-340%, -6%) scale(.95); opacity: 0; }
+  }
+
+  /* LEFT — vertical method tag, slim */
+  .rail-left {
+    border-right: 1px solid rgba(48,213,200,.16);
+    background: linear-gradient(180deg, rgba(8,24,32,.95), rgba(8,24,32,.6));
+    display: flex; align-items: center; justify-content: center;
+    padding: 6px 0;
+  }
+  .method {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-family: "IBM Plex Mono", monospace;
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: .28em;
+    color: #03080c;
+    background: #30d5c8;
+    padding: 8px 4px;
+    line-height: 1;
+    box-shadow: 0 0 12px rgba(48,213,200,.4);
+  }
+
+  /* MIDDLE — single dense column */
+  .body {
+    padding: 9px 14px 10px;
+    display: grid; gap: 4px;
+    min-width: 0;
+  }
+  .crumb {
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 11px;
+    color: #8dc8dd;
+    letter-spacing: .02em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+  }
+  .crumb b { color: #30d5c8; font-weight: 500; }
+  .crumb .sep { color: rgba(125,182,202,.4); }
+  .body h3 {
+    margin: 0;
+    font-family: "Space Grotesk", sans-serif;
+    font-weight: 600;
+    font-size: .98rem;
+    letter-spacing: .01em;
+    color: #f3fbfc;
+  }
+  .body p {
+    margin: 0;
+    color: #94a3b8;
+    font-size: .76rem;
+    line-height: 1.4;
+  }
+  .meta-inline {
+    display: flex; gap: 10px; align-items: center;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: 10px;
+    letter-spacing: .08em;
+    color: #6fa8b8;
+    margin-top: 2px;
+  }
+  .meta-inline .ok { color: #8be9a8; }
+  .meta-inline .accent { color: #30d5c8; }
+  .meta-inline .dot { color: rgba(125,182,202,.4); }
+
+  /* RIGHT — compact action stack */
+  .rail-right {
+    border-left: 1px solid rgba(48,213,200,.16);
+    padding: 8px 10px;
+    display: flex; flex-direction: column; gap: 6px; justify-content: center;
+    background: linear-gradient(180deg, rgba(48,213,200,.04), transparent);
+  }
+  .btn-run {
+    border: none;
+    background: #30d5c8;
+    color: #03080c;
+    font-family: "Space Grotesk", sans-serif;
+    font-weight: 700;
+    letter-spacing: .1em;
+    text-transform: uppercase;
+    font-size: .68rem;
+    padding: .42rem .7rem;
+    clip-path: polygon(5px 0, 100% 0, 100% calc(100% - 5px), calc(100% - 5px) 100%, 0 100%, 0 5px);
+    cursor: pointer;
+  }
+  .btn-secondary {
+    border: 1px solid rgba(125,182,202,.28);
+    background: transparent;
+    color: #9dc3cf;
+    font-family: "IBM Plex Mono", monospace;
+    font-size: .62rem;
+    letter-spacing: .12em;
+    text-transform: uppercase;
+    padding: .32rem .6rem;
+    cursor: pointer;
+  }
+</style>
+</head>
+<body>
+<div class="dsp">
+  <p class="eyebrow">CARD · OPERATION</p>
+
+  <article class="op">
+    <div class="deco" aria-hidden="true">
+      <div class="grid"></div>
+      <div class="stripes"></div>
+      <div class="stripes-2"></div>
+      <svg class="tick-tr" width="22" height="10" viewBox="0 0 22 10" fill="none">
+        <path d="M0 9 L6 1 L7 1 L13 9 M14 9 L20 1 L21 1" stroke="currentColor" stroke-width="1" stroke-linecap="square" />
+      </svg>
+      <svg class="tick-bl" width="22" height="10" viewBox="0 0 22 10" fill="none">
+        <path d="M0 1 L6 9 L7 9 L13 1 M14 1 L20 9 L21 9" stroke="currentColor" stroke-width="1" stroke-linecap="square" />
+      </svg>
+      <div class="smoke"></div>
+      <div class="smoke b"></div>
+    </div>
+    <div class="op-grid">
+
+      <div class="rail-left">
+        <div class="method">POST</div>
+      </div>
+
+      <div class="body">
+        <div class="crumb">
+          v1 <span class="sep">/</span> agents <span class="sep">/</span> <b>orchestrator</b> <span class="sep">/</span> invoke
+        </div>
+        <h3>Invoke orchestrator</h3>
+        <p>Run on the supplied task with model + temperature override.</p>
+        <div class="meta-inline">
+          <span class="ok">200 OK</span>
+          <span class="dot">·</span>
+          <span>412 ms</span>
+          <span class="dot">·</span>
+          <span class="accent">operator</span>
+          <span class="dot">·</span>
+          <span>soft gate</span>
+        </div>
+      </div>
+
+      <div class="rail-right">
+        <button class="btn-run">▸ run</button>
+        <button class="btn-secondary">curl</button>
+      </div>
+
+    </div>
+  </article>
+</div>
+</body>
+</html>

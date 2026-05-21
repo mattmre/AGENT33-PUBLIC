@@ -1,0 +1,32 @@
+name: official-outcome-packs
+version: 1.0.0
+description: Official beginner-ready outcome packs for common AGENT33 launch, research, review, testing, and release workflows.
+author: AGENT-33
+license: Apache-2.0
+tags:
+  - official
+  - starter
+  - outcome
+  - beginner
+  - workflows
+category: official-outcomes
+skills:
+  - name: official-outcome-guide
+    path: skills/official-outcome-guide
+    description: Guides operators through the official AGENT33 starter outcome packs.
+outcome_packs:
+  - path: outcomes/founder-mvp-builder.yaml
+    description: Turn a product idea into an MVP plan and first implementation slice.
+  - path: outcomes/competitor-research-brief.yaml
+    description: Produce a sourced competitor research brief with risks and opportunities.
+  - path: outcomes/repository-security-review.yaml
+    description: Review a repository for security posture, risky patterns, and fix priorities.
+  - path: outcomes/test-generation-sprint.yaml
+    description: Generate a focused test plan and first test implementation sprint.
+  - path: outcomes/release-readiness-checklist.yaml
+    description: Prepare a release readiness checklist, validation plan, and go/no-go summary.
+prompt_addenda:
+  - |
+    When an official outcome pack is selected, explain the intended deliverables in plain language,
+    confirm required setup before launch, and prefer review-gated steps over destructive automation.
+    Installation should prepare the workflow only; do not auto-run an outcome pack after install.

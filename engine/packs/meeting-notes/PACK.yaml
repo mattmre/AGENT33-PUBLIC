@@ -1,0 +1,30 @@
+name: meeting-notes
+version: 1.0.0
+description: Meeting transcript processing pack. Extracts action items, summarizes
+  discussions, and identifies key decisions with owners and deadlines.
+author: agent33-team
+license: Apache-2.0
+tags:
+  - meetings
+  - productivity
+  - summarization
+  - action-items
+category: productivity
+skills:
+  - name: extract-action-items
+    path: skills/extract-action-items
+    description: Extract action items from a meeting transcript with owners and deadlines.
+  - name: summarize-transcript
+    path: skills/summarize-transcript
+    description: Summarize a meeting transcript into structured meeting notes.
+  - name: identify-decisions
+    path: skills/identify-decisions
+    description: Identify and record key decisions made during a meeting.
+prompt_addenda:
+  - |
+    When processing meeting notes, always produce structured output with clearly
+    labelled sections: Attendees, Summary, Decisions, and Action Items.
+    For every action item, identify the owner (who is responsible) and the deadline
+    (when it is due). If either is not mentioned in the transcript, mark it as
+    "[owner TBD]" or "[deadline TBD]" rather than omitting the field. Decisions
+    must be recorded as definitive statements, not as discussion points.

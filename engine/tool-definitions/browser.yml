@@ -1,0 +1,37 @@
+name: browser
+description: >
+  Headless browser automation via Playwright. Navigate pages, take screenshots,
+  extract text, click elements, type text, and interact with web content.
+version: "1.0"
+owner: agent33-core
+provenance:
+  repo_url: https://github.com/mattmre/AGENT33-PUBLIC
+  license: Apache-2.0
+status: active
+
+parameters:
+  url:
+    type: string
+    required: false
+    description: URL to navigate to.
+  action:
+    type: string
+    required: true
+    description: "Action to perform: navigate, screenshot, extract_text, click, type_text, select, scroll, wait_for, get_elements, close_session."
+  selector:
+    type: string
+    required: false
+    description: CSS selector for element interaction.
+  text:
+    type: string
+    required: false
+    description: Text to type or search for.
+  session_id:
+    type: string
+    required: false
+    description: Browser session identifier for multi-step interactions.
+
+governance:
+  required_scope: tools:execute
+  domain_allowlist: []
+  max_timeout: 60

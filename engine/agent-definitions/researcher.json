@@ -1,0 +1,71 @@
+{
+  "$schema": "./schemas/agent.schema.json",
+  "name": "researcher",
+  "version": "1.0.0",
+  "role": "researcher",
+  "description": "Deep research agent that iteratively searches the web, reads promising sources, accumulates knowledge, and synthesizes comprehensive answers.",
+  "agent_id": "AGT-006",
+  "status": "active",
+  "capabilities": [
+    "api-calls",
+    "research"
+  ],
+  "spec_capabilities": ["X-01", "X-02", "X-03", "X-04", "X-05"],
+  "governance": {
+    "scope": "read-only",
+    "commands": "none",
+    "network": "external-read",
+    "approval_required": []
+  },
+  "ownership": {
+    "owner": "platform-team",
+    "escalation_target": "orchestrator"
+  },
+  "inputs": {
+    "query": {
+      "type": "string",
+      "description": "The research query to investigate",
+      "required": true
+    },
+    "max_iterations": {
+      "type": "integer",
+      "description": "Maximum number of research iterations",
+      "required": false,
+      "default": 5
+    }
+  },
+  "outputs": {
+    "answer": {
+      "type": "string",
+      "description": "Synthesized research answer"
+    },
+    "sources": {
+      "type": "array",
+      "description": "List of sources consulted during research"
+    }
+  },
+  "dependencies": [
+    {
+      "agent": "orchestrator",
+      "optional": true,
+      "purpose": "Receives research assignments from the orchestrator"
+    }
+  ],
+  "prompts": {
+    "system": "prompts/researcher/system.md",
+    "user": "prompts/researcher/user.md",
+    "examples": []
+  },
+  "constraints": {
+    "max_tokens": 32768,
+    "timeout_seconds": 300,
+    "max_retries": 2,
+    "parallel_allowed": false
+  },
+  "metadata": {
+    "author": "agent-33",
+    "created": "2025-01-01",
+    "updated": "2026-01-30",
+    "tags": ["research", "search", "deep-research"]
+  }
+}

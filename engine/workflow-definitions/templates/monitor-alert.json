@@ -1,0 +1,203 @@
+{
+  "name": "monitor-alert",
+  "version": "1.0.0",
+  "description": "Periodic monitoring workflow that checks sources and generates alerts",
+  "triggers": {
+    "manual": true,
+    "on_change": [],
+    "schedule": "*/30 * * * *",
+    "on_event": ["schedule"]
+  },
+  "inputs": {
+    "sources": {
+      "type": "array",
+      "description": "List of source URLs or endpoints to monitor",
+      "required": true,
+      "default": null
+    },
+    "keywords": {
+      "type": "array",
+      "description": "List of keywords or patterns to match against source content",
+      "required": true,
+      "default": null
+    }
+  },
+  "outputs": {
+    "alerts": {
+      "type": "array",
+      "description": "List of generated alerts with matched content and source details"
+    },
+    "summary": {
+      "type": "string",
+      "description": "Summary of the monitoring run including match counts"
+    }
+  },
+  "steps": [
+    {
+      "id": "fetch-sources",
+      "name": "Fetch content from all monitored sources in parallel",
+      "action": "parallel-group",
+      "agent": null,
+      "command": null,
+      "inputs": {
+        "sources": "${inputs.sources}"
+      },
+      "outputs": {
+        "source_content": "Fetched content from each source"
+      },
+      "condition": null,
+      "depends_on": [],
+      "retry": {
+        "max_attempts": 3,
+        "delay_seconds": 10
+      },
+      "timeout_seconds": 120,
+      "steps": [
+        {
+          "id": "fetch-single-source",
+          "name": "Fetch content from a single source",
+          "action": "invoke-agent",
+          "agent": "researcher",
+          "command": null,
+          "inputs": {
+            "url": "${parallel.item}"
+          },
+          "outputs": {
+            "content": "Raw content from the source",
+            "timestamp": "Fetch timestamp"
+          },
+          "condition": null,
+          "depends_on": [],
+          "retry": {
+            "max_attempts": 2,
+            "delay_seconds": 5
+          },
+          "timeout_seconds": 30
+        }
+      ]
+    },
+    {
+      "id": "filter-matches",
+      "name": "Filter source content for keyword matches",
+      "action": "transform",
+      "agent": null,
+      "command": null,
+      "inputs": {
+        "source_content": "${fetch-sources.outputs.source_content}",
+        "keywords": "${inputs.keywords}"
+      },
+      "outputs": {
+        "matches": "List of matched content segments with source attribution",
+        "match_count": "Total number of matches found"
+      },
+      "condition": null,
+      "depends_on": ["fetch-sources"],
+      "retry": {
+        "max_attempts": 1,
+        "delay_seconds": 0
+      },
+      "timeout_seconds": 30
+    },
+    {
+      "id": "check-matches",
+      "name": "Check if any matches were found and generate alerts",
+      "action": "conditional",
+      "agent": null,
+      "command": null,
+      "inputs": {
+        "match_count": "${filter-matches.outputs.match_count}"
+      },
+      "outputs": {
+        "alert_generated": "Whether an alert was generated"
+      },
+      "condition": "${filter-matches.outputs.match_count} > 0",
+      "depends_on": ["filter-matches"],
+      "retry": {
+        "max_attempts": 1,
+        "delay_seconds": 0
+      },
+      "timeout_seconds": 10,
+      "then": [
+        {
+          "id": "generate-alert",
+          "name": "Generate a detailed alert from matches",
+          "action": "invoke-agent",
+          "agent": "code-worker",
+          "command": null,
+          "inputs": {
+            "matches": "${filter-matches.outputs.matches}",
+            "keywords": "${inputs.keywords}"
+          },
+          "outputs": {
+            "alert_body": "Formatted alert message with match details"
+          },
+          "condition": null,
+          "depends_on": [],
+          "retry": {
+            "max_attempts": 2,
+            "delay_seconds": 3
+          },
+          "timeout_seconds": 60
+        }
+      ],
+      "else": [
+        {
+          "id": "no-matches-log",
+          "name": "Log that no matches were found",
+          "action": "transform",
+          "agent": null,
+          "command": null,
+          "inputs": {
+            "message": "No keyword matches found in this monitoring cycle"
+          },
+          "outputs": {
+            "alert_body": "Log entry for no-match result"
+          },
+          "condition": null,
+          "depends_on": [],
+          "retry": {
+            "max_attempts": 1,
+            "delay_seconds": 0
+          },
+          "timeout_seconds": 5
+        }
+      ]
+    },
+    {
+      "id": "notify",
+      "name": "Send notification with monitoring results",
+      "action": "invoke-agent",
+      "agent": "code-worker",
+      "command": null,
+      "inputs": {
+        "alert_generated": "${check-matches.outputs.alert_generated}",
+        "alert_body": "${check-matches.outputs.alert_body}",
+        "match_count": "${filter-matches.outputs.match_count}"
+      },
+      "outputs": {
+        "notification_sent": "Whether the notification was successfully sent",
+        "summary": "Summary of the monitoring run"
+      },
+      "condition": null,
+      "depends_on": ["check-matches"],
+      "retry": {
+        "max_attempts": 3,
+        "delay_seconds": 5
+      },
+      "timeout_seconds": 30
+    }
+  ],
+  "execution": {
+    "mode": "dependency-aware",
+    "parallel_limit": 4,
+    "continue_on_error": true,
+    "fail_fast": false,
+    "timeout_seconds": 300
+  },
+  "metadata": {
+    "author": "agent-33",
+    "created": "2026-01-30T00:00:00Z",
+    "updated": "2026-01-30T00:00:00Z",
+    "tags": ["monitoring", "alerts", "scheduled", "periodic"]
+  }
+}

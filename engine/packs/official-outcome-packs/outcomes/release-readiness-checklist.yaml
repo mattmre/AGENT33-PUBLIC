@@ -1,0 +1,86 @@
+schema_version: "1"
+name: release-readiness-checklist
+version: 1.0.0
+kind: outcome-pack
+description: Prepare a release checklist, validation plan, risk summary, and go/no-go recommendation.
+author: AGENT-33
+category: release
+tags:
+  - release
+  - checklist
+  - validation
+  - operations
+workflows:
+  - name: release-readiness-checklist
+    description: Collect release context, map validation gates, and produce a go/no-go checklist.
+    path: workflows/release-readiness-checklist.yaml
+presentation:
+  title: Release Readiness Checklist
+  audience: Maintainers, product owners, DevOps operators, and release managers
+  summary: Turn a planned release into a practical checklist with validation gates, rollback notes, and launch decision support.
+  difficulty: beginner
+  estimated_duration: 30-75 minutes depending on release complexity
+  expected_deliverables:
+    - Release checklist
+    - Validation command plan
+    - Known risk and rollback notes
+    - Go/no-go summary
+  sample_inputs:
+    release_goal: Ship the provider setup improvements
+    target_version: 1.2.0
+customization:
+  required_inputs:
+    - release_goal
+  preset_values:
+    mode: checklist-first
+    rollback_required: true
+requirements:
+  - kind: llm
+    name: chat-model
+    required: true
+    preferences:
+      - openrouter
+      - ollama
+      - lm-studio
+    capabilities:
+      - chat
+      - planning
+    setup_hint: Connect a chat-capable model for release planning.
+  - kind: tool
+    name: shell
+    required: false
+    capabilities:
+      - build
+      - test
+    setup_hint: Optional shell access can run existing validation commands after approval.
+governance:
+  approval_required: true
+  risk_level: low
+  max_parallel_runs: 1
+  max_daily_executions: 20
+  allowed_tools:
+    - shell
+    - file_ops
+provenance:
+  trust_tier: official
+  license: Apache-2.0
+  signer_id: AGENT-33
+installation:
+  setup_steps:
+    - Connect a chat-capable model.
+    - Provide the release goal and target version if available.
+    - Confirm validation commands before running them.
+  required_runtime_features:
+    - workflow-launch
+    - artifacts
+  dry_run_supported: true
+  auto_enable: false
+artifacts:
+  - name: Release checklist
+    description: Ordered readiness checklist with owners, gates, and open risks.
+    drawer_section: release
+    required: true
+  - name: Go or no-go summary
+    description: Launch recommendation with blockers and rollback notes.
+    drawer_section: decision
+    required: true

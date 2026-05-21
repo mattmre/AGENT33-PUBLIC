@@ -1,0 +1,10 @@
+#!/usr/bin/env bash
+set -euo pipefail
+
+api_url="${AGENT33_API_URL:-http://api:8000}"
+
+echo "API: ${api_url}"
+curl -fsS "${api_url}/healthz" >/dev/null && echo "api: ok"
+pg_isready -h postgres -U agent33 >/dev/null && echo "postgres: ok"
+redis-cli -h redis ping | grep -q PONG && echo "redis: ok"
+nc -z nats 4222 && echo "nats: ok"

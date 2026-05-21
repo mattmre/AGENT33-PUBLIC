@@ -1,0 +1,34 @@
+name: document-summarizer
+version: 1.0.0
+description: Document summarization pack for long-form content. Produces hierarchical
+  summaries that preserve technical accuracy, extract key points, and generate abstracts.
+author: agent33-team
+license: Apache-2.0
+tags:
+  - summarization
+  - documents
+  - research
+  - nlp
+category: content-processing
+skills:
+  - name: chunk-and-summarize
+    path: skills/chunk-and-summarize
+    description: Chunk a long document and summarize each section before synthesizing.
+  - name: extract-key-points
+    path: skills/extract-key-points
+    description: Extract the most important takeaways from a document.
+  - name: generate-abstract
+    path: skills/generate-abstract
+    description: Generate a concise abstract suitable for academic or executive audiences.
+prompt_addenda:
+  - |
+    When summarizing documents, preserve technical accuracy above all else. Do not
+    simplify terminology in ways that change the meaning. Produce hierarchical
+    summaries: a short abstract first, then section-level summaries. If the document
+    contains numerical data, statistics, or measurements, include them verbatim in
+    the summary — do not round, approximate, or omit key figures. Always note the
+    document title, author (if present), and date in the header of the summary.
+tool_config:
+  file_ops:
+    enabled: true
+    max_file_size_bytes: 10485760

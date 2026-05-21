@@ -1,0 +1,41 @@
+# AGENT-33 Load Test Scenario: Stress
+#
+# Purpose: Push the single-instance deployment past expected capacity to
+# identify failure modes, resource ceilings, and degradation behavior.
+# Results from this scenario inform the horizontal-scaling boundary
+# documented in docs/operators/horizontal-scaling-architecture.md.
+#
+# Usage:
+#   locust -f locustfile.py --config scenarios/stress.yaml
+#   locust -f locustfile.py --config scenarios/stress.yaml --auth-token "$TOKEN"
+#
+# WARNING: This scenario generates significant load. Do not run against
+# shared or production environments without operator approval.
+
+# Target host (override with --host on CLI or LOCUST_HOST env var)
+host: http://localhost:8000
+
+# Concurrency profile
+users: 200
+spawn-rate: 10
+run-time: 180s
+
+# Headless mode for CI / scripted runs
+headless: true
+
+# Acceptance criteria (documented, not enforced by Locust natively):
+#
+# The stress scenario is designed to find limits, not pass strict SLOs.
+# Expected behavior under 200 concurrent users on a single instance:
+#   - /healthz should remain responsive (p95 < 200ms)
+#   - /health p95 may exceed 100ms due to dependency probes under load
+#   - Agent invoke will likely degrade (p95 > 5s is expected)
+#   - Session lifecycle may show elevated latency or 5xx under contention
+#   - /metrics should remain responsive (p95 < 500ms)
+#   - Overall failure rate < 5% (primarily from LLM timeouts)
+#
+# Key measurements to capture:
+#   - RPS ceiling before error rate exceeds 5%
+#   - Memory/CPU utilization at peak (capture externally)
+#   - Connection pool exhaustion symptoms (Redis, PostgreSQL, NATS)
+#   - Locust worker resource usage

@@ -1,0 +1,610 @@
+.consumer-marketplace-layout {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  gap: 2rem;
+}
+
+.pack-marketplace-page {
+  animation: fade-in 0.4s ease-out forwards;
+}
+
+.pack-marketplace-header {
+  margin-bottom: 2rem;
+}
+
+.pack-marketplace-header h1 {
+  margin: 0 0 0.4rem 0;
+  color: #fff;
+  font-size: 2rem;
+}
+
+.pack-marketplace-header p {
+  margin: 0;
+  color: var(--text-soft);
+  max-width: 64rem;
+}
+
+.pack-marketplace-featured {
+  margin-bottom: 1.5rem;
+}
+
+.pack-marketplace-section-heading,
+.pack-marketplace-version-header,
+.pack-marketplace-card-header,
+.pack-marketplace-detail-header,
+.pack-marketplace-toolbar,
+.pack-marketplace-submission-header,
+.pack-marketplace-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.pack-marketplace-section-heading h2,
+.pack-marketplace-version-header h3 {
+  margin: 0;
+  color: #fff;
+}
+
+.pack-marketplace-section-heading span,
+.pack-marketplace-count,
+.pack-marketplace-card-header p,
+.pack-marketplace-feedback,
+.pack-marketplace-version-list span,
+.pack-marketplace-detail-header p {
+  color: var(--text-soft);
+}
+
+.pack-marketplace-featured-grid,
+.pack-marketplace-grid {
+  display: grid;
+  gap: 1rem;
+}
+
+.pack-marketplace-featured-grid {
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+}
+
+.pack-marketplace-layout {
+  display: grid;
+  grid-template-columns: 220px minmax(0, 1fr) minmax(320px, 380px);
+  gap: 1.5rem;
+  align-items: start;
+}
+
+.pack-marketplace-main,
+.pack-marketplace-filter-card,
+.pack-marketplace-detail,
+.pack-marketplace-featured-card,
+.pack-marketplace-card,
+.pack-marketplace-empty {
+  background: var(--bg-main);
+  border-radius: 16px;
+  box-shadow: var(--shadow-outer-sm);
+}
+
+.pack-marketplace-filter-card,
+.pack-marketplace-empty,
+.pack-marketplace-detail {
+  padding: 1.25rem;
+}
+
+.pack-marketplace-filter-card {
+  display: flex;
+  flex-direction: column;
+  gap: 0.6rem;
+  position: sticky;
+  top: 1rem;
+}
+
+.pack-marketplace-filter-card h3 {
+  margin: 0 0 0.2rem 0;
+  color: var(--accent);
+  font-family: var(--mono);
+  text-transform: uppercase;
+  letter-spacing: 0.06em;
+  font-size: 0.95rem;
+}
+
+.pack-marketplace-filter-card button,
+.pack-marketplace-featured-card,
+.pack-marketplace-card {
+  border: 1px solid rgba(48, 213, 200, 0.12);
+  cursor: pointer;
+  transition: transform 0.2s ease, border-color 0.2s ease, box-shadow 0.2s ease;
+}
+
+.pack-marketplace-filter-card button {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.02);
+  border-radius: 12px;
+  color: var(--text-main);
+  padding: 0.7rem 0.85rem;
+}
+
+.pack-marketplace-filter-card button.active,
+.pack-marketplace-card.selected,
+.pack-marketplace-filter-card button:hover,
+.pack-marketplace-card:hover,
+.pack-marketplace-featured-card:hover {
+  border-color: rgba(48, 213, 200, 0.45);
+  transform: translateY(-1px);
+  box-shadow: 0 12px 24px rgba(0, 0, 0, 0.22);
+}
+
+.pack-marketplace-main {
+  padding: 1.25rem;
+  min-height: 28rem;
+}
+
+.pack-marketplace-search {
+  flex: 1;
+}
+
+.pack-marketplace-search input,
+.pack-marketplace-version-header select {
+  width: 100%;
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(48, 213, 200, 0.18);
+  border-radius: 12px;
+  color: var(--text-main);
+  padding: 0.75rem 0.9rem;
+}
+
+.pack-marketplace-search input:focus,
+.pack-marketplace-version-header select:focus {
+  outline: none;
+  border-color: rgba(48, 213, 200, 0.5);
+  box-shadow: 0 0 0 2px rgba(48, 213, 200, 0.12);
+}
+
+.pack-marketplace-grid {
+  grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
+  margin-top: 1rem;
+}
+
+.pack-marketplace-card,
+.pack-marketplace-featured-card {
+  text-align: left;
+  color: var(--text-main);
+  padding: 1rem;
+}
+
+.pack-marketplace-card-header h3,
+.pack-marketplace-featured-card strong,
+.pack-marketplace-empty h2,
+.pack-marketplace-detail-header h2 {
+  margin: 0;
+  color: #fff;
+}
+
+.pack-marketplace-card-description {
+  min-height: 3.5rem;
+  color: var(--text-soft);
+}
+
+.pack-marketplace-badges,
+.pack-marketplace-tags {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.45rem;
+}
+
+.marketplace-pill,
+.marketplace-tag {
+  display: inline-flex;
+  align-items: center;
+  border-radius: 999px;
+  font-size: 0.78rem;
+  padding: 0.22rem 0.6rem;
+}
+
+.marketplace-pill {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.marketplace-pill.neutral {
+  color: var(--text-soft);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.marketplace-pill.featured {
+  color: #06231f;
+  background: #30d5c8;
+}
+
+.marketplace-pill.verified,
+.marketplace-pill.installed {
+  color: #dffbf7;
+  background: rgba(48, 213, 200, 0.18);
+}
+
+.marketplace-pill.preview {
+  color: #fef3c7;
+  background: rgba(245, 158, 11, 0.18);
+  border-color: rgba(245, 158, 11, 0.38);
+}
+
+.marketplace-pill.trust-official,
+.marketplace-pill.trust-verified,
+.marketplace-pill.quality-excellent,
+.marketplace-pill.quality-high {
+  color: #dcfce7;
+  background: rgba(34, 197, 94, 0.18);
+  border-color: rgba(34, 197, 94, 0.34);
+}
+
+.marketplace-pill.trust-community,
+.marketplace-pill.quality-medium {
+  color: #e0f2fe;
+  background: rgba(14, 165, 233, 0.16);
+  border-color: rgba(14, 165, 233, 0.32);
+}
+
+.marketplace-pill.trust-imported,
+.marketplace-pill.quality-low {
+  color: #ffedd5;
+  background: rgba(249, 115, 22, 0.16);
+  border-color: rgba(249, 115, 22, 0.34);
+}
+
+.marketplace-pill.trust-untrusted {
+  color: #fee2e2;
+  background: rgba(248, 113, 113, 0.14);
+  border-color: rgba(248, 113, 113, 0.34);
+}
+
+.marketplace-pill.trust-unknown,
+.marketplace-pill.quality-unknown {
+  color: var(--text-soft);
+  background: rgba(255, 255, 255, 0.03);
+}
+
+.marketplace-tag {
+  background: rgba(255, 255, 255, 0.05);
+  color: var(--text-soft);
+}
+
+.pack-marketplace-detail {
+  position: sticky;
+  top: 1rem;
+  min-height: 18rem;
+}
+
+.pack-marketplace-detail-header {
+  align-items: flex-start;
+}
+
+.pack-marketplace-detail-header button,
+.pack-marketplace-primary {
+  white-space: nowrap;
+}
+
+.pack-marketplace-detail-body {
+  display: flex;
+  flex-direction: column;
+  gap: 1.1rem;
+}
+
+.pack-marketplace-preview {
+  padding: 0.95rem;
+  border: 1px solid rgba(48, 213, 200, 0.14);
+  border-radius: 14px;
+  background: rgba(48, 213, 200, 0.05);
+}
+
+.pack-marketplace-preview-header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  gap: 0.8rem;
+  margin-bottom: 0.8rem;
+}
+
+.pack-marketplace-preview h3 {
+  margin: 0;
+  color: #fff;
+}
+
+.pack-marketplace-preview dl {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.pack-marketplace-preview dl > div {
+  display: grid;
+  grid-template-columns: minmax(0, 84px) 1fr;
+  gap: 0.75rem;
+}
+
+.pack-marketplace-preview dt {
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+}
+
+.pack-marketplace-preview dd {
+  margin: 0;
+  color: var(--text-main);
+}
+
+.pack-marketplace-recovery-preview {
+  padding: 0.95rem;
+  border: 1px solid rgba(245, 158, 11, 0.22);
+  border-radius: 14px;
+  background: rgba(245, 158, 11, 0.06);
+}
+
+.pack-marketplace-recovery-preview.warning {
+  border-color: rgba(248, 113, 113, 0.28);
+  background: rgba(248, 113, 113, 0.06);
+}
+
+.pack-marketplace-recovery-preview p {
+  margin: 0;
+  color: var(--text-soft);
+}
+
+.pack-marketplace-recovery-preview dl {
+  display: grid;
+  gap: 0.75rem;
+  margin: 0;
+}
+
+.pack-marketplace-recovery-preview dl > div {
+  display: grid;
+  grid-template-columns: minmax(0, 96px) 1fr;
+  gap: 0.75rem;
+}
+
+.pack-marketplace-recovery-preview dt {
+  color: #fbbf24;
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+}
+
+.pack-marketplace-recovery-preview dd {
+  margin: 0;
+  color: var(--text-main);
+}
+
+.pack-marketplace-dependency-list {
+  margin-top: 0.85rem;
+  padding: 0.75rem 0.85rem;
+  border-left: 2px solid rgba(251, 146, 60, 0.55);
+  border-radius: 10px;
+  background: rgba(251, 146, 60, 0.08);
+}
+
+.pack-marketplace-dependency-list.warning {
+  border-left-color: rgba(248, 113, 113, 0.6);
+  background: rgba(248, 113, 113, 0.08);
+}
+
+.pack-marketplace-dependency-list strong {
+  display: block;
+  margin-bottom: 0.45rem;
+  color: #fed7aa;
+}
+
+.pack-marketplace-dependency-list ul,
+.pack-marketplace-recovery-warnings {
+  margin: 0;
+  padding-left: 1.1rem;
+  color: var(--text-soft);
+}
+
+.pack-marketplace-recovery-warnings {
+  margin-top: 0.85rem;
+}
+
+.pack-marketplace-submission-section {
+  border-top: 1px solid rgba(255, 255, 255, 0.08);
+  padding-top: 1rem;
+  display: flex;
+  flex-direction: column;
+  gap: 0.8rem;
+}
+
+.pack-marketplace-submission-header h3 {
+  margin: 0;
+  color: #fff;
+}
+
+.pack-marketplace-submission-note {
+  margin: 0;
+  color: var(--text-soft);
+}
+
+.pack-marketplace-quality-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.pack-marketplace-quality-list li {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  font-size: 0.84rem;
+  color: var(--text-soft);
+}
+
+.pack-marketplace-review-notes {
+  padding: 0.8rem 0.9rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.04);
+}
+
+.pack-marketplace-review-notes strong {
+  display: block;
+  margin-bottom: 0.35rem;
+}
+
+.pack-marketplace-review-notes p {
+  margin: 0;
+  color: var(--text-soft);
+}
+
+.pack-marketplace-metadata {
+  display: grid;
+  grid-template-columns: minmax(0, 120px) 1fr;
+  gap: 0.45rem 0.9rem;
+  margin: 0;
+}
+
+.pack-marketplace-metadata dt {
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 0.82rem;
+  text-transform: uppercase;
+}
+
+.pack-marketplace-metadata dd {
+  margin: 0;
+  color: var(--text-main);
+}
+
+.pack-marketplace-version-header {
+  align-items: end;
+}
+
+.pack-marketplace-version-header label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 13rem;
+}
+
+.pack-marketplace-version-list {
+  list-style: none;
+  padding: 0;
+  margin: 0.8rem 0 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.45rem;
+}
+
+.pack-marketplace-version-list li {
+  margin: 0;
+}
+
+.pack-marketplace-version-button {
+  display: flex;
+  justify-content: space-between;
+  gap: 1rem;
+  width: 100%;
+  padding: 0.75rem 0.85rem;
+  border-radius: 12px;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid transparent;
+  color: var(--text-main);
+  text-align: left;
+  cursor: pointer;
+}
+
+.pack-marketplace-version-button.active {
+  border-color: rgba(48, 213, 200, 0.35);
+}
+
+.pack-marketplace-version-button:hover,
+.pack-marketplace-version-button:focus-visible {
+  border-color: rgba(48, 213, 200, 0.35);
+  outline: none;
+}
+
+.pack-marketplace-version-button > div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.18rem;
+}
+
+.pack-marketplace-primary {
+  background: var(--accent);
+  color: #03080c;
+  font-weight: 700;
+}
+
+.pack-marketplace-secondary {
+  background: rgba(48, 213, 200, 0.12);
+  color: #dffbf7;
+  border: 1px solid rgba(48, 213, 200, 0.28);
+}
+
+.pack-marketplace-primary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.pack-marketplace-secondary:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+
+.pack-marketplace-empty,
+.pack-marketplace-loading,
+.pack-marketplace-error {
+  margin-top: 1rem;
+}
+
+.pack-marketplace-empty p,
+.pack-marketplace-loading,
+.pack-marketplace-error {
+  color: var(--text-soft);
+}
+
+.pack-marketplace-error {
+  color: var(--danger);
+}
+
+.sr-only {
+  position: absolute;
+  width: 1px;
+  height: 1px;
+  padding: 0;
+  margin: -1px;
+  overflow: hidden;
+  clip: rect(0, 0, 0, 0);
+  white-space: nowrap;
+  border: 0;
+}
+
+@media (max-width: 1200px) {
+  .pack-marketplace-layout {
+    grid-template-columns: 220px minmax(0, 1fr);
+  }
+
+  .pack-marketplace-detail {
+    grid-column: 1 / -1;
+    position: static;
+  }
+}
+
+@media (max-width: 880px) {
+  .pack-marketplace-layout {
+    grid-template-columns: 1fr;
+  }
+
+  .pack-marketplace-filter-card {
+    position: static;
+  }
+
+  .pack-marketplace-toolbar,
+  .pack-marketplace-section-heading,
+  .pack-marketplace-version-header,
+  .pack-marketplace-actions,
+  .pack-marketplace-detail-header {
+    flex-direction: column;
+    align-items: stretch;
+  }
+}

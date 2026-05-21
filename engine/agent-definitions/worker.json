@@ -1,0 +1,77 @@
+{
+  "$schema": "./schemas/agent.schema.json",
+  "name": "code-worker",
+  "version": "1.0.0",
+  "role": "worker",
+  "description": "General-purpose coding worker that reads, writes, and executes code to complete assigned sub-tasks.",
+  "agent_id": "AGT-003",
+  "status": "active",
+  "capabilities": [
+    "file-read",
+    "file-write",
+    "code-execution"
+  ],
+  "spec_capabilities": ["I-01", "I-02", "I-03", "I-04", "I-05"],
+  "governance": {
+    "scope": "assigned-workspace",
+    "commands": "build,test,lint",
+    "network": "none",
+    "approval_required": ["deploy"]
+  },
+  "ownership": {
+    "owner": "platform-team",
+    "escalation_target": "orchestrator"
+  },
+  "inputs": {
+    "instruction": {
+      "type": "string",
+      "description": "Detailed instruction for the coding task",
+      "required": true
+    },
+    "files": {
+      "type": "array",
+      "description": "File paths relevant to the task",
+      "required": false
+    },
+    "language": {
+      "type": "string",
+      "description": "Primary programming language",
+      "required": false,
+      "default": "python"
+    }
+  },
+  "outputs": {
+    "code": {
+      "type": "string",
+      "description": "Generated or modified code"
+    },
+    "explanation": {
+      "type": "string",
+      "description": "Explanation of changes made"
+    }
+  },
+  "dependencies": [
+    {
+      "agent": "orchestrator",
+      "optional": false,
+      "purpose": "Receives task assignments from the orchestrator"
+    }
+  ],
+  "prompts": {
+    "system": "prompts/worker/system.md",
+    "user": "prompts/worker/user.md",
+    "examples": []
+  },
+  "constraints": {
+    "max_tokens": 16384,
+    "timeout_seconds": 180,
+    "max_retries": 2,
+    "parallel_allowed": true
+  },
+  "metadata": {
+    "author": "agent-33",
+    "created": "2025-01-01",
+    "updated": "2025-01-30",
+    "tags": ["core", "coding", "worker"]
+  }
+}

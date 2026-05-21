@@ -1,0 +1,185 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>AGENT-33 · HealthPanel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="_kit.css">
+<style>
+  body { max-width: 1100px; }
+  .health-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 1px;
+    background: var(--line);
+    margin-top: 14px;
+  }
+  .h-card {
+    background: var(--bg-deep);
+    padding: 14px 16px;
+    display: grid; gap: 4px;
+    border-left: 3px solid var(--line);
+    position: relative;
+  }
+  .h-card.ok       { border-left-color: var(--green); }
+  .h-card.degraded { border-left-color: var(--amber); }
+  .h-card.error    { border-left-color: var(--red); }
+  .h-card.pending  { border-left-color: var(--sky); }
+  .h-card.inactive { border-left-color: var(--text-mute); }
+
+  .h-card .label {
+    font-family: var(--mono);
+    font-size: 9px;
+    letter-spacing: .2em;
+    color: var(--text-mute);
+    text-transform: uppercase;
+  }
+  .h-card .state {
+    display: flex; align-items: center; gap: 8px;
+    margin-top: 2px;
+  }
+  .h-card .state .icon {
+    width: 10px; height: 10px;
+    background: currentColor;
+    clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+  }
+  .h-card.ok       .state { color: var(--green); }
+  .h-card.degraded .state { color: var(--amber); }
+  .h-card.error    .state { color: var(--red); }
+  .h-card.pending  .state { color: var(--sky); }
+  .h-card.inactive .state { color: var(--text-mute); }
+  .h-card .state strong {
+    font-family: var(--sans);
+    font-size: .9rem;
+    text-transform: uppercase;
+    letter-spacing: .08em;
+  }
+  .h-card .meta {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-mute);
+    letter-spacing: .1em;
+    margin-top: 6px;
+  }
+  .h-card .pulse {
+    position: absolute; top: 10px; right: 12px;
+    width: 6px; height: 6px;
+    background: currentColor;
+    border-radius: 50%;
+    opacity: .8;
+    animation: hpulse 2.4s ease-in-out infinite;
+  }
+  .h-card.inactive .pulse { animation: none; opacity: .3; }
+  @keyframes hpulse {
+    0%, 100% { transform: scale(1); opacity: .9; }
+    50%      { transform: scale(1.6); opacity: .3; }
+  }
+  .legend {
+    display: flex; gap: 18px; flex-wrap: wrap;
+    margin-top: 14px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: .14em;
+    color: var(--text-mute);
+    text-transform: uppercase;
+  }
+  .legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .legend i {
+    width: 8px; height: 8px;
+    clip-path: polygon(50% 0, 100% 50%, 50% 100%, 0 50%);
+    display: inline-block;
+  }
+</style>
+</head>
+<body>
+
+<div class="kit-head">
+  <div>
+    <p class="eyebrow">▸ COMPONENT · RUNTIME HEALTH</p>
+    <h1>HealthPanel</h1>
+  </div>
+  <div class="meta">
+    <span>SOURCE · <b>HealthPanel.tsx</b></span>
+    <span>POLL · <b>5s</b></span>
+    <span>NEXT · <b>00:03</b></span>
+  </div>
+</div>
+
+<section class="panel">
+  <div class="deco"><div class="grid"></div></div>
+  <div class="panel-body">
+    <p class="eyebrow">▸ RUNTIME HEALTH</p>
+    <h2>System status</h2>
+    <p>Live snapshot of the orchestrator and every backing service. Auto-refreshes every five seconds.</p>
+
+    <div class="health-grid">
+      <div class="h-card ok">
+        <div class="pulse"></div>
+        <span class="label">OVERALL</span>
+        <div class="state"><span class="icon"></span><strong>healthy</strong></div>
+        <div class="meta">uptime 14d 02h · v0.4.2</div>
+      </div>
+      <div class="h-card ok">
+        <div class="pulse"></div>
+        <span class="label">ORCHESTRATOR</span>
+        <div class="state"><span class="icon"></span><strong>ok</strong></div>
+        <div class="meta">8 active agents</div>
+      </div>
+      <div class="h-card ok">
+        <div class="pulse"></div>
+        <span class="label">POSTGRES</span>
+        <div class="state"><span class="icon"></span><strong>ok</strong></div>
+        <div class="meta">42 conn · 18ms p95</div>
+      </div>
+      <div class="h-card ok">
+        <div class="pulse"></div>
+        <span class="label">PGVECTOR</span>
+        <div class="state"><span class="icon"></span><strong>ok</strong></div>
+        <div class="meta">2.1M vectors</div>
+      </div>
+      <div class="h-card degraded">
+        <div class="pulse"></div>
+        <span class="label">REDIS</span>
+        <div class="state"><span class="icon"></span><strong>degraded</strong></div>
+        <div class="meta">eviction · 96% mem</div>
+      </div>
+      <div class="h-card ok">
+        <div class="pulse"></div>
+        <span class="label">EVENT BUS</span>
+        <div class="state"><span class="icon"></span><strong>ok</strong></div>
+        <div class="meta">412 msg/s</div>
+      </div>
+      <div class="h-card pending">
+        <div class="pulse"></div>
+        <span class="label">SECRETS BROKER</span>
+        <div class="state"><span class="icon"></span><strong>configured</strong></div>
+        <div class="meta">vault not reached</div>
+      </div>
+      <div class="h-card error">
+        <div class="pulse"></div>
+        <span class="label">TRACE EXPORTER</span>
+        <div class="state"><span class="icon"></span><strong>error</strong></div>
+        <div class="meta">otlp 503 · last 02m</div>
+      </div>
+      <div class="h-card inactive">
+        <div class="pulse"></div>
+        <span class="label">SANDBOX RUNNER</span>
+        <div class="state"><span class="icon"></span><strong>unconfigured</strong></div>
+        <div class="meta">not provisioned</div>
+      </div>
+    </div>
+
+    <div class="legend">
+      <span><i style="background: var(--green)"></i> Healthy</span>
+      <span><i style="background: var(--amber)"></i> Degraded</span>
+      <span><i style="background: var(--red)"></i> Error</span>
+      <span><i style="background: var(--sky)"></i> Configured · idle</span>
+      <span><i style="background: var(--text-mute)"></i> Unconfigured</span>
+    </div>
+  </div>
+</section>
+
+</body>
+</html>

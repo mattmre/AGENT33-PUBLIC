@@ -1,0 +1,23 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<title>AGENT-33 logo orb</title>
+<style>
+  body { margin:0; background:#1a1d21; display:grid; place-items:center; min-height:100vh; }
+  .logo-orb {
+    width: 160px;
+    height: 160px;
+    border-radius: 50%;
+    background: conic-gradient(from 180deg at 50% 50%, #30d5c8 0deg, #184e68 180deg, #30d5c8 360deg);
+    box-shadow: 0 0 60px rgba(48, 213, 200, 0.5);
+    animation: pulse-orb 4s infinite ease-in-out;
+  }
+  @keyframes pulse-orb {
+    0%,100% { transform: scale(1); opacity: 0.85; }
+    50%     { transform: scale(1.06); opacity: 1; }
+  }
+</style>
+</head>
+<body><div class="logo-orb"></div></body>
+</html>

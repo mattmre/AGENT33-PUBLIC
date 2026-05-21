@@ -1,0 +1,34 @@
+name: data-extractor
+version: "1.0.0"
+description: "Extract structured JSON data from unstructured text, emails, documents, or web content"
+inputs:
+  text:
+    type: string
+    required: true
+    description: "Unstructured text to extract data from"
+  schema:
+    type: string
+    required: true
+    description: "JSON schema or description of the fields to extract"
+outputs:
+  extracted_data:
+    type: object
+    description: "Extracted structured data as JSON"
+steps:
+  - id: extract
+    name: "Extract Data"
+    action: invoke-agent
+    agent: orchestrator
+    inputs:
+      agent_name: orchestrator
+      message: "Extract the following fields from the text and return valid JSON only (no markdown, no explanation): {{ schema }}. Text: {{ text }}"
+    depends_on: []
+execution:
+  mode: sequential
+  fail_fast: false
+metadata:
+  author: agent-33
+  tags: [data, extraction, json, structured]
+sample_inputs:
+  text: "Invoice from: Acme Corp, 123 Main St. Invoice #: INV-2024-0891. Date: March 15, 2024. Due: April 15, 2024. Items: Cloud hosting services - $1,200.00, Support plan - $300.00, Setup fee - $150.00. Total: $1,650.00. Payment: Wire transfer to Chase Bank, Routing: 021000021, Account: 7891234560."
+  schema: '{"vendor_name": "string", "invoice_number": "string", "date": "YYYY-MM-DD", "due_date": "YYYY-MM-DD", "total_amount": "number", "line_items": [{"description": "string", "amount": "number"}]}'

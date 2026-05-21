@@ -1,0 +1,212 @@
+# Node.js 24 migration: COMPLETE (all actions Node 24 ready)
+# - actions/checkout: v6
+# - actions/cache: v5
+# - aquasecurity/trivy-action: pinned v0.35.0 (SHA-locked)
+# - github/codeql-action: v4
+# - anthropics/claude-code-action: @beta (tracks latest)
+name: Security Scan
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  trivy-fs:
+    name: Dependency CVE Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Restore Trivy DB cache
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/trivy
+          key: trivy-db-${{ github.run_id }}
+          restore-keys: trivy-db-
+
+      - name: Run Trivy filesystem scan
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: ./engine
+          scanners: vuln
+          severity: CRITICAL,HIGH
+          exit-code: "1"
+          format: table
+
+  trivy-image:
+    name: Container Image Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Restore Trivy DB cache
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/trivy
+          key: trivy-db-${{ github.run_id }}
+          restore-keys: trivy-db-
+
+      - name: Create results directory
+        run: mkdir -p results
+
+      - name: Build Docker image
+        run: docker build --pull -t agent33:${{ github.sha }} ./engine
+
+      - name: Run Trivy image scan
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: image
+          image-ref: agent33:${{ github.sha }}
+          severity: CRITICAL,HIGH
+          ignore-unfixed: true
+          exit-code: "1"
+          format: table
+
+      - name: Export image scan for targeted CVE verification
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: image
+          image-ref: agent33:${{ github.sha }}
+          scanners: vuln
+          vuln-type: os
+          ignore-unfixed: false
+          exit-code: "0"
+          format: json
+          output: results/trivy-image.json
+
+      - name: Verify runtime image no longer reports CVE-2026-0861
+        run: python scripts/verify_trivy_image.py results/trivy-image.json CVE-2026-0861
+
+  trivy-config:
+    name: IaC Misconfiguration Scan
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Restore Trivy DB cache
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/trivy
+          key: trivy-db-${{ github.run_id }}
+          restore-keys: trivy-db-
+
+      - name: Run Trivy config scan
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: config
+          scan-ref: ./engine
+          severity: CRITICAL,HIGH,MEDIUM
+          exit-code: "0"
+          format: table
+
+  trivy-secrets:
+    name: Secret Leak Detection
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Restore Trivy DB cache
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/trivy
+          key: trivy-db-${{ github.run_id }}
+          restore-keys: trivy-db-
+
+      - name: Run Trivy secret scan
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: .
+          scanners: secret
+          severity: CRITICAL,HIGH,MEDIUM
+          exit-code: "1"
+          format: table
+
+  trivy-sarif:
+    name: Trivy SARIF Upload
+    runs-on: ubuntu-latest
+    permissions:
+      security-events: write
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Restore Trivy DB cache
+        uses: actions/cache@v5
+        with:
+          path: ~/.cache/trivy
+          key: trivy-db-${{ github.run_id }}
+          restore-keys: trivy-db-
+
+      - name: Create results directory
+        run: mkdir -p results
+
+      - name: Run Trivy scan (SARIF output)
+        uses: aquasecurity/trivy-action@ed142fd0673e97e23eac54620cfb913e5ce36c25 # v0.36.0
+        with:
+          scan-type: fs
+          scan-ref: ./engine
+          scanners: vuln,secret
+          severity: CRITICAL,HIGH,MEDIUM
+          exit-code: "0"
+          format: sarif
+          output: results/trivy-results.sarif
+
+      - name: Upload Trivy SARIF to GitHub Security
+        uses: github/codeql-action/upload-sarif@v4
+        if: always()
+        with:
+          sarif_file: results/trivy-results.sarif
+          category: trivy
+
+  claude-code-security:
+    name: Claude Code Security Review
+    runs-on: ubuntu-latest
+    continue-on-error: true
+    permissions:
+      security-events: write
+      contents: read
+    if: github.event_name == 'pull_request'
+    steps:
+      - uses: actions/checkout@v6
+
+      - name: Determine Claude security review mode (API key only)
+        id: claude-review
+        run: |
+          if [ "${{ vars.ENABLE_CLAUDE_SECURITY_REVIEW }}" != "true" ]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "reason=ENABLE_CLAUDE_SECURITY_REVIEW is not true" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          if [ -z "${{ secrets.ANTHROPIC_API_KEY }}" ]; then
+            echo "enabled=false" >> "$GITHUB_OUTPUT"
+            echo "reason=ANTHROPIC_API_KEY is not configured" >> "$GITHUB_OUTPUT"
+            exit 0
+          fi
+
+          echo "enabled=true" >> "$GITHUB_OUTPUT"
+          echo "reason=enabled" >> "$GITHUB_OUTPUT"
+
+      - name: Skip notice
+        if: steps.claude-review.outputs.enabled != 'true'
+        run: |
+          echo "Skipping Claude Code Security Review: ${{ steps.claude-review.outputs.reason }}"
+
+      - name: Run Claude Code Security Review
+        if: steps.claude-review.outputs.enabled == 'true'
+        uses: anthropics/claude-code-action@beta
+        with:
+          anthropic_api_key: ${{ secrets.ANTHROPIC_API_KEY }}
+          model: claude-sonnet-4-20250514
+          direct_prompt: |
+            Review this PR for security vulnerabilities. Focus on:
+            - Prompt injection risks in LLM-facing code
+            - OWASP Top 10 vulnerabilities
+            - Secrets exposure
+            - Dependency vulnerabilities
+            - Authentication/authorization bypasses
+            Output findings in SARIF 2.1.0 format.
+          timeout_minutes: 10

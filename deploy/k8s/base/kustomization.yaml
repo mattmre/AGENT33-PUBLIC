@@ -1,0 +1,22 @@
+apiVersion: kustomize.config.k8s.io/v1beta1
+kind: Kustomization
+namespace: agent33
+resources:
+  - namespace.yaml
+  - api-configmap.yaml
+  - api-deployment.yaml
+  - api-hpa.yaml
+  - api-pdb.yaml
+  - api-ingress.yaml
+  - api-service.yaml
+  - postgres-statefulset.yaml
+  - postgres-service.yaml
+  - redis-deployment.yaml
+  - redis-service.yaml
+  - nats-deployment.yaml
+  - nats-service.yaml
+  - ollama-pvc.yaml
+  - ollama-deployment.yaml
+  - ollama-service.yaml
+  - searxng-deployment.yaml
+  - searxng-service.yaml

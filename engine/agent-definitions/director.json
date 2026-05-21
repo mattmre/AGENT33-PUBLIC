@@ -1,0 +1,70 @@
+{
+  "$schema": "./schemas/agent.schema.json",
+  "name": "director",
+  "version": "1.0.0",
+  "role": "director",
+  "description": "Strategic director that translates high-level objectives into actionable plans, coordinates multi-agent workflows, and ensures alignment with project goals.",
+  "agent_id": "AGT-002",
+  "status": "active",
+  "capabilities": [
+    "orchestration",
+    "api-calls"
+  ],
+  "spec_capabilities": ["P-01", "P-02", "P-03", "P-04", "P-05"],
+  "governance": {
+    "scope": "project-level",
+    "commands": "none",
+    "network": "internal",
+    "approval_required": ["scope-change"]
+  },
+  "ownership": {
+    "owner": "platform-team",
+    "escalation_target": "orchestrator"
+  },
+  "inputs": {
+    "objective": {
+      "type": "string",
+      "description": "High-level project objective to plan for",
+      "required": true
+    },
+    "constraints": {
+      "type": "object",
+      "description": "Resource and timeline constraints",
+      "required": false
+    }
+  },
+  "outputs": {
+    "plan": {
+      "type": "object",
+      "description": "Detailed execution plan with milestones"
+    },
+    "risk_assessment": {
+      "type": "object",
+      "description": "Identified risks and mitigation strategies"
+    }
+  },
+  "dependencies": [
+    {
+      "agent": "orchestrator",
+      "optional": false,
+      "purpose": "Works under orchestrator direction"
+    }
+  ],
+  "prompts": {
+    "system": "prompts/director/system.md",
+    "user": "prompts/director/user.md",
+    "examples": []
+  },
+  "constraints": {
+    "max_tokens": 8192,
+    "timeout_seconds": 240,
+    "max_retries": 2,
+    "parallel_allowed": false
+  },
+  "metadata": {
+    "author": "agent-33",
+    "created": "2025-01-01",
+    "updated": "2026-01-30",
+    "tags": ["core", "planning", "director"]
+  }
+}

@@ -1,0 +1,95 @@
+schema_version: "1"
+name: test-generation-sprint
+version: 1.0.0
+kind: outcome-pack
+description: Build a focused test-generation sprint from current risk areas and existing project conventions.
+author: AGENT-33
+category: quality
+tags:
+  - tests
+  - quality
+  - sprint
+  - coverage
+workflows:
+  - name: test-generation-sprint
+    description: Identify test gaps, draft cases, add the first tests, and report validation results.
+    path: workflows/test-generation-sprint.yaml
+presentation:
+  title: Test Generation Sprint
+  audience: Developers, maintainers, QA leads, and teams preparing changes for review
+  summary: Select a feature or risky area and receive a test plan plus review-gated first test implementation.
+  difficulty: beginner
+  estimated_duration: 45-120 minutes depending on test setup
+  expected_deliverables:
+    - Test gap analysis
+    - Prioritized test cases
+    - First test implementation plan
+    - Validation summary
+  sample_inputs:
+    target_area: authentication routes
+    test_goal: cover login, logout, and token refresh edge cases
+customization:
+  required_inputs:
+    - target_area
+  preset_values:
+    mode: focused-sprint
+    implementation: review-gated
+requirements:
+  - kind: llm
+    name: chat-model
+    required: true
+    preferences:
+      - openrouter
+      - ollama
+      - lm-studio
+    capabilities:
+      - chat
+      - coding
+      - testing
+    setup_hint: Connect a code-capable model for test planning and implementation help.
+  - kind: tool
+    name: file-ops
+    required: true
+    capabilities:
+      - read
+      - write
+    setup_hint: Enable file operations when you are ready to add or update tests.
+  - kind: tool
+    name: shell
+    required: false
+    capabilities:
+      - test
+    setup_hint: Optional shell access can run the project's existing test command.
+governance:
+  approval_required: true
+  risk_level: medium
+  max_parallel_runs: 1
+  max_daily_executions: 10
+  allowed_tools:
+    - file_ops
+    - shell
+    - apply_patch
+provenance:
+  trust_tier: official
+  license: Apache-2.0
+  signer_id: AGENT-33
+installation:
+  setup_steps:
+    - Connect a code-capable model.
+    - Select the target feature or risk area.
+    - Confirm the existing test command before execution.
+  required_runtime_features:
+    - workflow-launch
+    - review-gates
+    - artifacts
+  dry_run_supported: true
+  auto_enable: false
+artifacts:
+  - name: Test plan
+    description: Prioritized test cases tied to risk and expected behavior.
+    drawer_section: quality
+    required: true
+  - name: Validation summary
+    description: Test command results and remaining gaps.
+    drawer_section: validation
+    required: true

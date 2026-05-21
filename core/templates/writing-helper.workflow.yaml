@@ -1,0 +1,40 @@
+name: writing-helper
+version: "1.0.0"
+description: "Draft, edit, or brainstorm written content -- emails, documents, social posts, and more"
+inputs:
+  task:
+    type: string
+    required: true
+    description: "Writing task: draft, edit, or brainstorm"
+  content:
+    type: string
+    required: true
+    description: "Topic, existing draft, or brainstorming prompt"
+  tone:
+    type: string
+    required: false
+    default: "professional"
+    description: "Tone: professional, casual, formal, or persuasive"
+outputs:
+  result:
+    type: string
+    description: "Written output"
+steps:
+  - id: write
+    name: "Writing Assistant"
+    action: invoke-agent
+    agent: orchestrator
+    inputs:
+      agent_name: orchestrator
+      message: "Task: {{ task }}. Tone: {{ tone }}. Content: {{ content }}"
+    depends_on: []
+execution:
+  mode: sequential
+  fail_fast: false
+metadata:
+  author: agent-33
+  tags: [writing, content, draft, edit]
+sample_inputs:
+  task: "Draft a professional email"
+  content: "Tell our customer Acme Corp that their support ticket for slow API response times has been resolved. The fix was a database index added to the queries table. They should see response times under 100ms now."
+  tone: "professional"

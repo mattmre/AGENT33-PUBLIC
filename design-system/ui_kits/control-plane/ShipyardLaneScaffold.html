@@ -1,0 +1,199 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>AGENT-33 · ShipyardLaneScaffold</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="_kit.css">
+<style>
+  body { max-width: 1280px; }
+  .lanes-head {
+    display: flex; justify-content: space-between; align-items: end; gap: 18px;
+    margin-bottom: 14px;
+  }
+  .lanes-head h2 { margin: 4px 0 0; color: var(--ice); font-size: 1.2rem; }
+  .lanes-head p { margin: 4px 0 0; color: var(--text-soft); font-size: .82rem; max-width: 56ch; }
+  .lanes-actions { display: flex; gap: 10px; align-items: center; }
+  .perm-chip {
+    font-family: var(--mono); font-size: 9px;
+    letter-spacing: .14em; text-transform: uppercase;
+    padding: 4px 10px; border: 1px solid rgba(246,189,96,.5);
+    color: var(--amber); background: var(--amber-soft);
+  }
+
+  .lane-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 12px;
+  }
+  .lane-card {
+    position: relative;
+    background: linear-gradient(180deg, rgba(8,24,32,.92), rgba(8,24,32,.78));
+    --cut: 10px;
+    clip-path: polygon(var(--cut) 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%, 0 var(--cut));
+    isolation: isolate;
+    padding: 14px 14px 16px;
+    display: grid; gap: 8px;
+  }
+  .lane-card::before {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(135deg, var(--line-strong), rgba(48,213,200,.06) 40%, rgba(141,200,221,.18) 80%, var(--line-strong));
+    clip-path: inherit;
+    z-index: -1; padding: 1px;
+    -webkit-mask: linear-gradient(#000,#000) content-box, linear-gradient(#000,#000);
+    -webkit-mask-composite: xor; mask-composite: exclude;
+  }
+  .lane-card.ready::before     { background: linear-gradient(135deg, rgba(141,200,221,.5), rgba(141,200,221,.06) 50%, rgba(141,200,221,.4)); }
+  .lane-card.working::before   { background: linear-gradient(135deg, rgba(125,211,252,.55), rgba(125,211,252,.06) 50%, rgba(125,211,252,.4)); }
+  .lane-card.reviewing::before { background: linear-gradient(135deg, rgba(246,189,96,.55), rgba(246,189,96,.06) 50%, rgba(246,189,96,.4)); }
+  .lane-card.blocked::before   { background: linear-gradient(135deg, rgba(255,107,107,.55), rgba(255,107,107,.06) 50%, rgba(255,107,107,.4)); }
+  .lane-card.complete::before  { background: linear-gradient(135deg, rgba(139,233,168,.55), rgba(139,233,168,.06) 50%, rgba(139,233,168,.4)); }
+
+  .lane-head {
+    display: flex; justify-content: space-between; align-items: start;
+    border-bottom: 1px solid var(--line);
+    padding-bottom: 8px;
+  }
+  .lane-head span {
+    font-family: var(--mono); font-size: 9px;
+    letter-spacing: .18em; color: var(--teal);
+    text-transform: uppercase;
+  }
+  .lane-head h3 { margin: 2px 0 0; color: var(--ice); font-size: 1rem; }
+  .lane-head small { font-family: var(--mono); font-size: 9px; color: var(--text-mute); letter-spacing: .12em; }
+  .lane-head strong {
+    font-family: var(--mono); font-size: 10px;
+    letter-spacing: .16em; text-transform: uppercase;
+    padding: 3px 8px;
+    border: 1px solid currentColor;
+  }
+  .lane-card.ready strong     { color: var(--ice); }
+  .lane-card.working strong   { color: var(--sky); }
+  .lane-card.reviewing strong { color: var(--amber); }
+  .lane-card.blocked strong   { color: var(--red); }
+  .lane-card.complete strong  { color: var(--green); }
+
+  .lane-card p { margin: 0; color: var(--text-soft); font-size: .78rem; line-height: 1.5; }
+  .lane-card > small {
+    font-family: var(--mono); font-size: 9px;
+    letter-spacing: .12em; color: var(--text-mute);
+    text-transform: uppercase;
+  }
+  .lane-card ul {
+    list-style: none; padding: 0; margin: 6px 0 0;
+    display: grid; gap: 6px;
+  }
+  .lane-card li {
+    background: var(--bg-deep);
+    border-left: 2px solid var(--line);
+    padding: 6px 9px;
+    font-size: .76rem; color: var(--ice);
+    display: grid; gap: 1px;
+  }
+  .lane-card li span {
+    font-family: var(--mono); font-size: 9px;
+    letter-spacing: .14em; color: var(--text-mute);
+    text-transform: uppercase;
+  }
+</style>
+</head>
+<body>
+
+<div class="kit-head">
+  <div>
+    <p class="eyebrow">▸ COMPONENT · LANES</p>
+    <h1>ShipyardLaneScaffold</h1>
+  </div>
+  <div class="meta">
+    <span>SOURCE · <b>ShipyardLaneScaffold.tsx</b></span>
+    <span>WORKSPACE · <b>cache-rollout</b></span>
+  </div>
+</div>
+
+<header class="lanes-head">
+  <div>
+    <p class="eyebrow">▸ DRYDOCK-STYLE LANES</p>
+    <h2>Shipyard command lanes</h2>
+    <p>Coordinator, Scout, Builder, and Reviewer responsibilities split across this workspace before deeper execution wiring lands.</p>
+  </div>
+  <div class="lanes-actions">
+    <button class="btn">Launch workflow</button>
+    <span class="perm-chip">Soft gate · reviewer ack</span>
+    <button class="btn">Check approvals</button>
+  </div>
+</header>
+
+<div class="lane-grid">
+  <article class="lane-card complete">
+    <div class="lane-head">
+      <div>
+        <span>Coordinator</span>
+        <h3>Coordinator lane</h3>
+        <small>AGENT · BRIDGE</small>
+      </div>
+      <strong>Complete</strong>
+    </div>
+    <p>Sequences work, owns the plan, manages handoffs.</p>
+    <small>OUTPUT · Sequenced task plan, blockers, handoff notes</small>
+    <ul>
+      <li><span>COMPLETE</span>Plan handoff</li>
+      <li><span>COMPLETE</span>Define rollback gates</li>
+    </ul>
+  </article>
+
+  <article class="lane-card working">
+    <div class="lane-head">
+      <div>
+        <span>Scout</span>
+        <h3>Scout lane</h3>
+        <small>AGENT · VEGA</small>
+      </div>
+      <strong>Working</strong>
+    </div>
+    <p>Read-only research, risk surfacing, comparison findings.</p>
+    <small>OUTPUT · Research evidence, risk notes, comparison findings</small>
+    <ul>
+      <li><span>RUNNING</span>Compare counter libs</li>
+      <li><span>TODO</span>Survey live metrics</li>
+    </ul>
+  </article>
+
+  <article class="lane-card blocked">
+    <div class="lane-head">
+      <div>
+        <span>Builder</span>
+        <h3>Builder lane</h3>
+        <small>AGENT · FORGE</small>
+      </div>
+      <strong>Blocked</strong>
+    </div>
+    <p>Implementation slices, validation commands, change-set artifacts.</p>
+    <small>OUTPUT · Implementation slice, validation commands, changed artifacts</small>
+    <ul>
+      <li><span>BLOCKED</span>Stage rollout — secrets broker</li>
+      <li><span>RUNNING</span>Wire prom counters</li>
+    </ul>
+  </article>
+
+  <article class="lane-card reviewing">
+    <div class="lane-head">
+      <div>
+        <span>Reviewer</span>
+        <h3>Reviewer lane</h3>
+        <small>AGENT · HAWK</small>
+      </div>
+      <strong>Reviewing</strong>
+    </div>
+    <p>Quality gate, redaction audit, merge recommendation.</p>
+    <small>OUTPUT · Review comments, quality gate, merge recommendation</small>
+    <ul>
+      <li><span>REVIEW</span>Diff metrics PR</li>
+      <li><span>READY</span>Cardinality audit pending</li>
+    </ul>
+  </article>
+</div>
+
+</body>
+</html>

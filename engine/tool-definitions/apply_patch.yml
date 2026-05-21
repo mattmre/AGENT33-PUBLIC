@@ -1,0 +1,29 @@
+name: apply_patch
+description: >
+  Apply a structured patch to files inside the allowed workspace. Supports
+  dry-run preview, governed execution, and mutation audit logging.
+version: "1.0"
+owner: agent33-core
+provenance:
+  repo_url: https://github.com/mattmre/AGENT33-PUBLIC
+  license: Apache-2.0
+status: active
+
+parameters:
+  patch:
+    type: string
+    required: true
+    description: Patch text using the *** Begin Patch / *** End Patch envelope.
+  dry_run:
+    type: boolean
+    required: false
+    default: false
+    description: Preview the patch without writing files.
+
+governance:
+  required_scope: tools:execute
+  filesystem: workspace
+  write_operation: true
+  approval_modes:
+    - supervised
+    - tool_policy

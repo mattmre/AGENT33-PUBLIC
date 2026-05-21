@@ -1,0 +1,61 @@
+name: competitor-research-brief
+version: 1.0.0
+description: Produce a cited competitor research brief with opportunity and risk recommendations.
+inputs:
+  market:
+    type: string
+    description: Market, product category, or problem space to research.
+    required: true
+  competitors:
+    type: string
+    description: Optional comma-separated competitors or alternatives to include.
+    required: false
+  audience:
+    type: string
+    description: Intended audience for the brief.
+    required: false
+outputs:
+  competitor_matrix:
+    type: object
+    description: Competitor positioning, strengths, weaknesses, and feature notes.
+  recommendations:
+    type: object
+    description: Tactical opportunities, risks, and next research steps.
+steps:
+  - id: scope
+    name: Scope research brief
+    action: invoke-agent
+    agent: researcher
+    inputs:
+      market: ${inputs.market}
+      competitors: ${inputs.competitors}
+      audience: ${inputs.audience}
+      instruction: Define the research questions, source needs, and comparison dimensions.
+  - id: collect-signals
+    name: Collect competitor signals
+    action: invoke-agent
+    agent: researcher
+    depends_on:
+      - scope
+    inputs:
+      scope: ${steps.scope.outputs}
+      instruction: Gather or request current source-backed observations for each competitor.
+  - id: synthesize
+    name: Synthesize brief
+    action: invoke-agent
+    agent: reviewer
+    depends_on:
+      - collect-signals
+    inputs:
+      research: ${steps.collect-signals.outputs}
+      instruction: Produce a concise competitor matrix, opportunities, risks, and citations.
+execution:
+  mode: dependency-aware
+  fail_fast: true
+metadata:
+  author: AGENT-33
+  tags:
+    - official
+    - research
+    - competitors
+    - citations

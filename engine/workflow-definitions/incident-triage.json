@@ -1,0 +1,87 @@
+{
+  "$schema": "../core/schemas/workflow.schema.json",
+  "name": "incident-triage-loop",
+  "version": "1.0.0",
+  "description": "Operational incident triage flow that collects evidence, classifies severity, and publishes a remediation plan.",
+  "triggers": {
+    "manual": true,
+    "on_event": ["artifact-created"]
+  },
+  "inputs": {
+    "incident_id": {
+      "type": "string",
+      "description": "Identifier of the incident to triage",
+      "required": true
+    }
+  },
+  "outputs": {
+    "remediation_plan": {
+      "type": "object",
+      "description": "Structured remediation summary"
+    }
+  },
+  "steps": [
+    {
+      "id": "collect-logs",
+      "name": "Collect Recent Logs",
+      "action": "run-command",
+      "command": "echo logs-collected",
+      "outputs": {
+        "log_digest": "stdout"
+      }
+    },
+    {
+      "id": "fetch-status",
+      "name": "Fetch Service Status",
+      "action": "http-request",
+      "depends_on": ["collect-logs"],
+      "url": "https://status.example.internal/api/incidents",
+      "outputs": {
+        "status_payload": "body"
+      }
+    },
+    {
+      "id": "classify-severity",
+      "name": "Classify Incident Severity",
+      "action": "invoke-agent",
+      "agent": "reasoning-agent",
+      "depends_on": ["collect-logs", "fetch-status"],
+      "inputs": {
+        "logs": "{{ steps['collect-logs'].log_digest }}",
+        "status": "{{ steps['fetch-status'].status_payload }}"
+      },
+      "outputs": {
+        "severity": "classification"
+      }
+    },
+    {
+      "id": "draft-remediation",
+      "name": "Draft Remediation Plan",
+      "action": "transform",
+      "depends_on": ["classify-severity"],
+      "inputs": {
+        "template": {
+          "incident": "{{ inputs.incident_id }}",
+          "severity": "{{ classify-severity.severity }}",
+          "next_step": "stabilize service and publish update"
+        }
+      },
+      "outputs": {
+        "remediation_plan": "result"
+      }
+    }
+  ],
+  "execution": {
+    "mode": "dependency-aware",
+    "parallel_limit": 2,
+    "continue_on_error": false,
+    "fail_fast": true,
+    "timeout_seconds": 240,
+    "dry_run": false
+  },
+  "metadata": {
+    "author": "agent-33",
+    "created": "2026-03-04",
+    "tags": ["incident", "operations", "synthetic"]
+  }
+}

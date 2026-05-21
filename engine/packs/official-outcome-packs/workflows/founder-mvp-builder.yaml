@@ -1,0 +1,62 @@
+name: founder-mvp-builder
+version: 1.0.0
+description: Shape a product idea into a gated MVP build plan and first implementation slice.
+inputs:
+  product_idea:
+    type: string
+    description: Plain-language description of the product or feature idea.
+    required: true
+  target_user:
+    type: string
+    description: Primary user or buyer for the first MVP.
+    required: true
+  constraints:
+    type: string
+    description: Budget, timeline, stack, compliance, or deployment constraints.
+    required: false
+outputs:
+  mvp_brief:
+    type: object
+    description: Problem, target user, core promise, and success criteria.
+  first_sprint_plan:
+    type: object
+    description: First review-gated implementation slice and validation checklist.
+steps:
+  - id: clarify
+    name: Clarify MVP target
+    action: invoke-agent
+    agent: orchestrator
+    inputs:
+      product_idea: ${inputs.product_idea}
+      target_user: ${inputs.target_user}
+      constraints: ${inputs.constraints}
+      instruction: Create a plain-language MVP brief with assumptions and questions.
+  - id: cutline
+    name: Draw version one cutline
+    action: invoke-agent
+    agent: reviewer
+    depends_on:
+      - clarify
+    inputs:
+      brief: ${steps.clarify.outputs}
+      instruction: Separate must-have, should-have, and later features for the first release.
+  - id: sprint-plan
+    name: Build first sprint plan
+    action: invoke-agent
+    agent: orchestrator
+    depends_on:
+      - cutline
+    inputs:
+      cutline: ${steps.cutline.outputs}
+      instruction: Produce a review-gated implementation plan and validation checklist.
+execution:
+  mode: dependency-aware
+  fail_fast: true
+  dry_run: false
+metadata:
+  author: AGENT-33
+  tags:
+    - official
+    - mvp
+    - beginner
+    - review-gated

@@ -1,0 +1,194 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>AGENT-33 · GlobalSearch</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="_kit.css">
+<style>
+  body { max-width: 720px; }
+  .search-bar {
+    position: relative;
+    display: flex; align-items: center;
+    gap: 0;
+    background: var(--bg-deep);
+    border: 1px solid var(--line-strong);
+  }
+  .search-bar:focus-within { border-color: var(--teal); }
+  .search-bar .magnifier {
+    width: 18px; height: 18px;
+    flex: none;
+    color: var(--teal);
+    margin-left: 12px;
+  }
+  .search-bar input {
+    flex: 1;
+    background: transparent;
+    border: none;
+    color: var(--ice);
+    font-family: var(--sans);
+    font-size: .92rem;
+    padding: 12px 12px;
+    outline: none;
+  }
+  .search-bar input::placeholder { color: var(--text-mute); font-style: italic; }
+  .search-bar .kbd {
+    margin-right: 12px;
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: .12em;
+    color: var(--text-mute);
+    border: 1px solid var(--line);
+    padding: 2px 6px;
+  }
+
+  .results {
+    margin-top: 6px;
+    background: var(--bg-deep);
+    border: 1px solid var(--line);
+    max-height: 460px;
+    overflow-y: auto;
+  }
+  .results-head {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--line);
+    font-family: var(--mono);
+    font-size: 10px;
+    letter-spacing: .14em;
+    color: var(--text-mute);
+    text-transform: uppercase;
+  }
+  .results-head strong { color: var(--teal); }
+  .results-head button {
+    background: transparent; border: none; color: var(--text-mute);
+    cursor: pointer; font-family: var(--mono); font-size: 12px;
+  }
+  .results-head button:hover { color: var(--ice); }
+
+  .result {
+    padding: 12px 14px;
+    border-bottom: 1px solid var(--line-soft);
+    cursor: pointer;
+    display: grid; gap: 4px;
+  }
+  .result:hover { background: var(--teal-soft); }
+  .result mark {
+    background: rgba(48,213,200,.25);
+    color: var(--teal);
+    padding: 0 1px;
+  }
+  .result .body {
+    font-size: .82rem;
+    color: var(--ice);
+    line-height: 1.5;
+  }
+  .result .meta {
+    font-family: var(--mono);
+    font-size: 10px;
+    color: var(--text-mute);
+    letter-spacing: .12em;
+    display: flex; gap: 14px;
+  }
+  .result .meta b { color: var(--teal); font-weight: 500; }
+  .result .meta .sep { color: rgba(125,182,202,.4); }
+
+  .empty-state {
+    padding: 24px 14px;
+    text-align: center;
+    color: var(--text-mute);
+    font-family: var(--mono);
+    font-size: 11px;
+    letter-spacing: .14em;
+    text-transform: uppercase;
+  }
+
+  .variant-label {
+    font-family: var(--mono); font-size: 9px;
+    letter-spacing: .2em; color: var(--text-mute);
+    text-transform: uppercase;
+    margin: 18px 0 6px;
+  }
+</style>
+</head>
+<body>
+
+<div class="kit-head">
+  <div>
+    <p class="eyebrow">▸ COMPONENT · MEMORY SEARCH</p>
+    <h1>GlobalSearch</h1>
+  </div>
+  <div class="meta">
+    <span>SOURCE · <b>GlobalSearch.tsx</b></span>
+    <span>BACKEND · <b>PGVECTOR</b></span>
+  </div>
+</div>
+
+<div class="search-bar">
+  <svg class="magnifier" viewBox="0 0 20 20" fill="none">
+    <circle cx="9" cy="9" r="6" stroke="currentColor" stroke-width="1.6"/>
+    <path d="M14 14L18 18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+  </svg>
+  <input type="search" value="cache eviction strategy" placeholder="Search semantic memory (PGVector)…">
+  <span class="kbd">⌘K</span>
+</div>
+
+<section class="results">
+  <header class="results-head">
+    <strong>3 RESULTS</strong>
+    <span>QUERY · CACHE EVICTION STRATEGY</span>
+    <button aria-label="Close">✕</button>
+  </header>
+
+  <div class="result">
+    <div class="body">When the redis pool reaches 96% memory pressure, the orchestrator switches to <mark>volatile-lru eviction</mark> automatically. Operators can override the threshold via SETTINGS_REDIS_EVICTION_THRESHOLD…</div>
+    <div class="meta">
+      <span>TOKENS · <b>184</b></span><span class="sep">·</span>
+      <span>MATCH · <b>FULL</b></span><span class="sep">·</span>
+      <span>SOURCE · runbook/redis-pressure.md</span>
+    </div>
+  </div>
+
+  <div class="result">
+    <div class="body">Past incident #482 — cache <mark>eviction</mark> ran for 14 minutes before the rollback gate fired. Root cause: cardinality explosion from a new label set. Mitigation: strip user_id from labels…</div>
+    <div class="meta">
+      <span>TOKENS · <b>211</b></span><span class="sep">·</span>
+      <span>MATCH · <b>FULL</b></span><span class="sep">·</span>
+      <span>SOURCE · postmortem/482.md</span>
+    </div>
+  </div>
+
+  <div class="result">
+    <div class="body">Plan-of-record for cache-metrics rollout (v3) commits to W-TinyLFU as the long-run <mark>strategy</mark>. v3 ships counters first, eviction tuning is reserved for v4 once we have 14 days of baseline.</div>
+    <div class="meta">
+      <span>TOKENS · <b>148</b></span><span class="sep">·</span>
+      <span>MATCH · <b>SUMMARY</b></span><span class="sep">·</span>
+      <span>SOURCE · plans/cache-rollout-v3.md</span>
+    </div>
+  </div>
+</section>
+
+<div class="variant-label">Variant · NO TOKEN · sign-in required</div>
+<div class="search-bar" style="opacity: .65;">
+  <svg class="magnifier" viewBox="0 0 20 20" fill="none">
+    <circle cx="9" cy="9" r="6" stroke="currentColor" stroke-width="1.6"/>
+    <path d="M14 14L18 18" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/>
+  </svg>
+  <input type="search" placeholder="Sign in to use memory search" disabled>
+  <span class="kbd">⌘K</span>
+</div>
+
+<div class="variant-label">Variant · EMPTY · zero results</div>
+<section class="results">
+  <header class="results-head">
+    <strong>0 RESULTS</strong>
+    <span>QUERY · GHGRAB</span>
+    <button aria-label="Close">✕</button>
+  </header>
+  <div class="empty-state">No semantic match. Try a longer phrase or refine the workspace filter.</div>
+</section>
+
+</body>
+</html>

@@ -1,0 +1,36 @@
+name: implementation-session
+version: 1.0.0
+description: Run an implementation slice using persistent planning and PR-manager review discipline.
+inputs:
+  task:
+    type: string
+    description: Implementation objective for the slice.
+    required: true
+  context:
+    type: object
+    description: Optional supporting context.
+outputs:
+  result:
+    type: object
+    description: Implementation outcome and artifacts.
+steps:
+  - id: implement
+    name: Plan and implement the slice
+    action: invoke-agent
+    agent: orchestrator
+    inputs:
+      agent_name: orchestrator
+      task: task
+      context: context
+      active_skills:
+        - workflow-ops/planning-with-files
+        - workflow-ops/pr-manager
+execution:
+  mode: dependency-aware
+  fail_fast: true
+metadata:
+  author: agent-33
+  tags:
+    - capability-pack
+    - implementation
+    - workflow-ops

@@ -1,0 +1,235 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<title>AGENT-33 · DomainPanel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&family=IBM+Plex+Mono:wght@400;500&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="_kit.css">
+<style>
+  body { max-width: 1100px; }
+  .domain-head {
+    display: flex; justify-content: space-between; align-items: end; gap: 18px;
+  }
+  .domain-head h2 { margin: 4px 0 0; color: var(--ice); font-size: 1.2rem; }
+  .domain-head p { margin: 4px 0 0; color: var(--text-soft); font-size: .84rem; max-width: 60ch; }
+  .domain-search {
+    display: flex; align-items: center; gap: 0;
+    background: var(--bg-deep);
+    border: 1px solid var(--line);
+    min-width: 280px;
+  }
+  .domain-search input {
+    background: transparent;
+    border: none;
+    color: var(--ice);
+    font-family: var(--sans);
+    font-size: .82rem;
+    padding: 9px 12px;
+    width: 100%;
+    outline: none;
+  }
+  .domain-search input:focus { box-shadow: none; }
+  .domain-search .label {
+    font-family: var(--mono); font-size: 9px;
+    letter-spacing: .18em; color: var(--text-mute);
+    text-transform: uppercase;
+    border-right: 1px solid var(--line);
+    padding: 0 10px;
+    align-self: stretch;
+    display: flex; align-items: center;
+  }
+  .pro-filter {
+    display: flex; align-items: center; gap: 8px;
+    margin-top: 12px;
+    padding: 8px 12px;
+    border-left: 2px solid var(--teal);
+    background: var(--teal-soft);
+    font-family: var(--mono);
+    font-size: 11px;
+    color: var(--ice);
+  }
+  .pro-filter span {
+    font-family: var(--mono); font-size: 9px;
+    letter-spacing: .18em; color: var(--teal);
+    text-transform: uppercase;
+  }
+  .pro-filter b { color: var(--teal); }
+
+  .ops { display: grid; gap: 8px; margin-top: 16px; }
+  .op {
+    position: relative;
+    --cut: 10px;
+    clip-path: polygon(var(--cut) 0, 100% 0, 100% calc(100% - var(--cut)), calc(100% - var(--cut)) 100%, 0 100%, 0 var(--cut));
+    background: linear-gradient(180deg, rgba(8,24,32,.92), rgba(8,24,32,.78));
+    isolation: isolate;
+  }
+  .op::before {
+    content: ""; position: absolute; inset: 0;
+    background: linear-gradient(135deg, var(--line-strong), rgba(48,213,200,.06) 40%, rgba(141,200,221,.18) 80%, var(--line-strong));
+    clip-path: inherit;
+    z-index: -1;
+    padding: 1px;
+    -webkit-mask: linear-gradient(#000,#000) content-box, linear-gradient(#000,#000);
+    -webkit-mask-composite: xor; mask-composite: exclude;
+  }
+  .op-grid {
+    display: grid;
+    grid-template-columns: 36px 1fr auto;
+    align-items: stretch;
+  }
+  .rail-left {
+    border-right: 1px solid rgba(48,213,200,.16);
+    background: linear-gradient(180deg, rgba(8,24,32,.95), rgba(8,24,32,.6));
+    display: flex; align-items: center; justify-content: center;
+  }
+  .method {
+    writing-mode: vertical-rl;
+    transform: rotate(180deg);
+    font-family: var(--mono);
+    font-weight: 700;
+    font-size: 10px;
+    letter-spacing: .28em;
+    color: #03080c;
+    background: var(--teal);
+    padding: 8px 4px;
+    line-height: 1;
+  }
+  .method.get    { background: rgba(141,200,221,.85); }
+  .method.delete { background: var(--red); color: #1a0608; }
+  .method.patch  { background: var(--amber); color: #1a0608; }
+  .op-body { padding: 10px 14px; display: grid; gap: 4px; min-width: 0; }
+  .op-body h4 { margin: 0; font-size: .94rem; color: var(--ice); font-weight: 600; }
+  .op-body p { margin: 0; color: var(--text-soft); font-size: .76rem; line-height: 1.4; }
+  .op-meta {
+    display: flex; gap: 10px; margin-top: 2px;
+    font-family: var(--mono); font-size: 10px;
+    letter-spacing: .08em; color: var(--text-mute);
+  }
+  .op-meta .accent { color: var(--teal); }
+  .op-meta .sep { color: rgba(125,182,202,.4); }
+  .rail-right {
+    border-left: 1px solid rgba(48,213,200,.16);
+    padding: 8px 10px;
+    display: flex; flex-direction: column; gap: 6px; justify-content: center;
+    background: linear-gradient(180deg, var(--teal-soft), transparent);
+  }
+
+  .feature-banner {
+    margin-top: 14px;
+    background: var(--sky-soft);
+    border-left: 3px solid var(--sky);
+    padding: 12px 14px;
+    display: flex; justify-content: space-between; align-items: center;
+  }
+  .feature-banner .copy { display: grid; gap: 2px; }
+  .feature-banner span { font-family: var(--mono); font-size: 9px; letter-spacing: .14em; color: var(--sky); text-transform: uppercase; }
+  .feature-banner strong { color: var(--ice); font-size: .9rem; }
+</style>
+</head>
+<body>
+
+<div class="kit-head">
+  <div>
+    <p class="eyebrow">▸ COMPONENT · DOMAIN</p>
+    <h1>DomainPanel</h1>
+  </div>
+  <div class="meta">
+    <span>SOURCE · <b>DomainPanel.tsx</b></span>
+    <span>DOMAIN · <b>WORKFLOWS</b></span>
+  </div>
+</div>
+
+<header class="domain-head">
+  <div>
+    <p class="eyebrow">▸ DOMAIN · WORKFLOWS</p>
+    <h2>Workflows</h2>
+    <p>Define, launch, and inspect agent workflows. Every operation here is gated by the active permission mode.</p>
+  </div>
+  <label class="domain-search">
+    <span class="label">SEARCH</span>
+    <input type="text" placeholder="Filter operations…" value="cache">
+  </label>
+</header>
+
+<div class="pro-filter">
+  <span>PRO SEARCH</span><b>cache</b> applied across all visible domains
+</div>
+
+<section class="feature-banner">
+  <div class="copy">
+    <span>▸ FEATURE PANEL</span>
+    <strong>Improvement Cycle Wizard</strong>
+  </div>
+  <button class="btn primary">Launch wizard</button>
+</section>
+
+<div class="ops">
+  <div class="op">
+    <div class="op-grid">
+      <div class="rail-left"><div class="method get">GET</div></div>
+      <div class="op-body">
+        <h4>List workflows</h4>
+        <p>Return all defined workflows for this workspace, scoped to the caller's role.</p>
+        <div class="op-meta">
+          <span class="accent">/v1/workflows/</span><span class="sep">·</span>
+          <span>OBSERVER+</span><span class="sep">·</span>
+          <span>READ</span>
+        </div>
+      </div>
+      <div class="rail-right"><button class="btn">Run</button></div>
+    </div>
+  </div>
+
+  <div class="op">
+    <div class="op-grid">
+      <div class="rail-left"><div class="method">POST</div></div>
+      <div class="op-body">
+        <h4>Launch cache-metrics rollout</h4>
+        <p>Kicks off the workflow as defined in plans/cache-rollout-v3. Soft gate applies to artifact merges.</p>
+        <div class="op-meta">
+          <span class="accent">/v1/workflows/cache_metrics_rollout/start</span><span class="sep">·</span>
+          <span>OPERATOR+</span><span class="sep">·</span>
+          <span>MUTATES</span>
+        </div>
+      </div>
+      <div class="rail-right"><button class="btn primary">Run</button></div>
+    </div>
+  </div>
+
+  <div class="op">
+    <div class="op-grid">
+      <div class="rail-left"><div class="method patch">PATCH</div></div>
+      <div class="op-body">
+        <h4>Patch cache eviction policy</h4>
+        <p>Adjust eviction strategy at runtime; reviewers ack required when permission gate is &gt; OBSERVER.</p>
+        <div class="op-meta">
+          <span class="accent">/v1/workflows/cache_metrics_rollout/policy</span><span class="sep">·</span>
+          <span>OPERATOR+</span><span class="sep">·</span>
+          <span>MUTATES</span>
+        </div>
+      </div>
+      <div class="rail-right"><button class="btn">Run</button></div>
+    </div>
+  </div>
+
+  <div class="op">
+    <div class="op-grid">
+      <div class="rail-left"><div class="method delete">DEL</div></div>
+      <div class="op-body">
+        <h4>Cancel cache rollout run</h4>
+        <p>Hard gate. Cancels an in-flight run and triggers the rollback playbook.</p>
+        <div class="op-meta">
+          <span class="accent">/v1/runs/{run_id}</span><span class="sep">·</span>
+          <span>ADMIN</span><span class="sep">·</span>
+          <span>DESTRUCTIVE</span>
+        </div>
+      </div>
+      <div class="rail-right"><button class="btn danger">Run</button></div>
+    </div>
+  </div>
+</div>
+
+</body>
+</html>

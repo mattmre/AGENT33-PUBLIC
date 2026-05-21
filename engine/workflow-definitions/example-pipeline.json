@@ -1,0 +1,111 @@
+{
+  "$schema": "../core/schemas/workflow.schema.json",
+  "name": "code-review-pipeline",
+  "version": "1.0.0",
+  "description": "Automated code review pipeline with parallel analysis, conditional deployment gate, and agent invocations",
+  "triggers": {
+    "manual": true,
+    "on_event": ["artifact-created"],
+    "on_change": ["src/**/*.py"]
+  },
+  "inputs": {
+    "repository": {
+      "type": "string",
+      "description": "Repository path to analyze",
+      "required": true
+    },
+    "branch": {
+      "type": "string",
+      "description": "Branch to review",
+      "default": "main"
+    }
+  },
+  "outputs": {
+    "review_summary": {
+      "type": "object",
+      "description": "Combined review results"
+    }
+  },
+  "steps": [
+    {
+      "id": "fetch-code",
+      "name": "Fetch Source Code",
+      "action": "run-command",
+      "command": "git diff --stat HEAD~1",
+      "inputs": {},
+      "outputs": {
+        "diff_output": "stdout"
+      },
+      "timeout_seconds": 30
+    },
+    {
+      "id": "lint-check",
+      "name": "Run Linter",
+      "action": "run-command",
+      "command": "echo lint-passed",
+      "depends_on": ["fetch-code"],
+      "inputs": {},
+      "outputs": {
+        "lint_result": "stdout"
+      },
+      "timeout_seconds": 60
+    },
+    {
+      "id": "security-scan",
+      "name": "Security Analysis",
+      "action": "invoke-agent",
+      "agent": "security-scanner",
+      "depends_on": ["fetch-code"],
+      "inputs": {
+        "source": "{{ steps['fetch-code'].diff_output }}"
+      },
+      "outputs": {
+        "vulnerabilities": "findings"
+      },
+      "retry": {
+        "max_attempts": 2,
+        "delay_seconds": 5
+      }
+    },
+    {
+      "id": "quality-gate",
+      "name": "Quality Gate Decision",
+      "action": "conditional",
+      "depends_on": ["lint-check", "security-scan"],
+      "condition": "lint-check.lint_result == 'lint-passed' and not security-scan.get('vulnerabilities')",
+      "inputs": {},
+      "outputs": {
+        "approved": "condition_result"
+      }
+    },
+    {
+      "id": "generate-report",
+      "name": "Generate Review Report",
+      "action": "transform",
+      "depends_on": ["quality-gate"],
+      "inputs": {
+        "template": {
+          "summary": "{{ 'Approved' if quality-gate.condition_result else 'Rejected' }}",
+          "lint": "{{ lint-check }}",
+          "security": "{{ security-scan }}"
+        }
+      },
+      "outputs": {
+        "report": "result"
+      }
+    }
+  ],
+  "execution": {
+    "mode": "dependency-aware",
+    "parallel_limit": 4,
+    "continue_on_error": false,
+    "fail_fast": true,
+    "timeout_seconds": 300,
+    "dry_run": false
+  },
+  "metadata": {
+    "author": "agent-33",
+    "created": "2025-01-30",
+    "tags": ["code-review", "ci-cd", "automated"]
+  }
+}

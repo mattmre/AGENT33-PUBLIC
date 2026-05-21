@@ -1,0 +1,26 @@
+name: workflow-ops
+version: 1.0.0
+description: Planning, review, documentation, and webapp testing capabilities imported from the EVOKORE skill library.
+author: AGENT-33
+license: Apache-2.0
+tags:
+  - imported
+  - evokore
+  - workflow
+  - review
+  - docs
+  - testing
+category: workflow-automation
+skills:
+  - name: planning-with-files
+    path: skills/workflow/planning-with-files
+    description: Persistent task planning with task plan, findings, and progress artifacts.
+  - name: docs-architect
+    path: skills/docs/docs-architect
+    description: Documentation overhaul workflow.
+  - name: pr-manager
+    path: skills/review/pr-manager
+    description: PR review, validation, and merge-prep workflow.
+  - name: webapp-testing
+    path: skills/testing/webapp-testing
+    description: Playwright-based local webapp testing workflow.

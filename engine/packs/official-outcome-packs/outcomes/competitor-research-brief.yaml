@@ -1,0 +1,86 @@
+schema_version: "1"
+name: competitor-research-brief
+version: 1.0.0
+kind: outcome-pack
+description: Produce a cited competitor brief with positioning, feature gaps, pricing signals, and tactical recommendations.
+author: AGENT-33
+category: research
+tags:
+  - research
+  - competitors
+  - strategy
+  - brief
+workflows:
+  - name: competitor-research-brief
+    description: Research a market or competitor set and produce a cited strategy brief.
+    path: workflows/competitor-research-brief.yaml
+presentation:
+  title: Competitor Research Brief
+  audience: Founders, product managers, agencies, and research operators
+  summary: Enter a product, market, or competitor list and receive a sourced brief with opportunities, risks, and next actions.
+  difficulty: beginner
+  estimated_duration: 30-60 minutes depending on source availability
+  expected_deliverables:
+    - Competitor matrix
+    - Feature and positioning gaps
+    - Pricing and messaging observations
+    - Recommended next moves
+  sample_inputs:
+    market: AI coding assistants for small teams
+    competitors: upstream agent OS, Hermes Agent, Agent Zero
+customization:
+  required_inputs:
+    - market
+  preset_values:
+    citation_required: true
+    depth: practical
+requirements:
+  - kind: llm
+    name: chat-model
+    required: true
+    preferences:
+      - openrouter
+      - ollama
+      - lm-studio
+    capabilities:
+      - chat
+      - synthesis
+    setup_hint: Connect a chat-capable model for synthesis and brief writing.
+  - kind: tool
+    name: web-fetch
+    required: false
+    capabilities:
+      - web
+      - citations
+    setup_hint: Enable web research tools for current source collection.
+governance:
+  approval_required: true
+  risk_level: low
+  max_parallel_runs: 2
+  max_daily_executions: 20
+  allowed_tools:
+    - web_fetch
+    - search
+provenance:
+  trust_tier: official
+  license: Apache-2.0
+  signer_id: AGENT-33
+installation:
+  setup_steps:
+    - Connect a chat-capable model.
+    - Enable web research tools if current information is needed.
+    - Provide a market, product, or competitor list.
+  required_runtime_features:
+    - workflow-launch
+    - artifacts
+  dry_run_supported: true
+  auto_enable: false
+artifacts:
+  - name: Competitor brief
+    description: Sourced summary of competitors, gaps, and recommendations.
+    drawer_section: research
+    required: true
+  - name: Source list
+    description: URLs and notes used for the brief.
+    drawer_section: citations
+    required: false

@@ -1,0 +1,44 @@
+name: code-review
+version: "1.0.0"
+description: "Review code changes for bugs, security issues, performance, and best practices"
+inputs:
+  code:
+    type: string
+    required: true
+    description: "Code diff, snippet, or PR description to review"
+  language:
+    type: string
+    required: false
+    default: "auto-detect"
+    description: "Programming language (or auto-detect)"
+  focus:
+    type: string
+    required: false
+    default: "all"
+    description: "Review focus: all, security, performance, correctness, or style"
+outputs:
+  review:
+    type: string
+    description: "Code review with findings and suggestions"
+steps:
+  - id: review
+    name: "Code Review"
+    action: invoke-agent
+    agent: qa
+    inputs:
+      agent_name: qa
+      message: "Review the following {{ language }} code focusing on {{ focus }}. Identify bugs, security vulnerabilities, performance issues, and style concerns. Provide specific, actionable feedback: {{ code }}"
+    depends_on: []
+execution:
+  mode: sequential
+  fail_fast: false
+metadata:
+  author: agent-33
+  tags: [code, review, quality, security]
+sample_inputs:
+  code: |
+    def get_user(user_id):
+        query = f"SELECT * FROM users WHERE id = {user_id}"
+        return db.execute(query)
+  language: "Python"
+  focus: "security"

@@ -1,0 +1,114 @@
+name: improvement-cycle-retrospective
+version: 1.0.0
+description: Deterministic retrospective scaffold for session or milestone improvement reviews.
+triggers:
+  manual: true
+  on_event:
+    - session-end
+inputs:
+  session_id:
+    type: string
+    description: Session or milestone identifier being reviewed.
+    required: true
+  scope:
+    type: string
+    description: Area or stream being reviewed.
+    default: full-delivery
+  participants:
+    type: array
+    description: Participants or roles included in the retrospective.
+    default:
+      - facilitator
+      - reviewer
+      - implementer
+  evidence_sources:
+    type: array
+    description: Evidence sources reviewed during the retrospective.
+    default:
+      - merged PRs
+      - test runs
+      - review notes
+  wins:
+    type: array
+    description: Concrete wins captured from the session.
+    default: []
+  improvement_areas:
+    type: array
+    description: Concrete issues to address next.
+    default: []
+outputs:
+  result:
+    type: object
+    description: Prepared retrospective scaffold with summary, prompts, and markdown output.
+steps:
+  - id: validate
+    name: Validate required retrospective input
+    action: validate
+    inputs:
+      data: session_id
+      expression: "'data'"
+  - id: collect
+    name: Normalize retrospective context
+    action: transform
+    depends_on:
+      - validate
+    inputs:
+      data:
+        session_id: session_id
+        scope: scope
+        participants: participants
+        evidence_sources: evidence_sources
+        wins: wins
+        improvement_areas: improvement_areas
+  - id: summarize
+    name: Produce retrospective scaffold outputs
+    action: transform
+    depends_on:
+      - collect
+    inputs:
+      data:
+        status: "'ready'"
+        summary: "'Retrospective scaffold prepared for ' ~ collect.result.session_id"
+        action_items:
+          - "'Assign an owner for the top improvement area.'"
+          - "'Carry one process change into the next session plan.'"
+        report_markdown: |
+          ## Retrospective: {{ collect.result.session_id }}
+
+          ### Scope
+          - {{ collect.result.scope or 'full-delivery' }}
+
+          ### Participants
+          {% for participant in collect.result.participants or ['facilitator', 'reviewer', 'implementer'] %}
+          - {{ participant }}
+          {% endfor %}
+
+          ### Wins
+          {% for item in collect.result.wins or ['Document one concrete success from the session.'] %}
+          - {{ item }}
+          {% endfor %}
+
+          ### Improvement Areas
+          {% for item in collect.result.improvement_areas or ['Document one concrete improvement area for the next session.'] %}
+          - {{ item }}
+          {% endfor %}
+
+          ### Evidence Reviewed
+          {% for item in collect.result.evidence_sources or ['merged PRs', 'test runs', 'review notes'] %}
+          - {{ item }}
+          {% endfor %}
+
+          ### Next Actions
+          1. Assign an owner for the top improvement area.
+          2. Carry one process change into the next session plan.
+execution:
+  mode: dependency-aware
+  fail_fast: true
+metadata:
+  author: implementer
+  created: "2026-03-06"
+  updated: "2026-03-06"
+  tags:
+    - improvement-cycle
+    - retrospective
+    - template

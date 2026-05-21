@@ -1,0 +1,21 @@
+name: reader
+description: >
+  Fetch a URL and return its content as clean markdown. Uses Jina Reader API
+  when configured, otherwise falls back to local extraction via trafilatura.
+version: "1.0"
+owner: agent33-core
+provenance:
+  repo_url: https://github.com/mattmre/AGENT33-PUBLIC
+  license: Apache-2.0
+status: active
+
+parameters:
+  url:
+    type: string
+    required: true
+    description: The URL to read and convert to markdown.
+
+governance:
+  required_scope: tools:execute
+  domain_allowlist: []
+  max_response_bytes: 5242880
