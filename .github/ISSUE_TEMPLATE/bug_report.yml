@@ -1,0 +1,107 @@
+name: Bug report
+description: Report a defect, regression, or unexpected behavior in AGENT-33.
+title: "[Bug]: "
+labels: ["bug", "needs-triage"]
+body:
+  - type: markdown
+    attributes:
+      value: |
+        Thanks for taking the time to file a bug report.
+
+        **Before filing**, please confirm:
+        - You are using a supported release (see `CHANGELOG.md` for the active version).
+        - This is not a security vulnerability — security issues must go through `SECURITY.md`, **not** public issues.
+        - You have searched existing issues and Discussions and have not found a duplicate.
+
+  - type: dropdown
+    id: version
+    attributes:
+      label: AGENT-33 version
+      description: Output of `agent33 status` or `python -c "import agent33; print(agent33.__version__)"`. If you are running from `main`, pick "main (unreleased)".
+      options:
+        - 2.1.0
+        - 2.0.x
+        - 1.x
+        - main (unreleased)
+        - other (describe in environment)
+    validations:
+      required: true
+
+  - type: dropdown
+    id: deployment
+    attributes:
+      label: Deployment method
+      description: How are you running AGENT-33?
+      options:
+        - Docker Compose (single-node)
+        - Kubernetes (Kustomize / Helm)
+        - Local Python (uvicorn against local infra)
+        - REST API client only (SDK / curl against remote)
+        - Other (describe below)
+    validations:
+      required: true
+
+  - type: textarea
+    id: what-happened
+    attributes:
+      label: What happened?
+      description: A clear, factual description of the unexpected behavior.
+      placeholder: "When I invoke the orchestrator agent via POST /v1/agents/orchestrator/invoke, the workflow step `parallel_group` never completes — the response hangs until the API timeout."
+    validations:
+      required: true
+
+  - type: textarea
+    id: expected
+    attributes:
+      label: What did you expect to happen?
+      placeholder: "All branches of the parallel_group should resolve within ~10s and the workflow should advance to the next step."
+    validations:
+      required: true
+
+  - type: textarea
+    id: repro
+    attributes:
+      label: Minimal reproduction
+      description: Step-by-step instructions, with commands and example payloads where possible. The more concrete, the faster the fix.
+      placeholder: |
+        1. Start the stack: `docker compose up -d`
+        2. POST a workflow:
+           ```
+           curl -X POST http://localhost:8000/v1/workflows/run \
+             -H "Authorization: Bearer $TOKEN" \
+             -d @workflow.yaml
+           ```
+        3. Poll GET /v1/workflows/{run_id} — observe step stays in `RUNNING`
+      render: shell
+    validations:
+      required: true
+
+  - type: textarea
+    id: logs
+    attributes:
+      label: Relevant logs / output
+      description: Paste the relevant slice of structured engine logs, container logs, or API responses. Redact any sensitive content (tenant IDs, agent prompts, tool args) before posting.
+      render: shell
+
+  - type: textarea
+    id: environment
+    attributes:
+      label: Environment details
+      description: OS, Python version, container runtime, LLM provider, anything else that might matter.
+      placeholder: |
+        - OS: Ubuntu 22.04
+        - Python: 3.11.7
+        - Docker: 24.0.7
+        - Postgres: pgvector/pgvector:pg16
+        - LLM provider: Ollama (llama3.1:8b) / OpenAI / other
+        - Tenant mode: single-tenant / multi-tenant
+
+  - type: checkboxes
+    id: confirmations
+    attributes:
+      label: Confirmations
+      options:
+        - label: I have **not** included any secrets, API keys, JWT tokens, or production data in this report.
+          required: true
+        - label: This is not a security vulnerability. (Security issues go to `SECURITY.md`.)
+          required: true

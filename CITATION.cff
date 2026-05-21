@@ -1,0 +1,36 @@
+cff-version: 1.2.0
+title: "AGENT-33: Multi-Agent Orchestration Framework with Governance and Evidence Capture"
+message: "If you use this software in research, deployment, or derivative work, please cite it as below."
+type: software
+authors:
+  - name: "AGENT-33 Contributors"
+    website: "https://github.com/mattmre/AGENT33-PUBLIC"
+repository-code: "https://github.com/mattmre/AGENT33-PUBLIC"
+url: "https://github.com/mattmre/AGENT33-PUBLIC"
+abstract: >-
+  AGENT-33 is a multi-agent orchestration framework that pairs an LLM-agnostic
+  agent runtime with a DAG-based workflow engine, a skills and packs ecosystem,
+  and a multi-tenant FastAPI control plane. It ships first-class governance
+  primitives - tool allowlists, autonomy budgets, two-layer review automation,
+  and signed release artifacts - alongside an evidence capture layer that
+  records traces, outcomes, and lineage for every agent invocation. The runtime
+  is provider-agnostic across Ollama, OpenAI-compatible APIs, and MCP servers;
+  memory is backed by pgvector plus a BM25 hybrid retriever; and operational
+  surfaces include code execution sandboxes, evaluation gates, knowledge
+  ingestion crons, and release-automation rollback. The platform is designed
+  for self-hosted, air-gap-capable deployment with per-tenant isolation.
+keywords:
+  - "multi-agent-orchestration"
+  - "fastapi"
+  - "multi-tenant"
+  - "pgvector"
+  - "retrieval-augmented-generation"
+  - "llm-orchestration"
+  - "workflow-engine"
+  - "governance"
+  - "evidence-capture"
+  - "ollama"
+  - "mcp"
+license: Apache-2.0
+version: 2.1.0
+date-released: 2026-05-21
