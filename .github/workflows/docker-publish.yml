@@ -1,0 +1,85 @@
+# Build and publish the AGENT-33 engine container image to GitHub Container
+# Registry (GHCR) on tag pushes and on manual workflow_dispatch.
+#
+# The image is `ghcr.io/mattmre/agent33`. Tag pushes (`v*`) produce semver tags
+# plus a `latest` move. `workflow_dispatch` accepts an arbitrary tag input so
+# operators can rebuild a specific version after the fact (for example to
+# backfill the v2.1.0 image that the public release notes already advertise).
+#
+# The engine image is amd64-only for the initial public release. The base
+# Python image, the runtime deployment target, and the existing `docker-smoke`
+# CI job all assume linux/amd64, so adding linux/arm64 here would introduce
+# silent-skew risk without delivering a working ARM runtime.
+
+name: Docker Publish
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Image tag to publish (e.g. 2.1.0 or latest)'
+        required: true
+        default: 'latest'
+        type: string
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  build-and-push:
+    name: Build and push engine image
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Login to GHCR
+        uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          # GHCR namespace must be lowercase. `mattmre/agent33` is already
+          # lowercased; do not template this from `github.repository` because
+          # the repo name is `AGENT33-PUBLIC` (mixed case) which would push
+          # to the wrong namespace.
+          images: ghcr.io/mattmre/agent33
+          tags: |
+            type=semver,pattern={{version}}
+            type=semver,pattern={{major}}.{{minor}}
+            type=raw,value=latest,enable=${{ startsWith(github.ref, 'refs/tags/v') }}
+            type=raw,value=${{ inputs.tag }},enable=${{ github.event_name == 'workflow_dispatch' }}
+          labels: |
+            org.opencontainers.image.title=AGENT-33
+            org.opencontainers.image.description=AGENT-33 multi-agent orchestration engine
+            org.opencontainers.image.source=https://github.com/mattmre/AGENT33-PUBLIC
+            org.opencontainers.image.licenses=Apache-2.0
+            org.opencontainers.image.vendor=mattmre
+
+      - name: Build and push
+        uses: docker/build-push-action@v5
+        with:
+          # The Dockerfile installs the package from the engine/ directory, so
+          # the build context is scoped to engine/ to match the COPY paths
+          # (`src/`, `agent-definitions/`, `workflow-definitions/`, etc.).
+          context: ./engine
+          file: ./engine/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max

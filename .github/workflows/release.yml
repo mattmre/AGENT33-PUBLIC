@@ -1,0 +1,42 @@
+# Auto-create a GitHub Release whenever a `v*.*.*` tag is pushed.
+#
+# The release body sources its content from `RELEASE_NOTES.md` at the repo
+# root. When that file is missing or empty (for example on patch tags where
+# we have not refreshed the notes yet), the action falls back to the
+# auto-generated PR-based release notes so a tag push always produces a
+# usable release page.
+
+name: Release
+
+on:
+  push:
+    tags:
+      - 'v*.*.*'
+
+permissions:
+  contents: write
+
+jobs:
+  create-release:
+    name: Create GitHub Release
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Create GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          # Source the release body from RELEASE_NOTES.md. The action will
+          # also generate the standard "What's Changed" auto-summary which is
+          # appended after the body.
+          body_path: RELEASE_NOTES.md
+          generate_release_notes: true
+          draft: false
+          prerelease: false
+          fail_on_unmatched_files: false
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
