@@ -1,4 +1,4 @@
-# ADR: Session 138 Tool Gateway Request Contract
+# ADR-002: Tool Gateway Request Contract
 
 Date: 2026-05-05
 

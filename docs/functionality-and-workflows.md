@@ -146,5 +146,3 @@ Flow:
 ## 6. Pending and In-Progress Capabilities
 
 The project is under active development, and some capabilities may be in progress on feature branches. This document reflects the current operational runtime on the active branch.
-
-For historical context on development activity and capability evolution, refer to the PR review snapshot in `docs/pr-review-2026-02-15.md`. Note that the snapshot may not reflect the current state of open or merged pull requests.
