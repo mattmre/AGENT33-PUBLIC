@@ -1,0 +1,851 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AGENT-33 &mdash; Architecture Deck</title>
+  <meta name="description" content="Component-by-component tour of the AGENT-33 platform: subsystem map, lifespan order, request lifecycle, persistence, security, deployment topologies.">
+  <link rel="stylesheet" href="./assets/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    .toc {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      margin: 32px 0;
+    }
+    .toc ol {
+      list-style: none;
+      padding: 0;
+      margin: 0;
+      counter-reset: toc;
+    }
+    .toc li {
+      counter-increment: toc;
+      padding: 8px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .toc li:last-child { border-bottom: none; }
+    .toc li::before {
+      content: counter(toc, decimal-leading-zero) ". ";
+      color: var(--accent);
+      font-family: var(--font-mono);
+      margin-right: 8px;
+    }
+    .toc a { color: var(--text); }
+    .toc a:hover { color: var(--accent); }
+    .arch-section h2 {
+      border-bottom: 2px solid var(--accent);
+      padding-bottom: 12px;
+      margin-bottom: 24px;
+    }
+    .arch-section { padding: 64px 0; border-bottom: 1px solid var(--border); }
+    .arch-section:last-child { border-bottom: none; }
+    .anchor-offset { scroll-margin-top: 80px; }
+    .two-col-grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 24px;
+      margin-top: 24px;
+    }
+    @media (max-width: 900px) {
+      .two-col-grid { grid-template-columns: 1fr; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="header">
+  <div class="container header-inner">
+    <div class="logo">AGENT<span class="accent">-33</span></div>
+    <nav class="nav">
+      <a href="./index.html">Overview</a>
+      <a href="./executive-summary.html">Exec Summary</a>
+      <a href="./technical-brief.html">Tech Brief</a>
+      <a href="./white-paper.html">White Paper</a>
+      <a href="./architecture.html" class="active">Architecture</a>
+      <a href="./use-cases.html">Use Cases</a>
+      <a href="./slides.html">Slides</a>
+      <a href="../README.md" class="hidden-mobile">Back to README</a>
+    </nav>
+  </div>
+</header>
+
+<section class="hero">
+  <div class="container">
+    <h1>Architecture Walkthrough</h1>
+    <p class="lead" style="margin: 0 auto;">
+      Component-by-component tour of the AGENT-33 platform. Diagrams are the
+      authoritative source; the prose is here to explain trade-offs.
+    </p>
+    <div class="badges">
+      <span class="badge">Version 2.1.0</span>
+      <span class="badge">Last updated: 2026-05-21</span>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <div class="toc" id="toc">
+      <h3 style="margin-bottom: 16px;">Contents</h3>
+      <ol>
+        <li><a href="#system-overview">System Overview</a></li>
+        <li><a href="#subsystem-map">Subsystem Map</a></li>
+        <li><a href="#lifespan">Lifespan Initialisation Order</a></li>
+        <li><a href="#request">Request Lifecycle</a></li>
+        <li><a href="#agent-runtime">Agent Runtime</a></li>
+        <li><a href="#workflow-engine">Workflow Engine</a></li>
+        <li><a href="#memory-retrieval">Memory &amp; Retrieval</a></li>
+        <li><a href="#governance">Governance Contracts</a></li>
+        <li><a href="#persistence">Persistence Architecture</a></li>
+        <li><a href="#observability">Observability Stack</a></li>
+        <li><a href="#security">Security Architecture</a></li>
+        <li><a href="#deployment">Deployment Topologies</a></li>
+      </ol>
+    </div>
+  </div>
+</section>
+
+<!-- 1. System Overview -->
+<section class="arch-section anchor-offset" id="system-overview">
+  <div class="container">
+    <h2>1. System Overview</h2>
+    <p>
+      AGENT-33 is a FastAPI-based multi-agent runtime with a governance layer,
+      a DAG-based workflow engine, hybrid retrieval-augmented memory, and a
+      session-spanning evidence pipeline. The platform is structured as two
+      layers: <strong><code>core/</code></strong> (declarative artifacts &mdash;
+      framework specifications, orchestrator rules, workflow templates) and
+      <strong><code>engine/</code></strong> (the running software: FastAPI app,
+      executor, registries, persistence).
+    </p>
+
+    <div class="diagram">
+      <div class="diagram-title">High-Level Component Map</div>
+      <pre class="mermaid">
+flowchart TB
+  subgraph EDGE[Edge Layer]
+    REST[REST API]
+    SSE[SSE / Streaming]
+    CLI[CLI]
+    MSG[Messaging Adapters]
+  end
+
+  subgraph RUNTIME[Runtime Plane]
+    AUTH[Auth Middleware]
+    AR[Agent Runtime]
+    WE[Workflow Executor]
+    TL[Tool Loop]
+    LR[LLM Router]
+  end
+
+  subgraph GOV[Governance Plane]
+    TG[Tool Governance]
+    AB[Autonomy Budgets]
+    RA[Review Automation]
+    PT[Pack Trust]
+  end
+
+  subgraph DATA[Data Plane]
+    MEM[Memory + RAG]
+    BM[BM25 + pgvector]
+    TR[Trace Pipeline]
+    LIN[Lineage / Replay]
+    OUT[Outcomes Store]
+  end
+
+  subgraph STORE[Persistence]
+    PG[(PostgreSQL + pgvector)]
+    RD[(Redis)]
+    NA[(NATS)]
+    SQ[(SQLite outcomes)]
+    FS[(Filesystem)]
+  end
+
+  EDGE --&gt; AUTH --&gt; RUNTIME
+  RUNTIME --&gt; GOV
+  RUNTIME --&gt; DATA
+  DATA --&gt; STORE
+
+  style RUNTIME fill:#0a1f2e,stroke:#0ea5e9
+  style GOV fill:#1f1a2e,stroke:#8b5cf6
+  style DATA fill:#1a2e1f,stroke:#10b981
+      </pre>
+    </div>
+
+    <p class="text-dim">
+      The split matters because governance enforcement happens between the
+      runtime and the underlying I/O: a tool call is governed before the
+      adapter executes, an autonomy budget is checked before a file is
+      touched, and a high-risk action waits for review signoff before it
+      proceeds.
+    </p>
+  </div>
+</section>
+
+<!-- 2. Subsystem Map -->
+<section class="arch-section anchor-offset" id="subsystem-map">
+  <div class="container">
+    <h2>2. Subsystem Map</h2>
+    <p>
+      The engine package (<code>engine/src/agent33/</code>) is organised into
+      cohesive subsystems. Each subsystem owns its models, services, and
+      (where applicable) API routes. Lifespan wiring is centralised in
+      <code>main.py</code>.
+    </p>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Subsystem</th>
+          <th>Responsibility</th>
+          <th>Key entry points</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><code>agents/</code></td>
+          <td>Agent registry, definitions, runtime (prompt + LLM invocation)</td>
+          <td><code>AgentRegistry</code>, <code>AgentRuntime</code>, <code>capabilities.py</code></td>
+        </tr>
+        <tr>
+          <td><code>workflows/</code></td>
+          <td>DAG executor: topological sort, retries, timeouts, parallel groups, checkpoints</td>
+          <td><code>WorkflowExecutor</code>, <code>actions/*</code></td>
+        </tr>
+        <tr>
+          <td><code>execution/</code></td>
+          <td>Sandboxed code execution: contracts, validation, CLI adapter, progressive disclosure</td>
+          <td><code>CodeExecutor</code>, <code>CLIAdapter</code></td>
+        </tr>
+        <tr>
+          <td><code>skills/</code></td>
+          <td>Markdown skill loader, registry, L0/L1/L2 progressive injection</td>
+          <td><code>SkillRegistry</code>, <code>SkillInjector</code></td>
+        </tr>
+        <tr>
+          <td><code>llm/</code></td>
+          <td>Provider abstraction; model router; 20+ providers auto-registered</td>
+          <td><code>ModelRouter</code>, <code>provider catalog</code></td>
+        </tr>
+        <tr>
+          <td><code>memory/</code></td>
+          <td>Short-term buffer, pgvector long-term store, hybrid RAG pipeline</td>
+          <td><code>HybridSearcher</code>, <code>RAGPipeline</code>, <code>ProgressiveRecall</code></td>
+        </tr>
+        <tr>
+          <td><code>security/</code></td>
+          <td>JWT / API-key auth, encryption, vault, scopes, prompt-injection detection</td>
+          <td><code>AuthMiddleware</code>, <code>Vault</code>, <code>permissions</code></td>
+        </tr>
+        <tr>
+          <td><code>tools/</code></td>
+          <td>Tool framework with JSON Schema validation and governance enforcement</td>
+          <td><code>ToolRegistry</code>, <code>ToolGovernance</code>, <code>builtins/*</code></td>
+        </tr>
+        <tr>
+          <td><code>review/</code></td>
+          <td>Two-layer review automation: risk assessment, signoff state machine</td>
+          <td><code>ReviewService</code>, signoff endpoints</td>
+        </tr>
+        <tr>
+          <td><code>observability/</code></td>
+          <td>Trace pipeline, lineage, replay, metrics, failure taxonomy</td>
+          <td><code>TraceCollector</code>, <code>FailureTaxonomy</code></td>
+        </tr>
+        <tr>
+          <td><code>evaluation/</code></td>
+          <td>Golden tasks, evaluation gates, regression detection</td>
+          <td><code>GateEnforcer</code>, <code>RegressionDetector</code></td>
+        </tr>
+        <tr>
+          <td><code>autonomy/</code></td>
+          <td>Per-invocation file / command / network scope budgets, escalation</td>
+          <td><code>BudgetEnforcer</code>, preflight checks</td>
+        </tr>
+        <tr>
+          <td><code>release/</code></td>
+          <td>Release lifecycle, rollback decision matrix, sync engine</td>
+          <td><code>ReleaseService</code>, <code>SyncEngine</code></td>
+        </tr>
+        <tr>
+          <td><code>improvement/</code></td>
+          <td>Research intake, lessons learned, roadmap refresh, metrics trends</td>
+          <td><code>ImprovementService</code>, intake API</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 3. Lifespan -->
+<section class="arch-section anchor-offset" id="lifespan">
+  <div class="container">
+    <h2>3. Lifespan Initialisation Order</h2>
+    <p>
+      Subsystem initialisation in <code>main.py</code> follows a strict order.
+      Each subsystem is stored on <code>app.state</code>; shutdown reverses the
+      order. The order matters: registries need stores; the agent-workflow
+      bridge needs registries; the LLM router needs the provider catalog.
+    </p>
+
+    <div class="diagram">
+      <div class="diagram-title">Startup Order (dependencies left to right)</div>
+      <pre class="mermaid">
+flowchart LR
+  PG[PostgreSQL] --&gt; RD[Redis] --&gt; NA[NATS]
+  NA --&gt; AR[AgentRegistry]
+  AR --&gt; CE[CodeExecutor]
+  CE --&gt; LR[ModelRouter]
+  LR --&gt; EP[EmbeddingProvider + Cache]
+  EP --&gt; BM[BM25Index]
+  BM --&gt; HS[HybridSearcher]
+  HS --&gt; RP[RAGPipeline]
+  RP --&gt; PR[ProgressiveRecall]
+  PR --&gt; SR[SkillRegistry + Injector]
+  SR --&gt; AW[Agent-Workflow Bridge]
+  AW --&gt; ME[Memory: Observation + Summariser]
+  ME --&gt; TR[Training: optional]
+      </pre>
+    </div>
+
+    <p class="text-dim">
+      Optional subsystems (training, AirLLM, advanced memory tiers) can be
+      disabled via config without affecting the core runtime. The lifespan
+      logs each subsystem on the way up and on the way down, so a startup
+      failure tells you exactly which dependency broke.
+    </p>
+  </div>
+</section>
+
+<!-- 4. Request Lifecycle -->
+<section class="arch-section anchor-offset" id="request">
+  <div class="container">
+    <h2>4. Request Lifecycle</h2>
+    <p>
+      A single agent invocation passes through authentication, retrieval,
+      prompt construction, the tool-use loop, and the trace pipeline.
+      Every step is observed; nothing flows past a governance check by accident.
+    </p>
+
+    <div class="diagram">
+      <div class="diagram-title">Invocation Sequence</div>
+      <pre class="mermaid">
+sequenceDiagram
+  participant C as Client
+  participant A as Auth Middleware
+  participant R as Agent Runtime
+  participant I as Skill Injector
+  participant M as Memory + RAG
+  participant T as Tool Loop
+  participant G as Tool Governance
+  participant L as LLM Router
+  participant O as Trace + Outcomes
+
+  C-&gt;&gt;A: POST /agents/{id}/invoke
+  A-&gt;&gt;A: Verify API key / JWT
+  A-&gt;&gt;A: Resolve tenant_id, scopes
+  A-&gt;&gt;R: Authorised invocation
+  R-&gt;&gt;I: Resolve skills (L0/L1/L2)
+  R-&gt;&gt;M: Hybrid retrieval (BM25 + pgvector + RRF)
+  R-&gt;&gt;L: Render prompt, stream completion
+  L--&gt;&gt;R: Completion or tool call
+  R-&gt;&gt;G: Check tool allowlist for agent role
+  G-&gt;&gt;T: Execute tool (governed)
+  T--&gt;&gt;R: Tool result
+  R-&gt;&gt;L: Continue tool-use loop
+  L--&gt;&gt;R: Final answer
+  R-&gt;&gt;O: Emit trace + outcome
+  R--&gt;&gt;C: Response + trace_id
+      </pre>
+    </div>
+
+    <p>
+      The iterative path (<code>AgentRuntime.invoke_iterative()</code>) resolves
+      effort-routing parameters <em>after</em> pre-hooks run, so hook mutations
+      to the input affect routing and model selection.
+    </p>
+  </div>
+</section>
+
+<!-- 5. Agent Runtime -->
+<section class="arch-section anchor-offset" id="agent-runtime">
+  <div class="container">
+    <h2>5. Agent Runtime</h2>
+    <p>
+      The agent runtime is the heart of the platform. It constructs the prompt
+      from a JSON definition, injects skills via L0/L1/L2 progressive
+      disclosure, runs the tool-use loop, and streams results back to the caller.
+    </p>
+
+    <div class="two-col-grid">
+      <div class="card">
+        <h3 class="text-accent">Definition (declarative)</h3>
+        <ul>
+          <li>System prompt + role description</li>
+          <li>Capability tags (P / I / V / R / X)</li>
+          <li>Allowed tools + governance scope</li>
+          <li>Default LLM + effort routing config</li>
+        </ul>
+      </div>
+      <div class="card">
+        <h3 class="text-accent-2">Runtime behaviours</h3>
+        <ul>
+          <li>Hybrid memory retrieval before prompt assembly</li>
+          <li>Skill injection at the right tier</li>
+          <li>Tool loop with iteration budget</li>
+          <li>Trace emission on every step</li>
+        </ul>
+      </div>
+    </div>
+
+    <p class="text-dim">
+      The runtime supports a streaming path (<code>run_stream()</code>) that
+      preserves the final output on <code>max_iterations</code> exits and
+      still propagates real <code>TypeError</code>s from the underlying
+      stream call instead of swallowing them as transient retries.
+    </p>
+  </div>
+</section>
+
+<!-- 6. Workflow Engine -->
+<section class="arch-section anchor-offset" id="workflow-engine">
+  <div class="container">
+    <h2>6. Workflow Engine</h2>
+    <p>
+      Workflows are YAML DAGs. The executor topologically sorts the graph,
+      runs steps with retries and timeouts, fans out via parallel groups,
+      branches on conditionals, and persists checkpoints so long-running
+      workflows survive restarts.
+    </p>
+
+    <div class="diagram">
+      <div class="diagram-title">Action Library</div>
+      <pre class="mermaid">
+flowchart TB
+  WE[Workflow Executor]
+  WE --&gt; IA[invoke_agent]
+  WE --&gt; RC[run_command]
+  WE --&gt; VAL[validate]
+  WE --&gt; TR[transform]
+  WE --&gt; COND[conditional]
+  WE --&gt; PG[parallel_group]
+  WE --&gt; WAIT[wait]
+  WE --&gt; EC[execute_code]
+  IA --&gt; AR[Agent Runtime]
+  RC --&gt; CE[Code Executor]
+  EC --&gt; CE
+      </pre>
+    </div>
+
+    <table>
+      <thead>
+        <tr>
+          <th>Action</th>
+          <th>Behaviour</th>
+          <th>Retry / Timeout</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr><td><code>invoke_agent</code></td><td>Calls AgentRuntime; captures trace_id and outcome</td><td>Configurable per step</td></tr>
+        <tr><td><code>run_command</code></td><td>Executes governed shell via CodeExecutor</td><td>Subprocess timeout</td></tr>
+        <tr><td><code>validate</code></td><td>Asserts on expression result</td><td>No retry (deterministic)</td></tr>
+        <tr><td><code>transform</code></td><td>Maps step output through expression</td><td>No retry</td></tr>
+        <tr><td><code>conditional</code></td><td>Branches DAG based on predicate</td><td>n/a</td></tr>
+        <tr><td><code>parallel_group</code></td><td>Fan-out + join with bounded concurrency</td><td>Per-branch retry</td></tr>
+        <tr><td><code>wait</code></td><td>Pauses for duration or external signal</td><td>Timeout configurable</td></tr>
+        <tr><td><code>execute_code</code></td><td>Runs in sandboxed adapter</td><td>Per-adapter timeout</td></tr>
+      </tbody>
+    </table>
+
+    <p class="text-dim">
+      The workflow bridge (<code>invoke_agent.py</code>) has
+      <code>set_definition_registry()</code> as a fallback path so workflow
+      execution remains decoupled from the FastAPI app state when invoked
+      programmatically (e.g., scheduled runs).
+    </p>
+  </div>
+</section>
+
+<!-- 7. Memory & Retrieval -->
+<section class="arch-section anchor-offset" id="memory-retrieval">
+  <div class="container">
+    <h2>7. Memory &amp; Retrieval</h2>
+    <p>
+      The memory stack has four tiers: a short-term buffer in Redis, a
+      long-term store backed by PostgreSQL + pgvector, a BM25 lexical index
+      for keyword match, and a hybrid searcher that combines BM25 and vector
+      scores via reciprocal-rank fusion.
+    </p>
+
+    <div class="diagram">
+      <div class="diagram-title">Retrieval Pipeline</div>
+      <pre class="mermaid">
+flowchart LR
+  Q[Query] --&gt; ST[Short-term buffer]
+  Q --&gt; BM[BM25 Index]
+  Q --&gt; EMB[Embedding Provider + Cache]
+  EMB --&gt; PV[pgvector Search]
+  BM --&gt; RRF[Reciprocal Rank Fusion]
+  PV --&gt; RRF
+  RRF --&gt; PR[Progressive Recall]
+  PR --&gt; CTX[Context Pack]
+  ST --&gt; CTX
+      </pre>
+    </div>
+
+    <p>
+      Token-aware chunking (1,200 tokens per chunk) keeps embeddings within
+      provider limits and makes retrieved spans coherent. The BM25 index can
+      warm up at startup; tests that mock <code>LongTermMemory.initialize()</code>
+      and <code>close()</code> must also mock <code>scan()</code> or disable
+      BM25 warmup, otherwise lifespan startup will trip on the warmup path.
+    </p>
+  </div>
+</section>
+
+<!-- 8. Governance -->
+<section class="arch-section anchor-offset" id="governance">
+  <div class="container">
+    <h2>8. Governance Contracts</h2>
+    <p>
+      Governance is enforced at four layers: tool allowlists, autonomy
+      budgets, review signoff, and release lifecycle gating. None of these
+      are advisory; the runtime refuses to proceed past a failed check.
+    </p>
+
+    <div class="diagram">
+      <div class="diagram-title">Governance Touchpoints</div>
+      <pre class="mermaid">
+flowchart TB
+  INV[Invocation] --&gt; TG[Tool Governance]
+  INV --&gt; AB[Autonomy Budget]
+  TG --&gt;|allowed| EXE[Execute]
+  TG --&gt;|denied| ERR1[F-SEC]
+  AB --&gt;|file scope| FS[File Op]
+  AB --&gt;|command scope| CMD[Command]
+  AB --&gt;|network scope| NET[Network]
+  AB --&gt;|over budget| ESC[Escalate]
+  ESC --&gt; REV[Review Queue]
+  REV --&gt;|signoff| EXE
+  REV --&gt;|reject| ERR2[F-REV]
+  EXE --&gt; REL[Release Gate]
+  REL --&gt;|frozen| DENY[Denied]
+  REL --&gt;|active| OK[Proceed]
+      </pre>
+    </div>
+
+    <table style="margin-top: 24px;">
+      <thead>
+        <tr><th>Layer</th><th>What it checks</th><th>On failure</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td>Tool governance</td>
+          <td>This agent role may invoke this tool</td>
+          <td>Refuse with <code>F-SEC</code> failure</td>
+        </tr>
+        <tr>
+          <td>Autonomy budget</td>
+          <td>File / command / network scope per invocation</td>
+          <td>Block or escalate to review</td>
+        </tr>
+        <tr>
+          <td>Review automation</td>
+          <td>Human signoff on high-risk actions</td>
+          <td>Hold until decision; record <code>F-REV</code></td>
+        </tr>
+        <tr>
+          <td>Release lifecycle</td>
+          <td>State machine: PLANNED / FROZEN / RC / VALIDATING / RELEASED / ROLLED_BACK</td>
+          <td>Deny ineligible operations</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 9. Persistence -->
+<section class="arch-section anchor-offset" id="persistence">
+  <div class="container">
+    <h2>9. Persistence Architecture</h2>
+    <p>
+      Five persistence tiers map to five workload shapes. The app process
+      itself is stateless &mdash; every piece of durable state lives in one of
+      the stores below, so HPA on the FastAPI deployment is the default.
+    </p>
+
+    <div class="diagram">
+      <div class="diagram-title">Persistence Layout</div>
+      <pre class="mermaid">
+flowchart LR
+  APP[FastAPI App<br>stateless] --&gt; PG[(PostgreSQL<br>+ pgvector)]
+  APP --&gt; RD[(Redis)]
+  APP --&gt; NA[(NATS)]
+  APP --&gt; SQ[(SQLite outcomes)]
+  APP --&gt; FS[(Filesystem artifacts)]
+
+  PG -.evidence.-&gt; AUD[Audit]
+  SQ -.evidence.-&gt; AUD
+
+  style APP fill:#0ea5e9,color:#fff
+      </pre>
+    </div>
+
+    <table style="margin-top: 24px;">
+      <thead>
+        <tr><th>Store</th><th>Purpose</th><th>Lifecycle</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>PostgreSQL + pgvector</td><td>Tenants, agents, workflows, checkpoints, memory, traces, lineage</td><td>Long-lived; Alembic migrations</td></tr>
+        <tr><td>Redis</td><td>Short-term memory, rate limits, ephemeral state</td><td>TTL-bounded</td></tr>
+        <tr><td>NATS</td><td>Cross-service messaging (workflows, messaging adapters)</td><td>Stream-based, replayable</td></tr>
+        <tr><td>SQLite (outcomes)</td><td>Outcomes store, evaluation history (best-effort persistence)</td><td>Local; mirrored to PG in enterprise</td></tr>
+        <tr><td>Filesystem</td><td>Trace artifacts, replay bundles, audit exports</td><td>Subject to retention policy</td></tr>
+      </tbody>
+    </table>
+
+    <p class="text-dim">
+      Notably absent from the app process itself: any single-instance state.
+      Multi-instance deployments are the default; HPA scaling works without
+      sticky sessions.
+    </p>
+  </div>
+</section>
+
+<!-- 10. Observability -->
+<section class="arch-section anchor-offset" id="observability">
+  <div class="container">
+    <h2>10. Observability Stack</h2>
+
+    <div class="diagram">
+      <div class="diagram-title">Telemetry Flow</div>
+      <pre class="mermaid">
+flowchart LR
+  AR[Agent Runtime + Workflow] --&gt;|structlog| LOG[Structured JSON Logs]
+  AR --&gt;|prometheus_client| PROM[Prometheus]
+  AR --&gt;|OTel SDK| OTEL[OTel Collector]
+  AR --&gt;|TraceCollector| TR[(Trace Store)]
+  AR --&gt;|OutcomesService| OUT[(Outcomes Store)]
+  PROM --&gt; GRAF[Grafana Dashboards]
+  PROM --&gt; ALRT[Alertmanager]
+  OTEL --&gt; JAE[Jaeger / Tempo]
+  LOG --&gt; FW[Fluentd / Promtail]
+  TR --&gt; REP[Replay Bundle]
+  OUT --&gt; EV[Evaluation Gates]
+
+  style PROM fill:#f59e0b,color:#000
+  style TR fill:#10b981,color:#fff
+      </pre>
+    </div>
+
+    <div class="two-col-grid">
+      <div class="card">
+        <h3 class="text-accent">Trace pipeline</h3>
+        <p style="margin: 0;">
+          Every invocation produces a trace record with the failure category
+          (10 taxonomy entries), per-step timings, tool calls, prompts, and
+          completions. Retention policies are configured per tenant. Traces
+          are replayable: given the trace_id, the platform can reconstruct
+          the exact invocation.
+        </p>
+      </div>
+      <div class="card">
+        <h3 class="text-accent-2">Outcomes &amp; evaluation</h3>
+        <p style="margin: 0;">
+          The outcomes store records every invocation result for downstream
+          evaluation. Golden tasks + regression detection compare current
+          behaviour to historical baseline. Evaluation gates can block
+          deployment if regression exceeds threshold.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- 11. Security -->
+<section class="arch-section anchor-offset" id="security">
+  <div class="container">
+    <h2>11. Security Architecture</h2>
+
+    <div class="diagram">
+      <div class="diagram-title">Defense Layers</div>
+      <pre class="mermaid">
+flowchart TB
+  subgraph N[Network]
+    NP[NetworkPolicies]
+    IP[Ingress Allowlist]
+  end
+  subgraph T[Transport]
+    TLS[TLS Termination]
+  end
+  subgraph A[Application]
+    AUTH[API Key + JWT<br>secrets.compare_digest]
+    RL[Rate Limit]
+    SCOPE[Scoped Permissions]
+    INJ[Prompt Injection Detection]
+  end
+  subgraph G[Governance]
+    TG[Tool Governance]
+    AB[Autonomy Budgets]
+    RA[Review Signoff]
+    PT[Pack Trust]
+  end
+  subgraph D[Data]
+    ENC[Vault + Fernet Encryption]
+    TENANT[Per-Tenant Row Isolation]
+    HMAC[HMAC Webhook Signing]
+  end
+  subgraph C[Container]
+    NR[Non-Root]
+    CAP[Capabilities Dropped]
+    SC[Seccomp]
+  end
+
+  N --&gt; T --&gt; A --&gt; G --&gt; D --&gt; C
+      </pre>
+    </div>
+
+    <table style="margin-top: 24px;">
+      <thead>
+        <tr><th>Threat</th><th>Mitigation</th></tr>
+      </thead>
+      <tbody>
+        <tr><td>Credential leak via logs</td><td>Sensitive fields use <code>SecretStr</code>; auth middleware masks API keys in logs</td></tr>
+        <tr><td>Prompt injection</td><td>Input validation runs before tool calls; pattern-based detection + allowlist</td></tr>
+        <tr><td>Tool misuse</td><td>Per-agent tool governance allowlists; runtime refuses unlisted tool calls</td></tr>
+        <tr><td>Resource exhaustion</td><td>Per-invocation autonomy budgets; rate limiting per tenant</td></tr>
+        <tr><td>Cross-tenant leak</td><td><code>tenant_id</code> on every persisted row; auth middleware resolves at edge</td></tr>
+        <tr><td>Unauthorised pack load</td><td>Pack trust validates integrity; signed packs verified before load</td></tr>
+        <tr><td>Provider key spill</td><td>Vault-backed secrets; encryption at rest; per-tenant scoping</td></tr>
+        <tr><td>Webhook replay</td><td>HMAC signing on outbound webhooks; nonce + replay protection on inbound</td></tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- 12. Deployment -->
+<section class="arch-section anchor-offset" id="deployment">
+  <div class="container">
+    <h2>12. Deployment Topologies</h2>
+    <p>
+      Three deployment shapes share the same image and the same code paths.
+      The difference is what supporting infrastructure runs alongside, and
+      which optional subsystems are enabled.
+    </p>
+
+    <div class="grid grid-3" style="margin: 32px 0;">
+      <div class="card">
+        <h3 class="text-accent">Lite</h3>
+        <p>Single process + Postgres + Ollama. Skips Redis cluster, NATS, and review automation.</p>
+        <p class="text-dim">Best for: laptops, dev, one-team pilots.</p>
+      </div>
+      <div class="card">
+        <h3 class="text-accent-2">Standard</h3>
+        <p>Full stack via Docker Compose: Postgres + pgvector, Redis, NATS, Ollama. Multi-tenant. Trace pipeline on.</p>
+        <p class="text-dim">Best for: small-to-mid teams; production for low-mid volume.</p>
+      </div>
+      <div class="card">
+        <h3 class="text-accent-3">Enterprise</h3>
+        <p>Kubernetes deployment with HPA, durable stores, review automation, autonomy budgets, full observability.</p>
+        <p class="text-dim">Best for: production, multi-tenant SaaS, regulated environments.</p>
+      </div>
+    </div>
+
+    <div class="diagram">
+      <div class="diagram-title">Enterprise Topology</div>
+      <pre class="mermaid">
+flowchart TB
+  subgraph EXT[External]
+    USERS[Users / API Clients]
+    INGRESS[Ingress / LB]
+  end
+
+  subgraph CTRL[Control Plane]
+    APP1[FastAPI Pod 1]
+    APP2[FastAPI Pod 2]
+    APPN[FastAPI Pod N]
+    HPA[HPA]
+  end
+
+  subgraph DATA[Data Plane]
+    PG[(PostgreSQL Primary<br>+ Replica + pgvector)]
+    RD[(Redis Cluster)]
+    NA[(NATS JetStream)]
+  end
+
+  subgraph LLM[Inference]
+    OLL[Ollama]
+    OAI[Remote Providers]
+  end
+
+  subgraph OBS[Observability]
+    PROM[Prometheus]
+    GRAF[Grafana]
+    OTEL[OTel Collector]
+  end
+
+  USERS --&gt; INGRESS --&gt; APP1 &amp; APP2 &amp; APPN
+  APP1 &amp; APP2 &amp; APPN &lt;--&gt; PG
+  APP1 &amp; APP2 &amp; APPN &lt;--&gt; RD
+  APP1 &amp; APP2 &amp; APPN &lt;--&gt; NA
+  APP1 &amp; APP2 &amp; APPN --&gt; OLL
+  APP1 &amp; APP2 &amp; APPN -.opt.-&gt; OAI
+  APP1 &amp; APP2 &amp; APPN --&gt; OTEL
+  APP1 &amp; APP2 &amp; APPN --&gt; PROM
+  PROM --&gt; GRAF
+  HPA -.scale.-&gt; APP1 &amp; APP2 &amp; APPN
+      </pre>
+    </div>
+
+    <p class="text-dim">
+      The app processes are stateless; HPA scales them on CPU, request rate,
+      or queue depth. Durable stores scale independently. Adding a new
+      tenant is a row in the tenants table plus credentials in the vault &mdash;
+      no per-tenant code paths.
+    </p>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer-links">
+      <a href="./index.html">Overview</a>
+      <a href="./executive-summary.html">Executive Summary</a>
+      <a href="./technical-brief.html">Tech Brief</a>
+      <a href="./white-paper.html">White Paper</a>
+      <a href="./architecture.html">Architecture</a>
+      <a href="./use-cases.html">Use Cases</a>
+      <a href="./slides.html">Slides</a>
+      <a href="../README.md">Back to README</a>
+    </div>
+    <p>AGENT-33 v2.1.0 &middot; Architecture Deck &middot; Apache License 2.0</p>
+  </div>
+</footer>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'dark',
+    themeVariables: {
+      primaryColor: '#1a2236',
+      primaryTextColor: '#e6edf3',
+      primaryBorderColor: '#2a3654',
+      lineColor: '#0ea5e9',
+      secondaryColor: '#121829',
+      tertiaryColor: '#0d1424',
+      background: '#0a0e1a',
+      mainBkg: '#1a2236',
+      secondBkg: '#121829',
+      fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif'
+    },
+    flowchart: { useMaxWidth: true, htmlLabels: true },
+    sequence: { useMaxWidth: true },
+    er: { useMaxWidth: true }
+  });
+</script>
+
+</body>
+</html>

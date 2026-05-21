@@ -1,0 +1,840 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AGENT-33 &mdash; Use Cases</title>
+  <meta name="description" content="Where AGENT-33 fits: governed agent platforms, RAG-with-audit, multi-tenant SaaS, internal automation, research workflows, regulated environments, model-mix exploration.">
+  <link rel="stylesheet" href="./assets/styles.css">
+  <style>
+    .uc-hero {
+      padding: 80px 0 48px;
+      background: linear-gradient(180deg, rgba(14, 165, 233, 0.08) 0%, transparent 100%);
+      text-align: center;
+      border-bottom: 1px solid var(--border);
+    }
+    .uc-hero h1 {
+      font-size: clamp(2.25rem, 5vw, 3.75rem);
+      max-width: 1000px;
+      margin: 0 auto 16px;
+    }
+    .uc-section {
+      padding: 56px 0;
+      border-bottom: 1px solid var(--border);
+    }
+    .uc-section:last-of-type { border-bottom: none; }
+    .uc-section h2 {
+      display: flex;
+      align-items: baseline;
+      gap: 16px;
+      font-size: clamp(1.5rem, 2.6vw, 2rem);
+      margin-bottom: 8px;
+      flex-wrap: wrap;
+    }
+    .uc-section h2 .tag {
+      font-family: var(--font-mono);
+      font-size: 0.7em;
+      letter-spacing: 0.1em;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      padding: 4px 10px;
+      border-radius: 999px;
+    }
+    .uc-section .uc-lead {
+      color: var(--text-dim);
+      font-size: 1.1rem;
+      max-width: 820px;
+      margin-bottom: 32px;
+    }
+    .uc-grid {
+      display: grid;
+      grid-template-columns: 1.4fr 1fr;
+      gap: 24px;
+      margin-top: 16px;
+    }
+    @media (max-width: 900px) {
+      .uc-grid { grid-template-columns: 1fr; }
+    }
+    .uc-body {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px 28px;
+    }
+    .uc-body h3 {
+      color: var(--accent);
+      font-size: 1.05rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin: 16px 0 8px;
+    }
+    .uc-body h3:first-child { margin-top: 0; }
+    .uc-body p { margin-bottom: 12px; color: var(--text); }
+    .uc-body ul {
+      margin: 8px 0 16px 20px;
+      color: var(--text-dim);
+    }
+    .uc-body li { margin-bottom: 6px; }
+    .uc-meta {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 24px;
+      display: flex;
+      flex-direction: column;
+      gap: 18px;
+    }
+    .uc-meta .row {
+      border-bottom: 1px solid var(--border);
+      padding-bottom: 12px;
+    }
+    .uc-meta .row:last-child {
+      border-bottom: none;
+      padding-bottom: 0;
+    }
+    .uc-meta .label {
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--text-dim);
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+      margin-bottom: 4px;
+    }
+    .uc-meta .val {
+      color: var(--text);
+      font-weight: 500;
+    }
+    .uc-meta .val strong { color: var(--accent); }
+    .topology-pill {
+      display: inline-block;
+      background: var(--bg-elev);
+      border: 1px solid var(--border);
+      padding: 2px 10px;
+      border-radius: 999px;
+      font-family: var(--font-mono);
+      font-size: 0.75rem;
+      color: var(--accent);
+      margin-right: 4px;
+    }
+    .features-list {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 6px;
+    }
+    .features-list .feature {
+      background: var(--bg-elev);
+      border: 1px solid var(--border);
+      border-radius: 999px;
+      padding: 3px 12px;
+      font-size: 0.8rem;
+      color: var(--text-dim);
+    }
+    .features-list .feature.hot {
+      border-color: var(--accent-3);
+      color: var(--accent-3);
+    }
+    .accent-1 h2 .icon { color: var(--accent); }
+    .accent-2 h2 .icon { color: var(--accent-2); }
+    .accent-3 h2 .icon { color: var(--accent-3); }
+    .accent-4 h2 .icon { color: var(--accent-4); }
+    .accent-5 h2 .icon { color: var(--accent-5); }
+    .h2-icon {
+      display: inline-block;
+      width: 36px;
+      height: 36px;
+      line-height: 36px;
+      text-align: center;
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 8px;
+      font-family: var(--font-mono);
+      font-weight: 700;
+      font-size: 0.85rem;
+    }
+    .summary-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+      gap: 16px;
+      margin: 32px 0 16px;
+    }
+    .summary-pill {
+      background: var(--bg-card);
+      border: 1px solid var(--border);
+      border-radius: 10px;
+      padding: 18px;
+      text-align: center;
+    }
+    .summary-pill .v {
+      font-size: 1.6rem;
+      font-weight: 800;
+      color: var(--accent);
+      line-height: 1;
+    }
+    .summary-pill .l {
+      color: var(--text-dim);
+      font-size: 0.85rem;
+      text-transform: uppercase;
+      letter-spacing: 0.08em;
+      margin-top: 6px;
+    }
+    .not-fit-card {
+      background: var(--bg-card);
+      border-left: 4px solid var(--accent-4);
+      border-radius: 8px;
+      padding: 20px 24px;
+      margin: 32px 0;
+    }
+    .not-fit-card h3 {
+      color: var(--accent-4);
+      margin-bottom: 8px;
+    }
+    .not-fit-card ul {
+      margin: 8px 0 0 20px;
+      color: var(--text-dim);
+    }
+    @media print {
+      .header, .footer { display: none; }
+      .uc-section { page-break-inside: avoid; }
+    }
+  </style>
+</head>
+<body>
+
+<header class="header">
+  <div class="container header-inner">
+    <div class="logo">AGENT<span class="accent">-33</span></div>
+    <nav class="nav">
+      <a href="./index.html">Overview</a>
+      <a href="./executive-summary.html">Exec Summary</a>
+      <a href="./technical-brief.html">Tech Brief</a>
+      <a href="./white-paper.html">White Paper</a>
+      <a href="./architecture.html">Architecture</a>
+      <a href="./use-cases.html" class="active">Use Cases</a>
+      <a href="./slides.html">Slides</a>
+      <a href="../README.md" class="hidden-mobile">Back to README</a>
+    </nav>
+  </div>
+</header>
+
+<section class="uc-hero">
+  <div class="container">
+    <h1>Where AGENT-33 Fits</h1>
+    <p class="lead" style="margin: 0 auto;">
+      Seven scenarios where a governed multi-agent platform matters more than
+      a slick single-shot chat. Each one tells you the topology to deploy,
+      the subsystems to flip on, and the operational shape to expect.
+    </p>
+    <div class="badges" style="margin-top: 24px;">
+      <span class="badge">7 scenarios</span>
+      <span class="badge">v2.1.0</span>
+      <span class="badge">Apache 2.0</span>
+    </div>
+  </div>
+</section>
+
+<section class="uc-section accent-1" id="governed-platform">
+  <div class="container">
+    <h2>
+      <span class="h2-icon icon">GOV</span>
+      Governed Internal Agent Platform
+      <span class="tag">Scenario 01</span>
+    </h2>
+    <p class="uc-lead">
+      Your company has half a dozen would-be "AI projects" each spinning up
+      their own LangChain stack, prompt store, and shadow OpenAI key.
+      You need a single platform that lets teams ship agents safely without
+      handing every team its own production runtime to operate.
+    </p>
+
+    <div class="uc-grid">
+      <div class="uc-body">
+        <h3>The problem</h3>
+        <p>
+          Without a common runtime, every team reimplements tool governance,
+          retries, observability, and tenant isolation. Each team picks its
+          own LLM provider. There&rsquo;s no single place to see who is calling
+          what, no consistent audit trail, and no way to enforce an
+          organisational policy on which tools an agent is allowed to invoke.
+        </p>
+
+        <h3>AGENT-33&rsquo;s answer</h3>
+        <ul>
+          <li>One FastAPI runtime, one tenant model, one auth layer. Teams ship JSON agent definitions, YAML workflows, and Markdown skills &mdash; not their own infrastructure.</li>
+          <li>Tool registry + governance allowlists let platform engineering define which tools each agent role may invoke; rules are enforced at execution time.</li>
+          <li>Trace pipeline + outcomes store give security and ops a single dashboard for every invocation, not seven dashboards in seven repos.</li>
+          <li>Provider-agnostic LLM router lets each team pick its preferred model (Ollama, OpenAI, Anthropic, llama.cpp) without forking the platform.</li>
+        </ul>
+
+        <h3>Operational outcome</h3>
+        <p>
+          Platform team operates one stack. Application teams ship agents through
+          declarative artifacts and PR reviews. Compliance has one trace store to
+          subpoena. Cost reporting rolls up cleanly by tenant.
+        </p>
+      </div>
+
+      <div class="uc-meta">
+        <div class="row">
+          <div class="label">Recommended topology</div>
+          <div class="val">
+            <span class="topology-pill">Enterprise</span> Multi-instance
+            <br><span class="topology-pill">Standard</span> For pilot phase
+          </div>
+        </div>
+        <div class="row">
+          <div class="label">Subsystems to enable</div>
+          <div class="features-list">
+            <span class="feature hot">Tool governance</span>
+            <span class="feature hot">Multi-tenant auth</span>
+            <span class="feature hot">Trace pipeline</span>
+            <span class="feature">Review automation</span>
+            <span class="feature">Cost tracking</span>
+          </div>
+        </div>
+        <div class="row">
+          <div class="label">Persistence used</div>
+          <div class="val">
+            <code>postgres</code> &middot; <code>pgvector</code> &middot; <code>redis</code> &middot; <code>nats</code>
+          </div>
+        </div>
+        <div class="row">
+          <div class="label">Typical scale</div>
+          <div class="val">10&ndash;100 tenants &middot; 10k+ invocations/day</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="uc-section accent-2" id="rag-with-audit" style="background: var(--bg-elev);">
+  <div class="container">
+    <h2>
+      <span class="h2-icon icon">RAG</span>
+      RAG-with-Audit for Regulated Knowledge
+      <span class="tag">Scenario 02</span>
+    </h2>
+    <p class="uc-lead">
+      A regulated business wants Retrieval-Augmented Generation across internal
+      policy and procedure documents. Every answer must cite specific sources
+      and the whole pipeline must be reproducible during audit.
+    </p>
+
+    <div class="uc-grid">
+      <div class="uc-body">
+        <h3>The problem</h3>
+        <p>
+          Pure vector-search RAG produces fluent answers with no way to say
+          which chunk drove which sentence. SaaS RAG products often refuse to
+          run on-prem, refuse to expose their embedding model, or refuse to
+          let you pin a chunking strategy. Audit teams want to verify that a
+          given answer would still be produced from the same evidence today.
+        </p>
+
+        <h3>AGENT-33&rsquo;s answer</h3>
+        <ul>
+          <li>Hybrid retrieval (BM25 + pgvector with reciprocal-rank fusion) gives both lexical and semantic recall; no SaaS dependency for the index.</li>
+          <li>Token-aware chunking (1,200 tokens) is deterministic and reproducible; the chunk fingerprint is in the trace.</li>
+          <li>Lineage and replay systems record which documents and chunks fed each invocation; the same prompt + index snapshot = the same answer (modulo model nondeterminism).</li>
+          <li>Embedding provider is pluggable; you can run sentence-transformers locally or call a provider, your call.</li>
+        </ul>
+
+        <h3>Operational outcome</h3>
+        <p>
+          The knowledge corpus lives in PostgreSQL on infrastructure you control.
+          Every response carries its retrieval context in the trace store.
+          Audit can replay any invocation and verify that the produced answer
+          matched what evidence supported.
+        </p>
+      </div>
+
+      <div class="uc-meta">
+        <div class="row">
+          <div class="label">Recommended topology</div>
+          <div class="val">
+            <span class="topology-pill">Standard</span> Mid-volume
+            <br><span class="topology-pill">Enterprise</span> Multi-region
+          </div>
+        </div>
+        <div class="row">
+          <div class="label">Subsystems to enable</div>
+          <div class="features-list">
+            <span class="feature hot">Hybrid retrieval</span>
+            <span class="feature hot">BM25 + pgvector</span>
+            <span class="feature hot">Lineage / replay</span>
+            <span class="feature">Progressive recall</span>
+            <span class="feature">Token-aware chunker</span>
+          </div>
+        </div>
+        <div class="row">
+          <div class="label">Persistence used</div>
+          <div class="val">
+            <code>postgres</code> &middot; <code>pgvector</code> &middot; <code>filesystem</code> (artifacts)
+          </div>
+        </div>
+        <div class="row">
+          <div class="label">Typical scale</div>
+          <div class="val">1k&ndash;100k documents &middot; sub-second retrieval</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="uc-section accent-3" id="multi-tenant-saas">
+  <div class="container">
+    <h2>
+      <span class="h2-icon icon">SaaS</span>
+      Multi-Tenant Agent SaaS
+      <span class="tag">Scenario 03</span>
+    </h2>
+    <p class="uc-lead">
+      You&rsquo;re building an agent-driven SaaS where each customer brings their own
+      data, their own LLM key, and their own configuration. The platform must
+      keep tenants isolated end-to-end with no chance of crosstalk in workflow
+      state, memory, traces, or output artifacts.
+    </p>
+
+    <div class="uc-grid">
+      <div class="uc-body">
+        <h3>The problem</h3>
+        <p>
+          Most agent libraries treat multi-tenancy as a feature to add later.
+          The result: every model, every queue, every cache is single-tenant
+          by default, and bolting on tenant_id retroactively is the foundation
+          for a future security incident. Customers can demand per-tenant
+          encryption keys, per-tenant rate limits, and per-tenant trace export.
+        </p>
+
+        <h3>AGENT-33&rsquo;s answer</h3>
+        <ul>
+          <li>Multi-tenancy is in the model layer: every persisted row carries <code>tenant_id</code>; auth middleware resolves tenant from API key or JWT.</li>
+          <li>Per-tenant encryption keys, scopes, rate limits, and webhook configurations are first-class.</li>
+          <li>Workflow state, memory store, lineage records, traces, and outcomes are all scoped by tenant.</li>
+          <li>Per-tenant cost tracking (tokens, invocations) feeds the billing pipeline cleanly.</li>
+        </ul>
+
+        <h3>Operational outcome</h3>
+        <p>
+          Provision a new customer by adding a tenant row plus their LLM provider
+          credentials in the vault. Every subsequent invocation is correctly
+          scoped without per-customer code changes. Compliance reports filter
+          by tenant trivially.
+        </p>
+      </div>
+
+      <div class="uc-meta">
+        <div class="row">
+          <div class="label">Recommended topology</div>
+          <div class="val">
+            <span class="topology-pill">Enterprise</span> HPA-ready
+            <br><span class="topology-pill">Standard</span> For early customers
+          </div>
+        </div>
+        <div class="row">
+          <div class="label">Subsystems to enable</div>
+          <div class="features-list">
+            <span class="feature hot">Per-tenant auth</span>
+            <span class="feature hot">Vault &amp; encryption</span>
+            <span class="feature hot">Cost tracking</span>
+            <span class="feature">Webhook delivery</span>
+            <span class="feature">Rate limiting</span>
+          </div>
+        </div>
+        <div class="row">
+          <div class="label">Persistence used</div>
+          <div class="val">
+            <code>postgres</code> &middot; <code>pgvector</code> &middot; <code>redis</code>
+          </div>
+        </div>
+        <div class="row">
+          <div class="label">Typical scale</div>
+          <div class="val">Hundreds of tenants &middot; mixed-shape workloads</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="uc-section accent-4" id="research-automation" style="background: var(--bg-elev);">
+  <div class="container">
+    <h2>
+      <span class="h2-icon icon">RES</span>
+      Research &amp; Investigation Workflows
+      <span class="tag">Scenario 04</span>
+    </h2>
+    <p class="uc-lead">
+      A research team needs to run repeatable multi-step investigations:
+      browse, scrape, summarise, cross-reference, and produce a structured
+      report. Today they string together notebooks and one-off scripts.
+      They want a workflow engine with retries, parallelism, and provenance.
+    </p>
+
+    <div class="uc-grid">
+      <div class="uc-body">
+        <h3>The problem</h3>
+        <p>
+          Notebook-driven investigations are brittle. Cells go stale, environments
+          drift, and rerunning a six-month-old query produces different output
+          for reasons no one remembers. Cloud agent products do not always
+          expose the workflow graph as code, which makes investigations hard
+          to version-control and hard to inherit.
+        </p>
+
+        <h3>AGENT-33&rsquo;s answer</h3>
+        <ul>
+          <li>YAML workflow definitions are checked into git like any other artifact; the topological-sorted DAG executor runs them deterministically.</li>
+          <li>Parallel groups let the researcher fan out across sources; the engine joins, deduplicates, and assembles the report.</li>
+          <li>Checkpoint persistence means a long-running workflow survives a restart; the resume point is exact.</li>
+          <li>Browser agent + web-fetch tool give scripted browsing without writing Selenium boilerplate.</li>
+          <li>Evidence capture &mdash; every step&rsquo;s input, output, and tool calls go into the trace store and lineage system.</li>
+        </ul>
+
+        <h3>Operational outcome</h3>
+        <p>
+          The team commits its workflows. Past investigations are reproducible.
+          New analysts inherit the methodology by reading a YAML file, not by
+          pair-programming with senior researchers for two weeks.
+        </p>
+      </div>
+
+      <div class="uc-meta">
+        <div class="row">
+          <div class="label">Recommended topology</div>
+          <div class="val">
+            <span class="topology-pill">Lite</span> Single-user
+            <br><span class="topology-pill">Standard</span> Team-wide
+          </div>
+        </div>
+        <div class="row">
+          <div class="label">Subsystems to enable</div>
+          <div class="features-list">
+            <span class="feature hot">Workflow engine</span>
+            <span class="feature hot">Browser agent</span>
+            <span class="feature hot">Parallel groups</span>
+            <span class="feature">Checkpoint persistence</span>
+            <span class="feature">Trace pipeline</span>
+          </div>
+        </div>
+        <div class="row">
+          <div class="label">Persistence used</div>
+          <div class="val">
+            <code>postgres</code> &middot; <code>filesystem</code> (artifacts) &middot; <code>redis</code>
+          </div>
+        </div>
+        <div class="row">
+          <div class="label">Typical scale</div>
+          <div class="val">Dozens of long-running workflows &middot; hours-long jobs</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="uc-section accent-5" id="local-first">
+  <div class="container">
+    <h2>
+      <span class="h2-icon icon">LCL</span>
+      Local-First Workstation Agent
+      <span class="tag">Scenario 05</span>
+    </h2>
+    <p class="uc-lead">
+      A developer or analyst wants to run a serious agent platform on a single
+      laptop or workstation &mdash; including the model &mdash; without rebuilding the
+      stack to do it. No cloud account, no per-token billing, no outbound
+      data plane during normal operation.
+    </p>
+
+    <div class="uc-grid">
+      <div class="uc-body">
+        <h3>The problem</h3>
+        <p>
+          Most agent platforms assume the cloud as default and treat local as
+          an afterthought. The trial-by-cloud pattern means experimenting with
+          a new agent design costs real money each iteration, and any sensitive
+          data has to be triple-checked before it leaves the box.
+        </p>
+
+        <h3>AGENT-33&rsquo;s answer</h3>
+        <ul>
+          <li>Ollama is the default LLM provider; pull a model, point AGENT-33 at it, you&rsquo;re live.</li>
+          <li>Lite runtime mode skips the heavy subsystems (no Redis cluster, no NATS, no review automation) and runs out of one process.</li>
+          <li>Local pgvector + SQLite checkpoints give real persistence without an ops burden.</li>
+          <li>Switch on remote providers (OpenAI, Anthropic, llama.cpp) per agent, per workflow, or per invocation when you do want them.</li>
+        </ul>
+
+        <h3>Operational outcome</h3>
+        <p>
+          A single command brings up the stack; a single command tears it down.
+          You can iterate on agent design at zero marginal cost. Sensitive data
+          never leaves the box unless you explicitly route a workflow through
+          a remote provider.
+        </p>
+      </div>
+
+      <div class="uc-meta">
+        <div class="row">
+          <div class="label">Recommended topology</div>
+          <div class="val">
+            <span class="topology-pill">Lite</span> Single laptop
+            <br><span class="topology-pill">Standard</span> Single workstation
+          </div>
+        </div>
+        <div class="row">
+          <div class="label">Subsystems to enable</div>
+          <div class="features-list">
+            <span class="feature hot">Ollama provider</span>
+            <span class="feature hot">Lite mode</span>
+            <span class="feature">Local pgvector</span>
+            <span class="feature">SQLite checkpoints</span>
+            <span class="feature">CLI runner</span>
+          </div>
+        </div>
+        <div class="row">
+          <div class="label">Persistence used</div>
+          <div class="val">
+            <code>sqlite</code> &middot; <code>postgres</code> &middot; <code>filesystem</code>
+          </div>
+        </div>
+        <div class="row">
+          <div class="label">Typical scale</div>
+          <div class="val">Single user &middot; tens of invocations/day</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="uc-section accent-1" id="model-mix" style="background: var(--bg-elev);">
+  <div class="container">
+    <h2>
+      <span class="h2-icon icon">MIX</span>
+      Multi-Provider Model-Mix Exploration
+      <span class="tag">Scenario 06</span>
+    </h2>
+    <p class="uc-lead">
+      An ML team wants to compare provider behaviour &mdash; same workflow, same
+      data, different models &mdash; without rewriting the workflow for each.
+      They also want to route the cheap reasoning steps to a small local
+      model and reserve the big remote model for the synthesis step.
+    </p>
+
+    <div class="uc-grid">
+      <div class="uc-body">
+        <h3>The problem</h3>
+        <p>
+          Hardcoding a single LLM provider in workflow code couples the
+          investigation to one vendor and one price point. Effort-based routing
+          (small model for triage, big model for synthesis) is the obvious
+          optimisation but most agent libraries leave you to wire it by hand.
+        </p>
+
+        <h3>AGENT-33&rsquo;s answer</h3>
+        <ul>
+          <li>20+ LLM providers auto-register from environment variables; the model router selects per agent definition.</li>
+          <li>Effort-based parameter resolution chooses the right model for the right step (cheap reasoning vs heavy synthesis).</li>
+          <li>The workflow stays the same; the provider strategy swaps via configuration.</li>
+          <li>Outcomes store + evaluation gates let you compare side-by-side on real workloads, not just on a benchmark.</li>
+        </ul>
+
+        <h3>Operational outcome</h3>
+        <p>
+          The team runs A/B comparisons across providers without code changes.
+          Routing policy is a configuration artifact. Cost tracking by tenant
+          and by step gives a clear picture of which provider is paying for
+          itself.
+        </p>
+      </div>
+
+      <div class="uc-meta">
+        <div class="row">
+          <div class="label">Recommended topology</div>
+          <div class="val">
+            <span class="topology-pill">Standard</span> Comparison sandbox
+            <br><span class="topology-pill">Enterprise</span> Production rollout
+          </div>
+        </div>
+        <div class="row">
+          <div class="label">Subsystems to enable</div>
+          <div class="features-list">
+            <span class="feature hot">Model router</span>
+            <span class="feature hot">Effort routing</span>
+            <span class="feature hot">Outcomes store</span>
+            <span class="feature">Evaluation gates</span>
+            <span class="feature">Cost tracking</span>
+          </div>
+        </div>
+        <div class="row">
+          <div class="label">Persistence used</div>
+          <div class="val">
+            <code>postgres</code> &middot; <code>redis</code> &middot; <code>sqlite</code> (outcomes)
+          </div>
+        </div>
+        <div class="row">
+          <div class="label">Typical scale</div>
+          <div class="val">Recurring eval cycles &middot; provider-mix experimentation</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="uc-section accent-2" id="regulated-environments">
+  <div class="container">
+    <h2>
+      <span class="h2-icon icon">REG</span>
+      Regulated / On-Prem Environments
+      <span class="tag">Scenario 07</span>
+    </h2>
+    <p class="uc-lead">
+      A regulated business (finance, healthcare, public sector) needs an agent
+      platform that runs entirely on infrastructure they control, with no
+      mandatory outbound network calls and a credible audit story. They have
+      Kubernetes, they have Prometheus, they have a CISO with opinions.
+    </p>
+
+    <div class="uc-grid">
+      <div class="uc-body">
+        <h3>The problem</h3>
+        <p>
+          Cloud-only agent platforms are off-table by procurement. Building
+          from scratch is multi-quarter and high-risk. Existing open-source
+          orchestration libraries treat governance as someone else&rsquo;s problem.
+          What&rsquo;s wanted is a stack that boots inside the existing security
+          envelope and produces evidence the audit team can act on.
+        </p>
+
+        <h3>AGENT-33&rsquo;s answer</h3>
+        <ul>
+          <li>Apache 2.0, self-hosted, no mandatory outbound calls; Ollama or llama.cpp keeps inference local.</li>
+          <li>Per-tenant encryption keys, scopes, and rate limits; auth via API key or JWT.</li>
+          <li>Trace pipeline + outcomes + lineage + replay give the auditor a defensible answer to "what happened, why, and would it happen again."</li>
+          <li>Autonomy budgets cap what an agent may do per invocation (file scope, command scope, network scope) with explicit escalation.</li>
+          <li>Review automation gates can require human signoff on high-risk actions before they execute.</li>
+        </ul>
+
+        <h3>Operational outcome</h3>
+        <p>
+          The platform sits in the existing Kubernetes footprint behind the
+          existing network perimeter. Metrics flow to the existing Prometheus.
+          Traces flow to the existing OpenTelemetry collector. The audit team
+          can subpoena one store and get one answer.
+        </p>
+      </div>
+
+      <div class="uc-meta">
+        <div class="row">
+          <div class="label">Recommended topology</div>
+          <div class="val">
+            <span class="topology-pill">Enterprise</span> Multi-instance
+            <br><span class="topology-pill">Air-gapped</span> When network is closed
+          </div>
+        </div>
+        <div class="row">
+          <div class="label">Subsystems to enable</div>
+          <div class="features-list">
+            <span class="feature hot">Autonomy budgets</span>
+            <span class="feature hot">Review automation</span>
+            <span class="feature hot">Vault &amp; encryption</span>
+            <span class="feature">Trace pipeline</span>
+            <span class="feature">Prometheus metrics</span>
+          </div>
+        </div>
+        <div class="row">
+          <div class="label">Persistence used</div>
+          <div class="val">
+            <code>postgres</code> &middot; <code>pgvector</code> &middot; <code>redis</code> &middot; <code>nats</code> &middot; <code>filesystem</code>
+          </div>
+        </div>
+        <div class="row">
+          <div class="label">Typical scale</div>
+          <div class="val">Production volume &middot; regulator-facing audit</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <h2 class="text-center mb-2">Where AGENT-33 is <em>not</em> a fit</h2>
+    <p class="lead text-center" style="margin: 0 auto 16px;">
+      Honest scoping. Pick a different tool for these.
+    </p>
+
+    <div class="not-fit-card">
+      <h3>A single-shot chat experience for end users</h3>
+      <ul>
+        <li>If you want a polished consumer chat interface with built-in voice, image generation, and a customer billing portal, a hosted chat product will be faster to deliver than configuring AGENT-33 yourself.</li>
+        <li>AGENT-33 is a platform for building governed agent workloads. It is not a consumer chat UI.</li>
+      </ul>
+    </div>
+
+    <div class="not-fit-card">
+      <h3>A vector database or a feature store</h3>
+      <ul>
+        <li>AGENT-33 uses pgvector for retrieval but it is not a managed vector DB; it is not a substitute for dedicated retrieval infrastructure if you already have one.</li>
+        <li>If your team already runs a feature store or vector DB, AGENT-33 can call into it via tools and skills instead of replacing it.</li>
+      </ul>
+    </div>
+
+    <div class="not-fit-card">
+      <h3>A generic web application framework</h3>
+      <ul>
+        <li>FastAPI lives inside AGENT-33, but the platform is opinionated about what it does (run agents, run workflows, govern tools, persist evidence). Bolting a generic web app onto it works but is not the design target.</li>
+        <li>Use FastAPI directly if the goal is a CRUD service that happens to call an LLM occasionally.</li>
+      </ul>
+    </div>
+
+    <div class="not-fit-card">
+      <h3>A model training / fine-tuning platform</h3>
+      <ul>
+        <li>AGENT-33 hosts an optional training subsystem hook, but it is not an MLOps platform; if your workload is GPU-bound model training, the right tools are PyTorch Lightning, Hugging Face TRL, or a managed training service.</li>
+        <li>AGENT-33 is for orchestrating workloads on top of already-trained models.</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="background: var(--bg-elev);">
+  <div class="container text-center">
+    <h2>Ready to scope a deployment?</h2>
+    <p class="lead" style="margin: 0 auto 32px;">
+      The architecture deck walks through subsystem-by-subsystem responsibilities,
+      and the technical brief covers stack, lifespan order, and API surface.
+    </p>
+    <div class="btn-group" style="justify-content: center;">
+      <a href="./architecture.html" class="btn btn-primary">Architecture Deck</a>
+      <a href="./technical-brief.html" class="btn btn-secondary">Technical Brief</a>
+      <a href="./white-paper.html" class="btn btn-secondary">White Paper</a>
+    </div>
+
+    <div class="summary-row">
+      <div class="summary-pill"><div class="v">6</div><div class="l">Reference agents</div></div>
+      <div class="summary-pill"><div class="v">7</div><div class="l">Built-in tools</div></div>
+      <div class="summary-pill"><div class="v">20+</div><div class="l">LLM providers</div></div>
+      <div class="summary-pill"><div class="v">3</div><div class="l">Runtime modes</div></div>
+      <div class="summary-pill"><div class="v">0</div><div class="l">Mandatory outbound calls</div></div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container">
+    <div class="footer-links">
+      <a href="./index.html">Overview</a>
+      <a href="./executive-summary.html">Executive Summary</a>
+      <a href="./technical-brief.html">Tech Brief</a>
+      <a href="./white-paper.html">White Paper</a>
+      <a href="./architecture.html">Architecture</a>
+      <a href="./use-cases.html">Use Cases</a>
+      <a href="./slides.html">Slides</a>
+      <a href="../README.md">Back to README</a>
+    </div>
+    <p>AGENT-33 v2.1.0 &middot; Apache 2.0 &middot; Built for governed multi-agent work.</p>
+  </div>
+</footer>
+
+</body>
+</html>

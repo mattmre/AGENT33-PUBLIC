@@ -1,0 +1,593 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>AGENT-33 &mdash; Slide Deck</title>
+  <meta name="description" content="AGENT-33 slide deck: governed multi-agent platform, runtime topology, workflow engine, governance contracts, deployment shapes.">
+  <link rel="stylesheet" href="./assets/styles.css">
+  <script src="https://cdn.jsdelivr.net/npm/mermaid@10/dist/mermaid.min.js"></script>
+  <style>
+    .slide:nth-child(odd) { background: var(--bg); }
+    .slide:nth-child(even) { background: var(--bg-elev); }
+    .slide-content ul { list-style: none; padding: 0; }
+    .slide-content ul li {
+      padding: 12px 0 12px 32px;
+      border-bottom: 1px solid var(--border);
+      position: relative;
+      text-align: left;
+      font-size: 1.1rem;
+    }
+    .slide-content ul li:last-child { border-bottom: none; }
+    .slide-content ul li::before {
+      content: "\2014";
+      position: absolute;
+      left: 0;
+      color: var(--accent);
+      font-weight: bold;
+    }
+    .two-col { display: grid; grid-template-columns: 1fr 1fr; gap: 32px; text-align: left; }
+    @media (max-width: 900px) { .two-col { grid-template-columns: 1fr; } }
+    .big-stat {
+      font-size: clamp(3rem, 8vw, 6rem);
+      font-weight: 800;
+      color: var(--accent);
+      line-height: 1;
+    }
+    .big-stat-label {
+      color: var(--text-dim);
+      font-size: 1.1rem;
+      text-transform: uppercase;
+      letter-spacing: 0.1em;
+    }
+    @media print {
+      .slide { page-break-after: always; min-height: 95vh; }
+      .slide-controls { display: none; }
+    }
+  </style>
+</head>
+<body>
+
+<!-- Slide 1: Title -->
+<section class="slide">
+  <span class="slide-num">01 / 16</span>
+  <div class="slide-content">
+    <div class="logo" style="font-size: 1.5rem; margin-bottom: 32px;">AGENT<span class="accent">-33</span></div>
+    <h1>A Governed Multi-Agent Platform.<br><span class="text-accent">Built for Evidence.</span></h1>
+    <p class="lead text-center" style="margin: 32px auto;">
+      Agents, workflows, skills, and tools as declarative artifacts &mdash;
+      run anywhere, audited end-to-end, and operated by one team.
+    </p>
+    <div class="badges" style="justify-content: center;">
+      <span class="badge">Version 2.1.0</span>
+      <span class="badge">Apache 2.0</span>
+      <span class="badge">FastAPI &middot; pgvector &middot; Ollama</span>
+    </div>
+  </div>
+</section>
+
+<!-- Slide 2: The Problem -->
+<section class="slide">
+  <span class="slide-num">02 / 16</span>
+  <div class="slide-content left">
+    <h2>The Problem</h2>
+    <p class="lead">Most agent platforms fail at the questions that matter once an agent leaves the demo notebook.</p>
+    <ul>
+      <li>Who called what, with what data, against which model, on what authority?</li>
+      <li>How do I run this on infrastructure I control, without paying per token forever?</li>
+      <li>How do I isolate tenants when "multi-tenant" was bolted on after the fact?</li>
+      <li>How do I prove to an auditor that the same input would produce the same answer today?</li>
+      <li>How do I let teams ship agents without each team operating its own production?</li>
+    </ul>
+  </div>
+</section>
+
+<!-- Slide 3: The Approach -->
+<section class="slide">
+  <span class="slide-num">03 / 16</span>
+  <div class="slide-content left">
+    <h2>The Approach</h2>
+    <p class="lead">Engineered around four load-bearing decisions.</p>
+    <div class="two-col" style="margin-top: 32px;">
+      <div>
+        <h3 class="text-accent">Governance First</h3>
+        <p>Tool allowlists, autonomy budgets, review gates, and per-tenant scopes are part of the runtime &mdash; not an aspirational wishlist.</p>
+      </div>
+      <div>
+        <h3 class="text-accent-2">Evidence Over Assertion</h3>
+        <p>Every invocation produces a trace, an outcome, lineage, and (optionally) a replayable artifact. Completion is something you can demonstrate, not just claim.</p>
+      </div>
+      <div>
+        <h3 class="text-accent-3">Multi-Tenant by Construction</h3>
+        <p>Tenant ID is in every persisted row, every queue, every cache. Isolation is the default, not an add-on module.</p>
+      </div>
+      <div>
+        <h3 class="text-accent-5">Local-First, Remote Optional</h3>
+        <p>Ollama by default; OpenAI, Anthropic, llama.cpp, vLLM, and 20+ providers swap in by environment variable. Run on a laptop or a fleet.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Slide 4: Runtime Overview -->
+<section class="slide">
+  <span class="slide-num">04 / 16</span>
+  <div class="slide-content">
+    <h2>Runtime at a Glance</h2>
+    <p class="lead text-center">Eleven subsystems initialised in deterministic lifespan order, every request observed end-to-end.</p>
+    <div class="pipeline" style="margin-top: 48px;">
+      <div class="pipeline-stage">
+        <div class="stage-num">01</div>
+        <div class="stage-name">Auth</div>
+        <div class="stage-threads">tenant resolve</div>
+      </div>
+      <div class="pipeline-arrow">&rarr;</div>
+      <div class="pipeline-stage">
+        <div class="stage-num">02</div>
+        <div class="stage-name">Agent</div>
+        <div class="stage-threads">prompt + skills</div>
+      </div>
+      <div class="pipeline-arrow">&rarr;</div>
+      <div class="pipeline-stage">
+        <div class="stage-num">03</div>
+        <div class="stage-name">Workflow</div>
+        <div class="stage-threads">DAG executor</div>
+      </div>
+      <div class="pipeline-arrow">&rarr;</div>
+      <div class="pipeline-stage">
+        <div class="stage-num">04</div>
+        <div class="stage-name">Tools</div>
+        <div class="stage-threads">governance</div>
+      </div>
+      <div class="pipeline-arrow">&rarr;</div>
+      <div class="pipeline-stage">
+        <div class="stage-num">05</div>
+        <div class="stage-name">Memory</div>
+        <div class="stage-threads">BM25 + vector</div>
+      </div>
+      <div class="pipeline-arrow">&rarr;</div>
+      <div class="pipeline-stage">
+        <div class="stage-num">06</div>
+        <div class="stage-name">Trace</div>
+        <div class="stage-threads">lineage + replay</div>
+      </div>
+    </div>
+    <p class="text-dim text-center" style="margin-top: 32px;">
+      Persistence is durable; the app itself is stateless and horizontally scalable.
+    </p>
+  </div>
+</section>
+
+<!-- Slide 5: Data Flow -->
+<section class="slide">
+  <span class="slide-num">05 / 16</span>
+  <div class="slide-content">
+    <h2>Request Lifecycle</h2>
+    <div class="diagram" style="text-align: left;">
+      <pre class="mermaid">
+sequenceDiagram
+  participant C as Client
+  participant A as Auth Middleware
+  participant R as Agent Runtime
+  participant T as Tool Loop
+  participant L as LLM Router
+  participant M as Memory + RAG
+  participant O as Trace + Outcomes
+
+  C-&gt;&gt;A: POST /invoke (API key or JWT)
+  A-&gt;&gt;A: Resolve tenant_id, scopes
+  A-&gt;&gt;R: Authorised invocation
+  R-&gt;&gt;M: Hybrid retrieval (BM25 + pgvector)
+  R-&gt;&gt;L: Render prompt + invoke
+  L--&gt;&gt;R: Completion or tool call
+  R-&gt;&gt;T: Execute tool (governed)
+  T--&gt;&gt;R: Tool result
+  R-&gt;&gt;O: Emit trace + outcome
+  R--&gt;&gt;C: Final response + trace_id
+      </pre>
+    </div>
+  </div>
+</section>
+
+<!-- Slide 6: Agent Model -->
+<section class="slide">
+  <span class="slide-num">06 / 16</span>
+  <div class="slide-content left">
+    <h2>Agents Are Declarative</h2>
+    <div class="two-col">
+      <div>
+        <h3 class="text-accent">JSON definitions</h3>
+        <ul>
+          <li>Six reference agents ship with the platform: orchestrator, director, worker, qa, researcher, browser-agent.</li>
+          <li>Auto-discovered from <code>agent-definitions/</code>; new agents are JSON files, not Python classes.</li>
+          <li>Capability taxonomy (25 entries across P / I / V / R / X) catalogues what each agent can do.</li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="text-accent-2">Skills + tools</h3>
+        <ul>
+          <li>Skills are Markdown documents with frontmatter; L0/L1/L2 progressive disclosure keeps context lean.</li>
+          <li>Tools are JSON-Schema-validated and governance-gated per agent.</li>
+          <li>The tool-use loop iterates until the model produces a final answer or hits its iteration budget.</li>
+        </ul>
+      </div>
+    </div>
+    <div style="margin-top: 32px; padding: 24px; background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border);">
+      <p class="text-dim" style="margin: 0;">
+        Adding an agent is a PR that adds JSON to <code>agent-definitions/</code>. No service restart of unrelated subsystems.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- Slide 7: Workflow Engine -->
+<section class="slide">
+  <span class="slide-num">07 / 16</span>
+  <div class="slide-content">
+    <h2>Workflows Are DAGs</h2>
+    <p class="lead text-center">YAML in, deterministic execution out. Built for retries, parallelism, and resume.</p>
+    <table style="margin-top: 32px;">
+      <thead>
+        <tr><th>Action</th><th>What it does</th></tr>
+      </thead>
+      <tbody>
+        <tr><td><code>invoke_agent</code></td><td>Calls the agent runtime with a rendered prompt and tool context</td></tr>
+        <tr><td><code>run_command</code></td><td>Executes a governed shell command through the code execution layer</td></tr>
+        <tr><td><code>validate</code></td><td>Asserts on a response shape, value, or invariant</td></tr>
+        <tr><td><code>transform</code></td><td>Applies an expression-based transformation to step output</td></tr>
+        <tr><td><code>conditional</code></td><td>Branches the DAG based on an expression result</td></tr>
+        <tr><td><code>parallel_group</code></td><td>Fans out across N branches, joins on completion</td></tr>
+        <tr><td><code>wait</code></td><td>Blocks for a duration or until an external signal</td></tr>
+        <tr><td><code>execute_code</code></td><td>Runs a sandboxed adapter (CLI today, more in roadmap)</td></tr>
+      </tbody>
+    </table>
+    <p class="text-dim text-center" style="margin-top: 32px;">
+      Checkpoint persistence means a multi-hour workflow survives a restart without losing progress.
+    </p>
+  </div>
+</section>
+
+<!-- Slide 8: REST API -->
+<section class="slide">
+  <span class="slide-num">08 / 16</span>
+  <div class="slide-content left">
+    <h2>REST API</h2>
+    <p class="lead">FastAPI server with per-tenant auth, rate limiting, SSE streaming, and signed webhooks.</p>
+    <div class="two-col">
+      <div>
+        <h3 class="text-accent">Endpoints</h3>
+        <ul>
+          <li><code>POST /agents/{id}/invoke</code> &mdash; invoke an agent</li>
+          <li><code>POST /workflows/{id}/run</code> &mdash; start a workflow</li>
+          <li><code>GET /traces/{id}</code> &mdash; fetch a trace</li>
+          <li><code>GET /health</code> &mdash; liveness</li>
+          <li><code>GET /metrics</code> &mdash; Prometheus scrape</li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="text-accent-2">Real-time</h3>
+        <ul>
+          <li><code>GET /agents/{id}/stream</code> &mdash; SSE token stream</li>
+          <li><code>GET /workflows/{id}/events</code> &mdash; SSE step events</li>
+          <li><code>POST /webhooks</code> &mdash; HMAC-signed delivery</li>
+        </ul>
+      </div>
+    </div>
+    <div style="margin-top: 32px;">
+      <span class="code-label">curl</span>
+      <pre><code>curl -X POST https://agent33.example.com/agents/researcher/invoke \
+  -H "X-API-Key: $API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{"input": "Summarise the latest on hybrid retrieval", "tenant_id": "team-alpha"}'</code></pre>
+    </div>
+  </div>
+</section>
+
+<!-- Slide 9: Deployment -->
+<section class="slide">
+  <span class="slide-num">09 / 16</span>
+  <div class="slide-content">
+    <h2>Runtime Modes</h2>
+    <p class="lead text-center">Same image. Three operational shapes.</p>
+    <div class="grid grid-3" style="margin-top: 32px;">
+      <div class="card">
+        <h3 class="text-accent">Lite</h3>
+        <p><code>docker compose up</code></p>
+        <p class="text-dim">
+          Single process plus Postgres + Ollama. Skips Redis cluster, NATS, and review automation.
+          Designed to fit on a laptop.
+        </p>
+      </div>
+      <div class="card">
+        <h3 class="text-accent-2">Standard</h3>
+        <p><code>docker compose up -d</code></p>
+        <p class="text-dim">
+          Full stack: Postgres + pgvector, Redis, NATS, Ollama. Multi-tenant. Trace pipeline on.
+          Hit-the-ground-running mid-team default.
+        </p>
+      </div>
+      <div class="card">
+        <h3 class="text-accent-3">Enterprise</h3>
+        <p><code>kubectl apply -k</code></p>
+        <p class="text-dim">
+          HPA-ready stateless app, durable stores, full review automation + autonomy budgets,
+          Prometheus + OpenTelemetry wired.
+        </p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Slide 10: Observability -->
+<section class="slide">
+  <span class="slide-num">10 / 16</span>
+  <div class="slide-content left">
+    <h2>Observability</h2>
+    <p class="lead">If you can&rsquo;t see it, you can&rsquo;t ship it.</p>
+    <div class="two-col">
+      <div>
+        <h3 class="text-accent">Trace pipeline</h3>
+        <ul>
+          <li>10-category failure taxonomy: F-ENV, F-INP, F-EXE, F-TMO, F-RES, F-SEC, F-DEP, F-VAL, F-REV, F-UNK</li>
+          <li>Trace collector with retention policies</li>
+          <li>OpenTelemetry-compatible export</li>
+          <li>Per-trace replay capability</li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="text-accent-2">Outcomes &amp; evaluation</h3>
+        <ul>
+          <li>Outcomes store records every invocation result</li>
+          <li>Evaluation gates compare against golden tasks</li>
+          <li>Regression detector catches drift</li>
+          <li>Cost tracking by tenant and by step</li>
+        </ul>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Slide 11: Security -->
+<section class="slide">
+  <span class="slide-num">11 / 16</span>
+  <div class="slide-content left">
+    <h2>Security Posture</h2>
+    <ul>
+      <li><strong>Tenant resolution at the edge.</strong> API key or JWT &rarr; tenant_id propagated through every layer.</li>
+      <li><strong>Per-tenant scopes and rate limits.</strong> Auth middleware enforces what each caller may do.</li>
+      <li><strong>Tool governance allowlists.</strong> Which tools a given agent may invoke is policy, not honor system.</li>
+      <li><strong>Autonomy budgets.</strong> Per-invocation file scope, command scope, and network scope with explicit escalation.</li>
+      <li><strong>Prompt injection detection.</strong> Input validation runs before tool calls execute.</li>
+      <li><strong>Pack trust controls.</strong> Extension packs validate integrity and (optionally) signature before load.</li>
+      <li><strong>Encryption at rest.</strong> Vault-backed secrets, Fernet-encrypted sensitive columns.</li>
+    </ul>
+  </div>
+</section>
+
+<!-- Slide 12: By the Numbers -->
+<section class="slide">
+  <span class="slide-num">12 / 16</span>
+  <div class="slide-content">
+    <h2>By the Numbers</h2>
+    <div class="stats">
+      <div class="stat">
+        <div class="stat-value">6</div>
+        <div class="stat-label">Reference Agents</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">7</div>
+        <div class="stat-label">Built-in Tools</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">20+</div>
+        <div class="stat-label">LLM Providers</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">25</div>
+        <div class="stat-label">Capability Entries</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">10</div>
+        <div class="stat-label">Failure Categories</div>
+      </div>
+      <div class="stat">
+        <div class="stat-value">3</div>
+        <div class="stat-label">Runtime Modes</div>
+      </div>
+    </div>
+    <p class="text-dim text-center" style="margin-top: 32px;">
+      One stack, one tenant model, one trace store. Operated by one team for many teams of agent builders.
+    </p>
+  </div>
+</section>
+
+<!-- Slide 13: Failure Taxonomy -->
+<section class="slide">
+  <span class="slide-num">13 / 16</span>
+  <div class="slide-content">
+    <h2>Failure Taxonomy</h2>
+    <p class="lead text-center">Every failure is classified into one of ten categories. Compare incidents like for like.</p>
+    <div class="diagram" style="text-align: left;">
+      <pre class="mermaid">
+flowchart LR
+  ENV[F-ENV<br>Environment] -.-> CL[Classifier]
+  INP[F-INP<br>Input Validation] -.-> CL
+  EXE[F-EXE<br>Execution] -.-> CL
+  TMO[F-TMO<br>Timeout] -.-> CL
+  RES[F-RES<br>Resource] -.-> CL
+  SEC[F-SEC<br>Security] -.-> CL
+  DEP[F-DEP<br>Dependency] -.-> CL
+  VAL[F-VAL<br>Validation] -.-> CL
+  REV[F-REV<br>Review] -.-> CL
+  UNK[F-UNK<br>Unknown] -.-> CL
+  CL --> TR[Trace Record]
+  TR --> RL[Retention Policy]
+  TR --> EV[Evaluation Gates]
+      </pre>
+    </div>
+    <p class="text-dim text-center" style="margin-top: 32px;">
+      Patterns become operational signals: a sudden spike in F-DEP means a downstream provider; F-SEC means audit.
+    </p>
+  </div>
+</section>
+
+<!-- Slide 14: Extension Points -->
+<section class="slide">
+  <span class="slide-num">14 / 16</span>
+  <div class="slide-content left">
+    <h2>Extension Points (Declarative)</h2>
+    <p class="lead">Six places to extend the platform without forking the runtime.</p>
+    <div class="two-col">
+      <div>
+        <h3 class="text-accent">Build-time</h3>
+        <ul>
+          <li>Agent definitions (<code>agent-definitions/*.json</code>)</li>
+          <li>Workflow templates (<code>workflows/*.yaml</code>)</li>
+          <li>Skills (<code>skills/*.md</code>)</li>
+        </ul>
+      </div>
+      <div>
+        <h3 class="text-accent-2">Runtime</h3>
+        <ul>
+          <li>Tool registry (Python interface or MCP server)</li>
+          <li>LLM provider catalog (20+ auto-registered)</li>
+          <li>Extension packs (signed, governed)</li>
+        </ul>
+      </div>
+    </div>
+    <div style="margin-top: 32px; padding: 24px; background: var(--bg-card); border-radius: 8px; border: 1px solid var(--border);">
+      <p class="text-dim" style="margin: 0;">
+        Each extension point has a contract; new artifacts get reviewed and governed like any production change.
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- Slide 15: Integrations -->
+<section class="slide">
+  <span class="slide-num">15 / 16</span>
+  <div class="slide-content">
+    <h2>Integrations</h2>
+    <div class="grid grid-3">
+      <div class="card">
+        <h3 class="text-accent">Models</h3>
+        <p>Ollama, OpenAI, Anthropic, llama.cpp, vLLM, Mistral, Cohere, plus 14+ more via env-var auto-registration.</p>
+      </div>
+      <div class="card">
+        <h3 class="text-accent-2">Storage</h3>
+        <p>PostgreSQL + pgvector for state and retrieval, Redis for ephemeral, NATS for messaging, filesystem for artifacts, SQLite for outcomes.</p>
+      </div>
+      <div class="card">
+        <h3 class="text-accent-3">Messaging</h3>
+        <p>Telegram, Discord, Slack, WhatsApp adapters with per-channel health checks; webhook delivery with HMAC signing.</p>
+      </div>
+      <div class="card">
+        <h3 class="text-accent-5">Tools / MCP</h3>
+        <p>Built-in shell, file_read, file_write, file_search, web_fetch, browser, code_exec. MCP servers register dynamically.</p>
+      </div>
+      <div class="card">
+        <h3 class="text-accent">Auth</h3>
+        <p>API key and JWT auth, per-tenant scopes, encryption at rest, prompt-injection detection, allowlists.</p>
+      </div>
+      <div class="card">
+        <h3 class="text-accent-2">Observability</h3>
+        <p>Prometheus metrics, OpenTelemetry traces, structured JSON logs, trace replay, outcomes + evaluation gates.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- Slide 16: Get Started -->
+<section class="slide">
+  <span class="slide-num">16 / 16</span>
+  <div class="slide-content">
+    <h1 class="text-accent">Get Started.</h1>
+    <p class="lead text-center" style="margin: 32px auto;">
+      One command. Real agents running in fifteen minutes.
+    </p>
+    <div style="max-width: 720px; margin: 32px auto; text-align: left;">
+      <span class="code-label">terminal</span>
+      <pre><code>git clone https://github.com/mattmre/AGENT33-PUBLIC.git
+cd AGENT33-PUBLIC
+docker compose up -d
+
+# Then call an agent
+curl -X POST http://localhost:8000/agents/researcher/invoke \
+  -H "X-API-Key: dev-key" \
+  -H "Content-Type: application/json" \
+  -d '{"input": "Hello, AGENT-33"}'</code></pre>
+    </div>
+    <div class="btn-group" style="justify-content: center; margin-top: 32px;">
+      <a href="./index.html" class="btn btn-primary">Back to Overview</a>
+      <a href="./architecture.html" class="btn btn-secondary">Architecture Deck</a>
+      <a href="../README.md" class="btn btn-secondary">README</a>
+    </div>
+  </div>
+</section>
+
+<!-- Slide controls -->
+<div class="slide-controls">
+  <button class="btn btn-secondary" onclick="prevSlide()">&larr;</button>
+  <button class="btn btn-secondary" onclick="nextSlide()">&rarr;</button>
+</div>
+
+<script>
+  mermaid.initialize({
+    startOnLoad: true,
+    theme: 'dark',
+    themeVariables: {
+      primaryColor: '#1a2236',
+      primaryTextColor: '#e6edf3',
+      primaryBorderColor: '#2a3654',
+      lineColor: '#0ea5e9',
+      secondaryColor: '#121829',
+      tertiaryColor: '#0d1424',
+      background: '#0a0e1a',
+      mainBkg: '#1a2236',
+      secondBkg: '#121829',
+      fontFamily: '-apple-system, BlinkMacSystemFont, sans-serif'
+    }
+  });
+
+  // Keyboard + button navigation between slides
+  const slides = Array.from(document.querySelectorAll('.slide'));
+  let current = 0;
+
+  function scrollToSlide(idx) {
+    if (idx < 0) idx = 0;
+    if (idx >= slides.length) idx = slides.length - 1;
+    current = idx;
+    slides[idx].scrollIntoView({ behavior: 'smooth', block: 'start' });
+  }
+  function nextSlide() { scrollToSlide(current + 1); }
+  function prevSlide() { scrollToSlide(current - 1); }
+
+  document.addEventListener('keydown', (e) => {
+    if (e.key === 'ArrowRight' || e.key === 'PageDown' || e.key === ' ') {
+      e.preventDefault();
+      nextSlide();
+    } else if (e.key === 'ArrowLeft' || e.key === 'PageUp') {
+      e.preventDefault();
+      prevSlide();
+    } else if (e.key === 'Home') {
+      e.preventDefault();
+      scrollToSlide(0);
+    } else if (e.key === 'End') {
+      e.preventDefault();
+      scrollToSlide(slides.length - 1);
+    }
+  });
+
+  // Track which slide is in view
+  const observer = new IntersectionObserver((entries) => {
+    entries.forEach((entry) => {
+      if (entry.isIntersecting) {
+        current = slides.indexOf(entry.target);
+      }
+    });
+  }, { threshold: 0.5 });
+  slides.forEach((s) => observer.observe(s));
+</script>
+
+</body>
+</html>
