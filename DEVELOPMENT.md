@@ -61,6 +61,13 @@ AGENT33-PUBLIC/
 │   ├── pyproject.toml            Package metadata + lint/type config
 │   ├── docker-compose.yml        Full local stack (api + infra)
 │   └── .env.example              Config template (env-var driven)
+├── frontend/                     React/TypeScript operator console (Vite + TS)
+│   ├── src/                      UI components, hooks, routes
+│   ├── public/                   Static assets
+│   ├── docker/                   Frontend container build assets
+│   ├── package.json              Frontend deps + scripts
+│   ├── vite.config.ts            Vite config
+│   └── Dockerfile                Production image
 ├── core/                         Markdown-native specs and templates
 │   ├── workflows/                Canonical workflow YAMLs (imported by engine)
 │   ├── orchestrator/             Orchestrator rules + agent protocols
