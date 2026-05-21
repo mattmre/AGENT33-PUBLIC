@@ -1,11 +1,11 @@
 name: platform-builder
 version: 1.0.0
-description: Platform integration and research capabilities imported from the EVOKORE skill library.
+description: Platform integration and research capabilities adapted from an external skill library.
 author: AGENT-33
 license: Apache-2.0
 tags:
   - imported
-  - evokore
+  - external-skills
   - mcp
   - research
   - platform

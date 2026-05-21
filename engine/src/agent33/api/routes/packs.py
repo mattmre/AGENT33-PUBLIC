@@ -68,8 +68,8 @@ def _get_skill_registry(request: Request) -> Any:
 def _default_skill_provenance(pack: Any) -> str:
     """Return a fallback provenance label derived from pack metadata."""
     tags = set(getattr(pack, "tags", []) or [])
-    if "evokore" in tags:
-        return "imported-evokore"
+    if "external-skills" in tags:
+        return "imported-external"
     if "imported" in tags:
         return "imported-pack"
     return ""

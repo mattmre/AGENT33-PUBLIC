@@ -1,11 +1,11 @@
 name: workflow-ops
 version: 1.0.0
-description: Planning, review, documentation, and webapp testing capabilities imported from the EVOKORE skill library.
+description: Planning, review, documentation, and webapp testing capabilities adapted from an external skill library.
 author: AGENT-33
 license: Apache-2.0
 tags:
   - imported
-  - evokore
+  - external-skills
   - workflow
   - review
   - docs

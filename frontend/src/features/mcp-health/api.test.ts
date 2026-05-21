@@ -28,8 +28,8 @@ describe("mcp health api parsers", () => {
     const servers = asProxyServersResponse({
       servers: [
         {
-          id: "evokore",
-          name: "EVOKORE",
+          id: "skills-mcp",
+          name: "Skills MCP",
           state: "healthy",
           transport: "stdio",
           tool_count: 4,
@@ -49,9 +49,9 @@ describe("mcp health api parsers", () => {
     const tools = asProxyToolsResponse({
       tools: [
         {
-          name: "evokore.search_skills",
+          name: "skills-mcp.search_skills",
           description: "Search skills",
-          proxy_server_id: "evokore",
+          proxy_server_id: "skills-mcp",
           original_name: "search_skills"
         }
       ],
@@ -59,7 +59,7 @@ describe("mcp health api parsers", () => {
     });
 
     expect(servers?.servers[0]?.state).toBe("healthy");
-    expect(tools?.tools[0]?.name).toBe("evokore.search_skills");
+    expect(tools?.tools[0]?.name).toBe("skills-mcp.search_skills");
   });
 
   it("parses CLI sync drift entries", () => {
@@ -97,10 +97,10 @@ describe("mcp health api parsers", () => {
       valid: true,
       server_count: 1,
       errors: [],
-      diff: { added: ["evokore"] }
+      diff: { added: ["skills-mcp"] }
     });
     const reloaded = asProxyReloadResponse({
-      added: ["evokore"],
+      added: ["skills-mcp"],
       restarted: [],
       removed: [],
       unchanged: [],
@@ -109,6 +109,6 @@ describe("mcp health api parsers", () => {
 
     expect(pushed?.results[0]?.status).toBe("updated");
     expect(validated?.server_count).toBe(1);
-    expect(reloaded?.added).toEqual(["evokore"]);
+    expect(reloaded?.added).toEqual(["skills-mcp"]);
   });
 });

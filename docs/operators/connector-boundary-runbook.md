@@ -85,14 +85,14 @@ curl http://127.0.0.1:8000/v1/connectors \
 2. Single connector detail:
 
 ```bash
-curl http://127.0.0.1:8000/v1/connectors/evokore \
+curl http://127.0.0.1:8000/v1/connectors/skills-mcp \
   -H "Authorization: Bearer $TOKEN"
 ```
 
 3. Breaker transition history:
 
 ```bash
-curl "http://127.0.0.1:8000/v1/connectors/evokore/events?limit=20" \
+curl "http://127.0.0.1:8000/v1/connectors/skills-mcp/events?limit=20" \
   -H "Authorization: Bearer $TOKEN"
 ```
 
