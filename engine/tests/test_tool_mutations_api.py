@@ -46,7 +46,8 @@ def test_mutation_audit_api_lists_records(client: TestClient) -> None:
 
 
 def test_mutation_audit_api_enforces_tenant_isolation() -> None:
-    with TestClient(app, headers=_headers(tenant_id="tenant-a")) as tenant_client:
+    tenant_client = TestClient(app, headers=_headers(tenant_id="tenant-a"))
+    try:
         from agent33.api.routes.tool_mutations import (
             _reset_mutation_audit_store,
             get_mutation_audit_store,
@@ -84,3 +85,5 @@ def test_mutation_audit_api_enforces_tenant_isolation() -> None:
 
         hidden_response = tenant_client.get(f"/v1/tools/mutations/{tenant_b_record.mutation_id}")
         assert hidden_response.status_code == 404
+    finally:
+        tenant_client.close()

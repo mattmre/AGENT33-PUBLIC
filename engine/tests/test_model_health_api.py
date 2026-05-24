@@ -143,15 +143,15 @@ def _install_services(
     lm_studio_fetcher = _LMStudioSequenceFetcher(lm_studio_responses)
     local_orchestration_fetcher = _LocalOrchestrationSequenceFetcher(local_orchestration_responses)
     app.state.ollama_readiness_service = OllamaReadinessService(
-        Settings(),
+        Settings(_env_file=None),
         fetcher=ollama_fetcher,
     )
     app.state.lm_studio_readiness_service = LMStudioReadinessService(
-        Settings(),
+        Settings(_env_file=None),
         fetcher=lm_studio_fetcher,
     )
     app.state.local_orchestration_readiness_service = LocalOrchestrationReadinessService(
-        local_orchestration_settings or Settings(),
+        local_orchestration_settings or Settings(_env_file=None),
         fetcher=local_orchestration_fetcher,
     )
     return ollama_fetcher, lm_studio_fetcher, local_orchestration_fetcher
@@ -412,7 +412,10 @@ class TestModelHealthRoute:
                     payload={"data": [{"id": "mixtral-8x7b"}]},
                 )
             ],
-            local_orchestration_settings=Settings(local_orchestration_engine="vLLM"),
+            local_orchestration_settings=Settings(
+                local_orchestration_engine="vLLM",
+                _env_file=None,
+            ),
         )
 
         resp = operator_read_client.get("/v1/model-health")
@@ -438,6 +441,7 @@ class TestModelHealthRoute:
             local_orchestration_settings=Settings(
                 local_orchestration_engine="ollama",
                 local_orchestration_model="qwen3-coder",
+                _env_file=None,
             ),
         )
 

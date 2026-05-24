@@ -1,0 +1,83 @@
+#!/usr/bin/env bash
+# smoke_pipeline.sh — Stage 2 of the v3.5 Rule 5 smoke gate (shell-only variant).
+#
+# For repos where neither Python nor Node is the production runtime (Go, Rust,
+# Java, Ruby with shell-only floor tier). Reads smoke.config.json via a small awk
+# parser and verifies the production entry exists / is executable.
+#
+# PLACEHOLDERS TO FILL IN:
+#   smoke.config.json at the repo root must contain:
+#     {
+#       "language": "shell",
+#       "production_entry": "{{PRODUCTION_ENTRY}}",
+#       "ceiling_command": ["{{CEILING_COMMAND}}", "{{CEILING_ARG}}"]
+#     }
+#
+# Two-tier framing per project release gate.
+
+set -u
+
+REPO_ROOT="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
+cd "$REPO_ROOT"
+
+CONFIG="$REPO_ROOT/smoke.config.json"
+if [ ! -f "$CONFIG" ]; then
+    echo "SMOKE_PIPELINE FAIL: smoke.config.json not found at $CONFIG. Copy scripts/smoke.config.json.example and fill it in." >&2
+    exit 1
+fi
+
+# Minimal JSON value extractor. NOT a general JSON parser; works for the
+# specific shape documented in smoke.config.json.README.md.
+extract_string() {
+    # extract_string KEY < json
+    local key="$1"
+    awk -v k="\"$key\"" '
+        BEGIN { found=0 }
+        {
+            line=$0
+            while (match(line, k "[[:space:]]*:[[:space:]]*\"[^\"]*\"")) {
+                m=substr(line, RSTART, RLENGTH)
+                sub(/.*:[[:space:]]*"/, "", m)
+                sub(/"$/, "", m)
+                print m
+                found=1
+                line=substr(line, RSTART+RLENGTH)
+            }
+        }
+    ' "$CONFIG"
+}
+
+LANG_VAL=$(extract_string language)
+if [ "$LANG_VAL" != "shell" ]; then
+    echo "SMOKE_PIPELINE FAIL: smoke.config.json says language=$LANG_VAL; this runner is for language=shell only." >&2
+    exit 1
+fi
+
+ENTRY=$(extract_string production_entry)
+if [ -z "$ENTRY" ]; then
+    echo "SMOKE_PIPELINE FAIL: smoke.config.json missing production_entry" >&2
+    exit 1
+fi
+
+echo "smoke_pipeline.sh (floor tier) — REPO_ROOT=$REPO_ROOT"
+if [ ! -e "$ENTRY" ]; then
+    echo "SMOKE_PIPELINE FAIL: production_entry does not exist: $ENTRY" >&2
+    exit 1
+fi
+if [ -f "$ENTRY" ] && [ ! -x "$ENTRY" ]; then
+    echo "SMOKE_PIPELINE FAIL: production_entry exists but is not executable: $ENTRY" >&2
+    exit 1
+fi
+echo "  OK: production_entry present and executable: $ENTRY"
+
+# Ceiling tier (optional): handled at the smoke.sh level since shell arg parsing of
+# a JSON array in awk is brittle. smoke.config.json.README.md documents the option.
+
+echo ""
+echo "HONEST DISCLOSURE (per project release gate):"
+echo "  This smoke ran the FLOOR tier only (entry-point presence + executability)."
+echo "  Ceiling tier (real end-to-end exercise) is the adopter's responsibility;"
+echo "  wire it into ceiling_command and call it via smoke.sh after this runner."
+echo ""
+echo "SMOKE_PIPELINE PASS (floor tier; ceiling tier deferred)"
+exit 0

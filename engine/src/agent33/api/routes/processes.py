@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from typing import TYPE_CHECKING, Annotated
+from typing import TYPE_CHECKING, Annotated, Any
 
 from fastapi import APIRouter, Depends, HTTPException, Request, status
 from pydantic import BaseModel, Field
@@ -78,6 +78,14 @@ def _requested_by(request: Request) -> str:
     return getattr(user, "sub", "") or ""
 
 
+def _tool_context_allowlists(tool_registry: Any) -> dict[str, list[str]]:
+    allowlists = getattr(tool_registry, "default_context_allowlists", None)
+    if not callable(allowlists):
+        return {}
+    loaded = allowlists()
+    return loaded if isinstance(loaded, dict) else {}
+
+
 def _ensure_governed_process_start(
     request: Request,
     svc: ProcessManagerService,
@@ -90,9 +98,14 @@ def _ensure_governed_process_start(
     if governance is None or user is None:
         return
     resolved_root = svc.workspace_root
+    loaded_allowlists = _tool_context_allowlists(
+        getattr(request.app.state, "tool_registry", None)
+    )
     context = ToolContext(
         user_scopes=list(getattr(user, "scopes", [])),
+        command_allowlist=loaded_allowlists.get("command_allowlist", []),
         path_allowlist=[str(resolved_root)],
+        domain_allowlist=loaded_allowlists.get("domain_allowlist", []),
         working_dir=resolved_root,
         requested_by=getattr(user, "sub", "") or "",
         tenant_id=getattr(user, "tenant_id", "") or "",

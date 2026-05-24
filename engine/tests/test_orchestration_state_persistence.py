@@ -2,10 +2,11 @@
 
 from __future__ import annotations
 
+from agent33.autonomy.models import CommandPermission, FileScope, StopCondition
 from agent33.autonomy.service import AutonomyService
 from agent33.observability.trace_collector import TraceCollector
 from agent33.observability.trace_models import TraceStatus
-from agent33.release.models import SyncRule
+from agent33.release.models import CheckStatus, SyncRule
 from agent33.release.service import ReleaseService
 from agent33.services.orchestration_state import OrchestrationStateStore
 from agent33.workflows.definition import WorkflowDefinition
@@ -20,7 +21,14 @@ def test_autonomy_service_state_restores_after_restart(tmp_path) -> None:
     path = tmp_path / "orchestration_state.json"
 
     service = AutonomyService(state_store=_new_store(str(path)))
-    budget = service.create_budget(task_id="task-restore", agent_id="agent-1")
+    budget = service.create_budget(
+        task_id="task-restore",
+        agent_id="agent-1",
+        in_scope=["restore-test"],
+        files=FileScope(read=["src/**"], write=["src/**"]),
+        allowed_commands=[CommandPermission(command="echo")],
+        stop_conditions=[StopCondition(description="Stop when iteration limit reached")],
+    )
     service.activate(budget.budget_id, approved_by="operator")
     service.create_enforcer(budget.budget_id)
     service.enforce_command(budget.budget_id, "echo hello")
@@ -42,6 +50,11 @@ def test_release_service_state_restores_after_restart(tmp_path) -> None:
     service = ReleaseService(state_store=_new_store(str(path)))
     release = service.create_release(version="1.2.3")
     service.freeze(release.release_id)
+    service.cut_rc(release.release_id)
+    service.start_validation(release.release_id)
+    for check in service.get_release(release.release_id).evidence.checklist:
+        service.update_check(release.release_id, check.check_id, CheckStatus.PASS)
+    service.publish(release.release_id, released_by="operator")
     rule = service.add_sync_rule(
         SyncRule(
             source_pattern="core/**/*.md",
@@ -53,7 +66,7 @@ def test_release_service_state_restores_after_restart(tmp_path) -> None:
 
     restored = ReleaseService(state_store=_new_store(str(path)))
     loaded_release = restored.get_release(release.release_id)
-    assert loaded_release.status.value == "frozen"
+    assert loaded_release.status.value == "rolled_back"
     assert len(restored.list_sync_rules()) == 1
     assert len(restored.sync_engine.list_executions()) == 1
     assert len(restored.rollback_manager.list_all(release_id=release.release_id)) == 1

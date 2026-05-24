@@ -95,6 +95,14 @@ def _get_state_dependency(request: Request, name: str) -> Any:
     return dependency
 
 
+def _tool_context_allowlists(tool_registry: Any) -> dict[str, list[str]]:
+    allowlists = getattr(tool_registry, "default_context_allowlists", None)
+    if not callable(allowlists):
+        return {}
+    loaded = allowlists()
+    return loaded if isinstance(loaded, dict) else {}
+
+
 def _build_skillsbench_adapter(
     request: Request,
     config: SkillsBenchConfig,
@@ -115,6 +123,7 @@ def _build_skillsbench_adapter(
     token_payload = _get_token_payload(request)
     tool_context = ToolContext(
         user_scopes=token_payload.scopes,
+        **_tool_context_allowlists(tool_registry),
         tool_policies=definition.governance.tool_policies,
         requested_by=token_payload.sub,
         tenant_id=token_payload.tenant_id or "",

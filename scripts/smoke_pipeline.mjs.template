@@ -1,0 +1,99 @@
+#!/usr/bin/env node
+// smoke_pipeline.mjs — Stage 2 of the v3.5 Rule 5 smoke gate (Node ESM variant).
+//
+// REPO-AGNOSTIC TEMPLATE. Reads `smoke.config.json` at the repo root, then:
+//   1. await import()s the production entry module.
+//   2. Asserts the named exports exist.
+//   3. (Optional) Subprocesses the ceiling command for ceiling-tier exercise.
+//
+// PLACEHOLDERS TO FILL IN:
+//   `smoke.config.json` at the repo root must contain:
+//     {
+//       "language": "node",
+//       "production_entry": "{{PRODUCTION_ENTRY}}",
+//       "production_exports": ["{{EXPORT_NAME_1}}", "{{EXPORT_NAME_2}}"],
+//       "ceiling_command": ["{{CEILING_COMMAND}}", "{{CEILING_ARG_1}}"]
+//     }
+//
+// Two-tier framing per project release gate.
+
+import { readFileSync, existsSync } from 'node:fs';
+import { spawnSync } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import { dirname, resolve as resolvePath } from 'node:path';
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = dirname(__filename);
+const REPO_ROOT = resolvePath(__dirname, '..');
+
+function fail(reason) {
+    console.error(`SMOKE_PIPELINE FAIL: ${reason}`);
+    process.exit(1);
+}
+
+function ok(msg) {
+    console.log(`  OK: ${msg}`);
+}
+
+const configPath = resolvePath(REPO_ROOT, 'smoke.config.json');
+if (!existsSync(configPath)) {
+    fail(`smoke.config.json not found at ${configPath}. Copy v3.5/scripts/smoke.config.json.example and fill it in.`);
+}
+const config = JSON.parse(readFileSync(configPath, 'utf-8'));
+
+if (config.language !== 'node') {
+    fail(`smoke.config.json says language=${config.language}; this runner is for language=node only.`);
+}
+
+const entryRel = config.production_entry;
+if (typeof entryRel !== 'string' || entryRel.length === 0) {
+    fail(`smoke.config.json missing production_entry`);
+}
+const entryAbs = resolvePath(REPO_ROOT, entryRel);
+if (!existsSync(entryAbs)) {
+    fail(`production_entry does not exist on disk: ${entryAbs}`);
+}
+
+console.log(`smoke_pipeline.mjs (floor tier) — REPO_ROOT=${REPO_ROOT}`);
+
+// 1. Import the production entry module.
+let mod;
+try {
+    mod = await import(entryAbs);
+    ok(`imported ${entryRel}`);
+} catch (err) {
+    fail(`cannot import ${entryRel}: ${err.message}\n${err.stack}`);
+}
+
+// 2. Verify exports.
+const requiredExports = Array.isArray(config.production_exports) ? config.production_exports : [];
+const missing = requiredExports.filter((name) => !(name in mod));
+if (missing.length > 0) {
+    fail(`${entryRel} missing exports: ${JSON.stringify(missing)}. These are load-bearing per smoke.config.json; missing them is L4 partial-with-claim-of-complete.`);
+}
+if (requiredExports.length > 0) {
+    ok(`production exports present: ${JSON.stringify(requiredExports)}`);
+}
+
+// 3. Ceiling tier (optional).
+const ceiling = Array.isArray(config.ceiling_command) ? config.ceiling_command : null;
+if (ceiling && ceiling.length > 0) {
+    console.log(`\n--- Ceiling tier: ${ceiling.join(' ')} ---`);
+    const result = spawnSync(ceiling[0], ceiling.slice(1), { cwd: REPO_ROOT, stdio: 'inherit' });
+    if (result.status !== 0) {
+        fail(`ceiling command exit=${result.status}`);
+    }
+    ok(`ceiling command exit=0`);
+    console.log('\nSMOKE_PIPELINE PASS (floor + ceiling tiers)');
+    process.exit(0);
+}
+
+// HONEST DISCLOSURE — floor-tier PASS, ceiling-tier NOT WIRED.
+console.log('');
+console.log('HONEST DISCLOSURE (per project release gate):');
+console.log('  This smoke ran the FLOOR tier only. Ceiling tier is NOT WIRED in smoke.config.json.');
+console.log('  Per Rule 5, the PR body SMOKE: line must name "floor-tier only" AND any ceiling gap');
+console.log('  must appear as a Carried Debt entry in next-session.md per §6.3.');
+console.log('');
+console.log('SMOKE_PIPELINE PASS (floor tier; ceiling tier deferred)');
+process.exit(0);

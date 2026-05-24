@@ -708,6 +708,47 @@ class TestInvokeIterativeRoute:
         assert "termination_reason" in data
         assert data["termination_reason"] == "completed"
 
+    def test_autonomy_level_invocation_persists_budget(self, client) -> None:
+        """Route-selected autonomy levels bind execution to a persisted budget ID."""
+        from agent33.autonomy.service import AutonomyService
+
+        autonomy_service = AutonomyService()
+        client.app.state.autonomy_service = autonomy_service
+        mock_router = MagicMock()
+        mock_router.complete = AsyncMock(return_value=_text_response('{"result": "success"}'))
+        client.app.state.model_router = mock_router
+        client.app.state.tool_registry = _make_registry(_make_mock_tool())
+
+        resp = client.post(
+            "/v1/agents/iter-agent/invoke-iterative",
+            json={
+                "inputs": {"task": "do it"},
+                "autonomy_level": 2,
+                "enable_double_confirmation": False,
+            },
+        )
+
+        assert resp.status_code == 200
+        data = resp.json()
+        assert data["autonomy_budget_id"].startswith("level-2-")
+        assert autonomy_service.get_budget(data["autonomy_budget_id"]).state.value == "active"
+        assert autonomy_service.get_enforcer(data["autonomy_budget_id"]) is not None
+
+    def test_autonomy_level_and_budget_id_are_mutually_exclusive(self, client) -> None:
+        client.app.state.model_router = MagicMock()
+        client.app.state.tool_registry = _make_registry(_make_mock_tool())
+
+        resp = client.post(
+            "/v1/agents/iter-agent/invoke-iterative",
+            json={
+                "inputs": {"task": "do it"},
+                "autonomy_level": 1,
+                "autonomy_budget_id": "BDG-existing",
+            },
+        )
+
+        assert resp.status_code == 400
+
     def test_prompt_injection_rejected(self, client) -> None:
         """Inputs containing prompt injection patterns are rejected with 400."""
         client.app.state.model_router = MagicMock()

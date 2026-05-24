@@ -116,3 +116,14 @@ class TestCLIAdapter:
 
         assert result.success is True
         assert "test_value" in result.stdout
+
+    @pytest.mark.asyncio
+    async def test_stdin_passthrough(self) -> None:
+        adapter = CLIAdapter(_cli_definition())
+        contract = _contract(arguments=["-c", "import sys; print(sys.stdin.read().upper())"])
+        contract.inputs.stdin = "hello from stdin"
+
+        result = await adapter.execute(contract)
+
+        assert result.success is True
+        assert "HELLO FROM STDIN" in result.stdout

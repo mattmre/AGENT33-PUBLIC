@@ -270,6 +270,7 @@ class TestConfigApplyService:
         return Settings(
             environment="test",
             database_url="postgresql+asyncpg://test:test@localhost/test",
+            _env_file=None,
         )
 
     def test_validate_only_accepts_valid_changes(self) -> None:
@@ -556,7 +557,7 @@ class TestOnboardingService:
             "database_url": "postgresql+asyncpg://test:test@localhost/test",
         }
         defaults.update(overrides)
-        return Settings(**defaults)
+        return Settings(**defaults, _env_file=None)
 
     def test_full_onboarding_with_all_services(self) -> None:
         """All steps complete when all services are initialized and secrets changed."""

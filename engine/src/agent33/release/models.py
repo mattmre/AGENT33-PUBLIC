@@ -186,6 +186,8 @@ class SyncFileResult(BaseModel):
     target_path: str
     action: str = ""  # "added", "modified", "removed", "unchanged"
     checksum_valid: bool = True
+    source_checksum: str = ""
+    target_checksum: str = ""
 
 
 class SyncExecution(BaseModel):
@@ -196,6 +198,10 @@ class SyncExecution(BaseModel):
     release_version: str = ""
     status: SyncStatus = SyncStatus.PENDING
     dry_run: bool = True
+    io_mode: str = "dry_run"
+    approved_dry_run_execution_id: str = ""
+    source_root: str = ""
+    target_root: str = ""
 
     started_at: datetime = Field(default_factory=lambda: datetime.now(UTC))
     completed_at: datetime | None = None

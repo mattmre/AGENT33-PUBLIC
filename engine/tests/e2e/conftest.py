@@ -10,6 +10,7 @@ from __future__ import annotations
 import hashlib
 import math
 import sys
+from pathlib import Path
 from typing import TYPE_CHECKING, Any
 from unittest.mock import AsyncMock, MagicMock, patch
 
@@ -58,6 +59,7 @@ def _make_mock_ltm() -> MagicMock:
     m.close = AsyncMock()
     m.store = AsyncMock(return_value="e2e-memory-record")
     m.search = AsyncMock(return_value=[])
+    m.scan = AsyncMock(return_value=[])
     return m
 
 
@@ -135,14 +137,27 @@ class _AuthClientProxy:
 
 
 @pytest.fixture
-def e2e_app():
+def e2e_app(monkeypatch, tmp_path):
     """Create a FastAPI app with all external deps mocked but internal wiring intact.
 
     Yields (app, mock_ltm) so tests can inspect app.state and the LTM mock.
     The app goes through the real lifespan, initializing AgentRegistry,
     ModelRouter, EmbeddingProvider, SkillRegistry, HookRegistry, etc.
     """
+    from agent33.api.routes import workflows
+    from agent33.config import settings
     from agent33.main import app
+
+    workflows.set_workflow_state_service(None)
+    workflows.reset_workflow_state()
+    workflows.set_workflow_run_archive_service(None)
+    e2e_state_dir = Path(__file__).resolve().parents[2] / "var" / "pytest-e2e" / tmp_path.name
+    monkeypatch.setattr(settings, "orchestration_state_store_path", "")
+    monkeypatch.setattr(settings, "training_enabled", False)
+    monkeypatch.setattr(settings, "pack_definitions_dir", str(tmp_path / "packs"))
+    monkeypatch.setattr(settings, "pack_marketplace_dir", str(tmp_path / "pack-marketplace"))
+    monkeypatch.setattr(settings, "plugin_definitions_dir", str(tmp_path / "plugins"))
+    monkeypatch.setattr(settings, "operator_session_base_dir", str(e2e_state_dir / "sessions"))
 
     mock_ltm = _make_mock_ltm()
     mock_nats = _make_mock_nats_bus()
@@ -157,6 +172,9 @@ def e2e_app():
     ):
         app.state._e2e_embedding_provider = mock_embedding_provider
         yield app, mock_ltm
+        workflows.set_workflow_state_service(None)
+        workflows.reset_workflow_state()
+        workflows.set_workflow_run_archive_service(None)
 
 
 @pytest.fixture

@@ -10,6 +10,7 @@ import fnmatch
 import logging
 import re
 from typing import Any
+from urllib.parse import urlparse
 
 from agent33.autonomy.models import (
     AutonomyBudget,
@@ -72,8 +73,12 @@ class RuntimeEnforcer:
                 self._context.add_violation(f"File read denied: {path}")
                 return EnforcementResult.BLOCKED
 
-        # If read patterns exist, enforce them
-        if self._budget.files.read and not any(
+        if not self._budget.files.read:
+            self._context.add_violation(f"File read blocked; no read allowlist defined: {path}")
+            return EnforcementResult.BLOCKED
+
+        # Read patterns must explicitly allow the path.
+        if not any(
             fnmatch.fnmatch(normalized, p.replace("\\", "/")) for p in self._budget.files.read
         ):
             self._context.add_violation(f"File read not in allowlist: {path}")
@@ -94,7 +99,11 @@ class RuntimeEnforcer:
                 self._context.add_violation(f"File write denied: {path}")
                 return EnforcementResult.BLOCKED
 
-        if self._budget.files.write and not any(
+        if not self._budget.files.write:
+            self._context.add_violation(f"File write blocked; no write allowlist defined: {path}")
+            return EnforcementResult.BLOCKED
+
+        if not any(
             fnmatch.fnmatch(normalized, p.replace("\\", "/")) for p in self._budget.files.write
         ):
             self._context.add_violation(f"File write not in allowlist: {path}")
@@ -128,21 +137,24 @@ class RuntimeEnforcer:
             self._context.add_warning(f"Command requires approval: {cmd_name}")
             return EnforcementResult.WARNED
 
-        # Allowed commands (if list is defined, enforce it)
-        if self._budget.allowed_commands:
-            allowed = False
-            for perm in self._budget.allowed_commands:
-                if perm.command == cmd_name:
-                    # Check args pattern
-                    if perm.args_pattern:
-                        args = command[len(cmd_name) :].strip()
-                        if not re.match(perm.args_pattern, args):
-                            continue
-                    allowed = True
-                    break
-            if not allowed:
-                self._context.add_violation(f"Command not in allowlist: {cmd_name}")
-                return EnforcementResult.BLOCKED
+        if not self._budget.allowed_commands:
+            self._context.add_violation("Command blocked; no command allowlist defined")
+            return EnforcementResult.BLOCKED
+
+        allowed = False
+        for perm in self._budget.allowed_commands:
+            if perm.command not in {cmd_name, "*", "**"}:
+                continue
+            # Check args pattern
+            if perm.args_pattern:
+                args = command[len(cmd_name) :].strip()
+                if not re.match(perm.args_pattern, args):
+                    continue
+            allowed = True
+            break
+        if not allowed:
+            self._context.add_violation(f"Command not in allowlist: {cmd_name}")
+            return EnforcementResult.BLOCKED
 
         self._context.record_tool_call()
         return self._check_tool_call_limit()
@@ -157,7 +169,9 @@ class RuntimeEnforcer:
             self._context.add_violation("Network access disabled")
             return EnforcementResult.BLOCKED
 
-        domain_lower = domain.lower()
+        parsed = urlparse(domain)
+        target_domain = parsed.hostname or domain
+        domain_lower = target_domain.lower()
 
         # Denied domains
         for d in self._budget.network.denied_domains:
@@ -165,8 +179,13 @@ class RuntimeEnforcer:
                 self._context.add_violation(f"Domain denied: {domain}")
                 return EnforcementResult.BLOCKED
 
-        # Allowed domains (if list exists)
-        if self._budget.network.allowed_domains and not any(
+        if not self._budget.network.allowed_domains:
+            self._context.add_violation("Network blocked; no domain allowlist defined")
+            return EnforcementResult.BLOCKED
+
+        # Allowed domains must explicitly permit the target, with * as an
+        # intentional full-network budget scope.
+        if "*" not in self._budget.network.allowed_domains and not any(
             domain_lower == d.lower() or domain_lower.endswith(f".{d.lower()}")
             for d in self._budget.network.allowed_domains
         ):
@@ -253,27 +272,56 @@ class RuntimeEnforcer:
         triggered: list[str] = []
 
         for sc in self._budget.stop_conditions:
-            # Auto-trigger resource-based stop conditions
             desc = sc.description.lower()
-            iter_exceeded = self._context.iterations >= self._budget.limits.max_iterations
-            dur_exceeded = (
-                self._context.elapsed_minutes() >= self._budget.limits.max_duration_minutes
+            iter_exceeded = (
+                self._budget.limits.max_iterations > 0
+                and self._context.iterations >= self._budget.limits.max_iterations
             )
-            if "iteration" in desc and iter_exceeded:
+            dur_exceeded = (
+                self._budget.limits.max_duration_minutes > 0
+                and self._context.elapsed_minutes() >= self._budget.limits.max_duration_minutes
+            )
+            tool_exceeded = (
+                self._budget.limits.max_tool_calls > 0
+                and self._context.tool_calls >= self._budget.limits.max_tool_calls
+            )
+            files_exceeded = (
+                self._budget.limits.max_files_modified > 0
+                and self._context.files_modified >= self._budget.limits.max_files_modified
+            )
+            lines_exceeded = (
+                self._budget.limits.max_lines_changed > 0
+                and self._context.lines_changed >= self._budget.limits.max_lines_changed
+            )
+            network_exceeded = (
+                self._budget.network.max_requests > 0
+                and self._context.network_requests >= self._budget.network.max_requests
+            )
+            violation_seen = bool(self._context.violations)
+
+            matched = (
+                ("iteration" in desc and iter_exceeded)
+                or ("duration" in desc and dur_exceeded)
+                or ("tool" in desc and tool_exceeded)
+                or ("file" in desc and files_exceeded)
+                or ("line" in desc and lines_exceeded)
+                or ("network" in desc and network_exceeded)
+                or ("violation" in desc and violation_seen)
+                or ("denied" in desc and violation_seen)
+            )
+            if matched:
                 triggered.append(sc.description)
-                if sc.action == StopAction.STOP:
-                    self._context.mark_stopped(sc.description)
-                elif sc.action == StopAction.ESCALATE:
-                    self._escalate(
-                        sc.description,
-                        self._budget.default_escalation_target,
-                    )
-            elif "duration" in desc and dur_exceeded:
-                triggered.append(sc.description)
-                if sc.action == StopAction.STOP:
-                    self._context.mark_stopped(sc.description)
+                self._apply_stop_action(sc.description, sc.action)
 
         return triggered
+
+    def _apply_stop_action(self, description: str, action: StopAction) -> None:
+        if action == StopAction.WARN:
+            self._context.add_warning(description)
+            return
+        if action == StopAction.ESCALATE:
+            self._escalate(description, self._budget.default_escalation_target)
+        self._context.mark_stopped(description)
 
     # ------------------------------------------------------------------
     # Escalation

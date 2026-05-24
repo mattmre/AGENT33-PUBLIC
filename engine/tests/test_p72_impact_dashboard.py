@@ -100,12 +100,20 @@ def reset_outcomes_service() -> Any:
     saved_state = getattr(app.state, "outcomes_service", None)
     if had_attr:
         delattr(app.state, "outcomes_service")
+    had_pack_registry = hasattr(app.state, "pack_registry")
+    saved_pack_registry = getattr(app.state, "pack_registry", None)
+    if had_pack_registry:
+        delattr(app.state, "pack_registry")
     yield
     outcomes_mod._service = saved_service
     if had_attr:
         app.state.outcomes_service = saved_state
     elif hasattr(app.state, "outcomes_service"):
         delattr(app.state, "outcomes_service")
+    if had_pack_registry:
+        app.state.pack_registry = saved_pack_registry
+    elif hasattr(app.state, "pack_registry"):
+        delattr(app.state, "pack_registry")
 
 
 @pytest.fixture

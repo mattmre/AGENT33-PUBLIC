@@ -291,7 +291,7 @@ def test_invoke_records_failure_on_runtime_error(
 
 # ---------------------------------------------------------------------------
 # Test: Iterative invoke records SUCCESS_RATE, LATENCY, no FAILURE_CLASS
-# for successful "complete" termination
+# for successful "completed" termination
 # ---------------------------------------------------------------------------
 
 
@@ -308,7 +308,7 @@ def test_iterative_invoke_records_success(
 
     mock_instance = MagicMock()
     mock_instance.invoke_iterative = AsyncMock(
-        return_value=_make_iterative_result(termination_reason="complete")
+        return_value=_make_iterative_result(termination_reason="completed")
     )
     mock_runtime_cls.return_value = mock_instance
 
@@ -318,18 +318,18 @@ def test_iterative_invoke_records_success(
     )
     assert response.status_code == 200
     body = response.json()
-    assert body["termination_reason"] == "complete"
+    assert body["termination_reason"] == "completed"
     assert body["iterations"] == 3
     assert body["cadre_profile"]["required_artifact"].startswith("Patch summary")
 
     events = outcomes_service.list_events(tenant_id="t-abc", domain="test-agent")
-    # Should have SUCCESS_RATE + LATENCY (no FAILURE_CLASS for "complete")
+    # Should have SUCCESS_RATE + LATENCY (no FAILURE_CLASS for "completed")
     assert len(events) == 2
 
     success_events = [e for e in events if e.metric_type == OutcomeMetricType.SUCCESS_RATE]
     assert len(success_events) == 1
     assert success_events[0].value == 1.0
-    assert success_events[0].metadata["termination"] == "complete"
+    assert success_events[0].metadata["termination"] == "completed"
     assert success_events[0].metadata["iterations"] == 3
     assert success_events[0].metadata["tool_calls_made"] == 5
     assert success_events[0].event_type == "invoke_iterative"

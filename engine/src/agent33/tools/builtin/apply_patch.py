@@ -275,7 +275,9 @@ class ApplyPatchTool:
             if not candidate.is_absolute()
             else candidate.resolve(strict=False)
         )
-        roots = [Path(item).resolve() for item in context.path_allowlist] or [base_dir]
+        if not context.path_allowlist:
+            raise PatchError("Path allowlist not configured; patch execution denied")
+        roots = [Path(item).resolve() for item in context.path_allowlist]
         if not any(self._is_within_root(resolved, root) for root in roots):
             raise PatchError(f"Patch path escapes the allowed workspace: {raw_path}")
         return resolved

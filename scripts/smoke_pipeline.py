@@ -1,11 +1,11 @@
 #!/usr/bin/env python3
-"""scripts/smoke_pipeline.py — Stage 2 of the v3.3 Rule 5 smoke gate.
+"""scripts/smoke_pipeline.py — Stage 2 of the v3.7.1 Rule 5 smoke gate.
 
 AGENT33 FLOOR + CEILING TIER SMOKE — verifies the production module surface
 (floor) AND drives real production code paths against real on-disk fixtures
 (ceiling). See `run_ceiling_smoke()` for the ceiling-tier exercise.
 
-Two-tier framing per project release gate:
+Two-tier framing per project release gate.1 §1 + §10 Rule 5:
 
   Floor (this template, default):
     Imports the production module, verifies its documented surface (constants,
@@ -25,7 +25,7 @@ Two-tier framing per project release gate:
                        with expected content
     Until you reach ceiling-tier, the SMOKE: line in your PR body MUST name
     which tier was run AND any ceiling gap MUST appear as a Carried Debt entry
-    in your session handoff document per §6.3.
+    in your next-session.md per §6.3.
 
 AGENT33 FLOOR-TIER SURFACE:
   production module: agent33.main

@@ -6,6 +6,7 @@ from agent33.execution.models import ExecutionContract, ExecutionInputs, OutputS
 from agent33.execution.validation import (
     check_argument_sanitization,
     check_command_allowlist,
+    check_command_denylist,
     check_environment_filtering,
     check_input_size,
     check_path_traversal,
@@ -27,6 +28,19 @@ class TestIV01CommandAllowlist:
         assert v is not None
         assert "IV-01" in v
         assert "rm" in v
+
+
+class TestIV01CommandDenylist:
+    """IV-01: Command deny-list check."""
+
+    def test_no_denylist_passes(self) -> None:
+        assert check_command_denylist("rm", None) is None
+
+    def test_denied_command(self) -> None:
+        v = check_command_denylist("rm", {"rm"})
+        assert v is not None
+        assert "IV-01" in v
+        assert "explicitly denied" in v
 
 
 class TestIV02ArgumentSanitization:
@@ -159,3 +173,14 @@ class TestValidateContract:
         c = self._make_contract()
         result = validate_contract(c, command_allowlist=None)
         assert result.is_valid is True
+
+    def test_denylist_accumulates_with_allowlist(self) -> None:
+        c = self._make_contract(inputs={"command": "rm"})
+        result = validate_contract(
+            c,
+            command_allowlist={"rm"},
+            command_denylist={"rm"},
+        )
+        assert result.is_valid is False
+        assert len(result.violations) == 1
+        assert "explicitly denied" in result.violations[0]

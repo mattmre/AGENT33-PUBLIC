@@ -6,7 +6,7 @@ from pathlib import Path
 
 # Resolve the design document relative to the repo root.
 _REPO_ROOT = Path(__file__).resolve().parents[2]
-_DESIGN_DOC = _REPO_ROOT / "docs" / "research" / "session104-p23-shared-memory-design.md"
+_DESIGN_DOC = _REPO_ROOT / "_internal" / "research" / "session104-p23-shared-memory-design.md"
 
 # Required top-level sections that must appear as markdown headings.
 _REQUIRED_SECTIONS: list[str] = [

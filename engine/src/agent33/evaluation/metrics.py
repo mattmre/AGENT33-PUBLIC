@@ -60,11 +60,11 @@ class MetricsCalculator:
         return MetricValue(metric_id=MetricId.M_03, value=round(value, 2), unit="%")
 
     def diff_size(self, results: list[TaskRunResult]) -> MetricValue:
-        """M-04: Average diff size (uses checks_total as proxy for lines changed)."""
-        totals = [r.checks_total for r in results if r.checks_total > 0]
-        if not totals:
+        """M-04: Average diff size from actual changed-line counts."""
+        changed_lines = [r.diff_lines for r in results if r.diff_lines > 0]
+        if not changed_lines:
             return MetricValue(metric_id=MetricId.M_04, value=0.0, unit="lines")
-        avg = sum(totals) / len(totals)
+        avg = sum(changed_lines) / len(changed_lines)
         return MetricValue(metric_id=MetricId.M_04, value=round(avg, 2), unit="lines")
 
     def scope_adherence(

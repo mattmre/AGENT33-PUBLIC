@@ -148,6 +148,27 @@ export const reviewsDomain: DomainConfig = {
       )
     },
     {
+      id: "reviews-approve-with-rationale",
+      title: "Approve With Rationale",
+      method: "POST",
+      path: "/v1/reviews/{review_id}/approve-with-rationale",
+      description: "Record a final approval decision with rationale.",
+      defaultPathParams: {
+        review_id: "replace-with-review-id"
+      },
+      defaultBody: JSON.stringify(
+        {
+          decision: "approved",
+          rationale: "All checks pass.",
+          modification_summary: "",
+          conditions: [],
+          linked_intake_id: null
+        },
+        null,
+        2
+      )
+    },
+    {
       id: "reviews-merge",
       title: "Merge Review",
       method: "POST",

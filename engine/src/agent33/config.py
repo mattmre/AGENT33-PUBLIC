@@ -299,6 +299,11 @@ class Settings(BaseSettings):
     # P69b tool-approval persistence
     p69b_db_path: str = "var/p69b.db"
 
+    # Phase 23 lifecycle persistence
+    phase23_lifecycle_backend: Literal["memory", "sqlite"] = "sqlite"
+    phase23_auth_db_path: str = "var/phase23_auth_lifecycle.db"
+    phase23_workspace_db_path: str = "var/phase23_workspace_lifecycle.db"
+
     # Ingestion persistence (Sprint 1)
     ingestion_db_path: str = "var/ingestion.db"
 
@@ -647,6 +652,14 @@ class Settings(BaseSettings):
         normalized = value.strip().lower()
         if normalized not in {"memory", "sqlite"}:
             raise ValueError("control_plane_backend must be one of: memory, sqlite")
+        return normalized
+
+    @field_validator("phase23_lifecycle_backend")
+    @classmethod
+    def _validate_phase23_lifecycle_backend(cls, value: str) -> str:
+        normalized = value.strip().lower()
+        if normalized not in {"memory", "sqlite"}:
+            raise ValueError("phase23_lifecycle_backend must be one of: memory, sqlite")
         return normalized
 
     @field_validator("workflow_transport_preferred")

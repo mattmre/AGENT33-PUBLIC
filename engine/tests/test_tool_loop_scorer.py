@@ -188,36 +188,40 @@ async def test_tool_loop_scores_route_returns_503_when_scorer_absent() -> None:
 
 
 @pytest.mark.asyncio
-async def test_profiling_summaries_returns_503_when_profiler_absent() -> None:
+async def test_profiling_summaries_returns_empty_when_profiler_absent() -> None:
     app = _make_app(with_profiler=False)
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         resp = await client.get("/v1/agents/profiling/summaries")
-    assert resp.status_code == 503
+    assert resp.status_code == 200
+    assert resp.json() == []
 
 
 @pytest.mark.asyncio
-async def test_profiling_bottlenecks_returns_503_when_profiler_absent() -> None:
+async def test_profiling_bottlenecks_returns_empty_when_profiler_absent() -> None:
     app = _make_app(with_profiler=False)
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         resp = await client.get("/v1/agents/profiling/bottlenecks")
-    assert resp.status_code == 503
+    assert resp.status_code == 200
+    assert resp.json() == []
 
 
 @pytest.mark.asyncio
-async def test_profiling_hot_paths_returns_503_when_profiler_absent() -> None:
+async def test_profiling_hot_paths_returns_empty_when_profiler_absent() -> None:
     app = _make_app(with_profiler=False)
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         resp = await client.get("/v1/agents/profiling/hot-paths")
-    assert resp.status_code == 503
+    assert resp.status_code == 200
+    assert resp.json() == []
 
 
 @pytest.mark.asyncio
-async def test_profiling_profiles_returns_503_when_profiler_absent() -> None:
+async def test_profiling_profiles_returns_empty_when_profiler_absent() -> None:
     app = _make_app(with_profiler=False)
     transport = ASGITransport(app=app)
     async with AsyncClient(transport=transport, base_url="http://test") as client:
         resp = await client.get("/v1/agents/profiling/profiles")
-    assert resp.status_code == 503
+    assert resp.status_code == 200
+    assert resp.json() == []

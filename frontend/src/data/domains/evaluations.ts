@@ -77,9 +77,28 @@ export const evaluationsDomain: DomainConfig = {
             {
               item_id: "GT-01",
               result: "pass",
-              checks_passed: 3,
-              checks_total: 3,
+              checks_passed: 4,
+              checks_total: 4,
+              diff_lines: 10,
               duration_ms: 1100
+            },
+            {
+              item_id: "GT-04",
+              result: "pass",
+              checks_passed: 4,
+              checks_total: 4,
+              diff_lines: 20,
+              duration_ms: 900
+            },
+            {
+              item_id: "GC-01",
+              result: "pass",
+              checks_passed: 5,
+              checks_total: 5,
+              diff_lines: 30,
+              duration_ms: 700,
+              failure_category: "",
+              flaky: false
             }
           ],
           rework_count: 0,
@@ -132,8 +151,8 @@ export const evaluationsDomain: DomainConfig = {
       },
       defaultBody: JSON.stringify(
         {
-          status: "in_progress",
-          owner: "qa-team"
+          status: "investigating",
+          assignee: "qa-team"
         },
         null,
         2
@@ -150,7 +169,8 @@ export const evaluationsDomain: DomainConfig = {
       },
       defaultBody: JSON.stringify(
         {
-          resolution: "Fixed in commit abcdef"
+          resolved_by: "qa-team",
+          fix_commit: "abcdef"
         },
         null,
         2

@@ -24,13 +24,12 @@ if TYPE_CHECKING:
 from agent33.evaluation.ctrf import CTRFGenerator, CTRFReport, CTRFReportGenerator
 from agent33.evaluation.experiment import ExperimentRunner
 from agent33.evaluation.gates import GateEnforcer
-from agent33.evaluation.golden_tasks import GOLDEN_CASES, GOLDEN_TASKS, tasks_by_tag
+from agent33.evaluation.golden_tasks import GOLDEN_CASES, GOLDEN_TASKS, tasks_for_gate
 from agent33.evaluation.metrics import MetricsCalculator
 from agent33.evaluation.models import (
     BaselineSnapshot,
     EvaluationRun,
     GateType,
-    GoldenTag,
     MetricId,
     RegressionRecord,
     TaskRunResult,
@@ -55,15 +54,6 @@ def set_metrics(collector: MetricsCollector) -> None:
     """Install the global metrics collector (called during app lifespan init)."""
     global _metrics  # noqa: PLW0603
     _metrics = collector
-
-
-# Gate → required tag (§ Gate Execution Matrix)
-_GATE_TAG: dict[GateType, GoldenTag] = {
-    GateType.G_PR: GoldenTag.GT_SMOKE,
-    GateType.G_MRG: GoldenTag.GT_CRITICAL,
-    GateType.G_REL: GoldenTag.GT_RELEASE,
-    GateType.G_MON: GoldenTag.GT_OPTIONAL,
-}
 
 
 class EvaluationService:
@@ -170,12 +160,11 @@ class EvaluationService:
         return [c.model_dump() for c in GOLDEN_CASES.values()]
 
     def get_tasks_for_gate(self, gate: GateType) -> list[str]:
-        """Return task IDs required for a specific gate."""
-        tag = _GATE_TAG.get(gate)
-        if tag is None:
+        """Return golden task and case IDs required for a specific gate."""
+        required_tag = self._enforcer.get_required_tag(gate)
+        if required_tag is None:
             return []
-        tasks = tasks_by_tag(tag)
-        return [t.task_id for t in tasks]
+        return tasks_for_gate(required_tag)
 
     # ------------------------------------------------------------------
     # Evaluation runs
@@ -506,9 +495,9 @@ class DeterministicFallbackEvaluator:
         model: str,
         skills_enabled: bool,
     ) -> TrialEvaluationOutcome:
-        if task_id not in GOLDEN_TASKS:
+        if task_id not in GOLDEN_TASKS and task_id not in GOLDEN_CASES:
             logger.warning(
-                "multi_trial_unknown_task task_id=%s agent=%s model=%s skills=%s",
+                "multi_trial_unknown_item item_id=%s agent=%s model=%s skills=%s",
                 task_id,
                 agent,
                 model,

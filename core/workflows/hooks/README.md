@@ -55,7 +55,7 @@ Triggers when an orchestration session concludes.
 - **Purpose**: Generate summaries, prepare handoff, archive session data.
 - **Common Uses**:
   - Generate session wrap summary
-  - Update session handoff document
+  - Update next-session.md
   - Archive session log to docs/session-logs/
 - **Blocks Execution**: No, but may warn on incomplete items.
 
@@ -98,7 +98,7 @@ See `core/orchestrator/handoff/EVIDENCE_CAPTURE.md` for the evidence capture spe
 | PreTask | `core/orchestrator/handoff/TASKS.md` | Validates task has acceptance criteria |
 | PostTask | `core/arch/verification-log.md` | Records task completion evidence |
 | SessionStart | `core/orchestrator/handoff/STATUS.md` | Verifies current state |
-| SessionEnd | `docs/handoff.md` | Prepares handoff context (TODO: operator may wire this to their actual handoff document via .gitignore) |
+| SessionEnd | `core/arch/next-session.md` | Prepares handoff context |
 | PreCommit | `core/orchestrator/SECURITY_HARDENING.md` | Enforces security checks |
 | PostVerify | `core/arch/verification-log.md` | Updates verification index |
 

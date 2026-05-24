@@ -18,16 +18,20 @@ export const agentsDomain: DomainConfig = {
       title: "Search Agents",
       method: "GET",
       path: "/v1/agents/search",
-      description: "Search by role/tags.",
-      instructionalText: "Find specific agents based on their assigned roles (like 'orchestrator' or 'worker') or specific capability tags.",
+      description: "Search by role, spec capability, category, or status.",
+      instructionalText: "Find agents by canonical role, Phase 11 capability ID, capability category, or lifecycle status.",
       schemaInfo: {
         parameters: [
           { name: "role", type: "string", description: "Filter the agent registry to only return agents possessing this exact role.", required: false },
-          { name: "tags", type: "string", description: "Comma-separated list of capabilities to filter by.", required: false }
+          { name: "spec_capability", type: "string", description: "Filter by a Phase 11 capability ID such as P-01, I-01, V-01, R-01, or X-01.", required: false },
+          { name: "category", type: "string", description: "Filter by capability category: P, I, V, R, or X.", required: false },
+          { name: "status", type: "string", description: "Filter by lifecycle status: active, deprecated, or experimental.", required: false }
         ]
       },
       defaultQuery: {
-        role: "orchestrator"
+        role: "orchestrator",
+        spec_capability: "P-01",
+        status: "active"
       }
     },
     {
@@ -39,7 +43,7 @@ export const agentsDomain: DomainConfig = {
       instructionalText: "Retrieve the exact configuration, assigned tools, and current behavioral parameters for a specific agent using its unique ID.",
       schemaInfo: {
         parameters: [
-          { name: "agent_id", type: "string", description: "The precise unqiue identifier of the agent.", required: true }
+          { name: "agent_id", type: "string", description: "The precise unique identifier of the agent.", required: true }
         ]
       },
       defaultPathParams: {
@@ -80,16 +84,17 @@ export const agentsDomain: DomainConfig = {
       schemaInfo: {
         body: {
           description: "A complete agent definition specifying its context, system prompt, tool constraints, and overarching role within the engine.",
-          example: '{\n  "name": "demo-worker",\n  "role": "worker",\n  "description": "A demo agent for performing simple calculations.",\n  "capabilities": ["math", "logic"],\n  "constraints": {\n    "max_tokens": 1024,\n    "timeout_seconds": 60\n  }\n}'
+          example: '{\n  "name": "demo-agent",\n  "version": "1.0.0",\n  "role": "implementer",\n  "description": "A demo agent for performing simple calculations.",\n  "capabilities": ["file-read"],\n  "spec_capabilities": ["I-01"],\n  "constraints": {\n    "max_tokens": 1024,\n    "timeout_seconds": 60\n  }\n}'
         }
       },
       defaultBody: JSON.stringify(
         {
           name: "demo-agent",
           version: "1.0.0",
-          role: "worker",
-          description: "Demo worker",
-          capabilities: [],
+          role: "implementer",
+          description: "Demo implementer",
+          capabilities: ["file-read"],
+          spec_capabilities: ["I-01"],
           inputs: {},
           outputs: {},
           constraints: {

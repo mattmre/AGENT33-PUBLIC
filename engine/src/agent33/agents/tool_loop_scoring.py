@@ -16,9 +16,7 @@ class IterationRecord:
     tool_calls: int
     success: bool
     converged: bool
-    recorded_at: str = field(
-        default_factory=lambda: datetime.now(UTC).isoformat()
-    )
+    recorded_at: str = field(default_factory=lambda: datetime.now(UTC).isoformat())
 
 
 class ToolLoopScorer:
@@ -38,9 +36,7 @@ class ToolLoopScorer:
         self._iterations: list[IterationRecord] = []
         self._tool_call_counts: dict[str, int] = {}
 
-    def record_iteration(
-        self, agent_id: str, tool_calls: int, success: bool
-    ) -> None:
+    def record_iteration(self, agent_id: str, tool_calls: int, success: bool) -> None:
         """Record one completed tool-loop iteration.
 
         Parameters
@@ -62,9 +58,7 @@ class ToolLoopScorer:
                     converged=converged,
                 )
             )
-            self._tool_call_counts[agent_id] = (
-                self._tool_call_counts.get(agent_id, 0) + tool_calls
-            )
+            self._tool_call_counts[agent_id] = self._tool_call_counts.get(agent_id, 0) + tool_calls
 
     def get_loop_summary(self) -> dict[str, Any]:
         """Return an aggregated summary of all recorded iterations.

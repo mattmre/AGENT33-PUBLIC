@@ -463,6 +463,30 @@ class TestDiffReviewEndpoint:
         assert data["fact_check_status"] == "skipped"
         assert data["metadata"]["branch"] == "feat/test"
 
+    def test_diff_review_is_persisted_and_retrievable(
+        self, writer_client: TestClient, reader_client: TestClient
+    ) -> None:
+        """Visual diff explanations should round-trip through the authenticated API."""
+        create_resp = writer_client.post(
+            "/v1/explanations/diff-review",
+            json={
+                "entity_type": "pull-request",
+                "entity_id": "pr-26",
+                "diff_text": "diff --git a/a.py b/a.py\n+print('phase 26')",
+                "metadata": {"source_ref": "local-remediation"},
+            },
+        )
+        assert create_resp.status_code == 201
+        explanation_id = create_resp.json()["id"]
+
+        get_resp = reader_client.get(f"/v1/explanations/{explanation_id}")
+        assert get_resp.status_code == 200
+        retrieved = get_resp.json()
+        assert retrieved["id"] == explanation_id
+        assert retrieved["mode"] == "diff_review"
+        assert retrieved["metadata"]["source_ref"] == "local-remediation"
+        assert "Diff Review" in retrieved["content"]
+
     def test_diff_review_requires_write_scope(self, no_scope_client: TestClient) -> None:
         """Should require workflows:write scope."""
         resp = no_scope_client.post(
@@ -608,6 +632,21 @@ class TestVisualPageSecurity:
         content = resp.json()["content"]
         assert "<script>alert('xss')</script>" not in content
         assert "&lt;script&gt;alert(&#x27;xss&#x27;)&lt;/script&gt;" in content
+
+    def test_plan_review_escapes_plan_text(self, writer_client: TestClient) -> None:
+        """Plan review payload HTML should be escaped in rendered output."""
+        resp = writer_client.post(
+            "/v1/explanations/plan-review",
+            json={
+                "entity_type": "workflow",
+                "entity_id": "xss-plan",
+                "plan_text": "## Safe section\n<script>alert('plan')</script>",
+            },
+        )
+        assert resp.status_code == 201
+        content = resp.json()["content"]
+        assert "<script>alert('plan')</script>" not in content
+        assert "&lt;script&gt;alert(&#x27;plan&#x27;)&lt;/script&gt;" in content
 
     def test_project_recap_escapes_highlight_items(self, writer_client: TestClient) -> None:
         """Highlight list entries should be escaped before HTML interpolation."""

@@ -125,8 +125,8 @@ class PreflightChecker:
             return PreflightCheck(
                 check_id="PF-05",
                 name="Files scoped",
-                status=PreflightStatus.WARN,
-                message="No file read/write patterns defined",
+                status=PreflightStatus.FAIL,
+                message="No file read/write patterns defined; file access would be open-ended",
             )
         return PreflightCheck(
             check_id="PF-05",
@@ -140,8 +140,8 @@ class PreflightChecker:
             return PreflightCheck(
                 check_id="PF-06",
                 name="Commands scoped",
-                status=PreflightStatus.WARN,
-                message="No command allowlist defined",
+                status=PreflightStatus.FAIL,
+                message="No command allowlist defined; command execution would be open-ended",
             )
         return PreflightCheck(
             check_id="PF-06",
@@ -155,8 +155,11 @@ class PreflightChecker:
             return PreflightCheck(
                 check_id="PF-07",
                 name="Network scoped",
-                status=PreflightStatus.WARN,
-                message="Network enabled but no domains specified",
+                status=PreflightStatus.FAIL,
+                message=(
+                    "Network enabled but no domains specified; "
+                    "network access would be open-ended"
+                ),
             )
         return PreflightCheck(
             check_id="PF-07",

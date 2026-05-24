@@ -71,6 +71,14 @@ def _llamacpp_enabled() -> bool:
 _model_router = build_model_router()
 
 
+def _tool_context_allowlists(tool_registry: Any) -> dict[str, list[str]]:
+    allowlists = getattr(tool_registry, "default_context_allowlists", None)
+    if not callable(allowlists):
+        return {}
+    loaded = allowlists()
+    return loaded if isinstance(loaded, dict) else {}
+
+
 def _parse_effort_policy(raw: str) -> dict[str, str]:
     if not raw.strip():
         return {}
@@ -432,8 +440,14 @@ class InvokeIterativeRequest(BaseModel):
         ge=0,
         le=3,
         description="P67 autonomy level (0=supervised, 1=default, 2=auto, 3=full). "
-        "When set, overrides the constructor-injected RuntimeEnforcer with a "
-        "level-derived AutonomyBudget.",
+        "When set, creates a persisted level-derived AutonomyBudget for this invocation.",
+    )
+    autonomy_budget_id: str | None = Field(
+        default=None,
+        description=(
+            "Existing persisted autonomy budget ID to bind to this invocation. "
+            "Mutually exclusive with autonomy_level."
+        ),
     )
 
 
@@ -448,6 +462,7 @@ class InvokeIterativeResponse(BaseModel):
     tool_calls_made: int
     tools_used: list[str]
     termination_reason: str
+    autonomy_budget_id: str | None = None
     routing: dict[str, Any] | None = None
     cadre_profile: dict[str, Any]
 
@@ -541,7 +556,7 @@ async def profiling_summaries(
     """Return performance summaries for all profiled agents."""
     profiler = getattr(request.app.state, "agent_profiler", None)
     if profiler is None:
-        raise HTTPException(status_code=503, detail="Service not initialized")
+        return []
     summaries = profiler.get_all_summaries()
     return [s.model_dump(mode="json") for s in summaries]
 
@@ -553,7 +568,7 @@ async def profiling_bottlenecks(
     """Detect agents with performance bottlenecks (one phase > 60% of duration)."""
     profiler = getattr(request.app.state, "agent_profiler", None)
     if profiler is None:
-        raise HTTPException(status_code=503, detail="Service not initialized")
+        return []
     result: list[dict[str, Any]] = profiler.detect_bottlenecks()
     return result
 
@@ -565,7 +580,7 @@ async def profiling_hot_paths(
     """Identify the slowest agent/model combinations."""
     profiler = getattr(request.app.state, "agent_profiler", None)
     if profiler is None:
-        raise HTTPException(status_code=503, detail="Service not initialized")
+        return []
     result: list[dict[str, Any]] = profiler.get_hot_paths()
     return result
 
@@ -579,7 +594,7 @@ async def profiling_profiles(
     """Return raw invocation profiles, newest first."""
     profiler = getattr(request.app.state, "agent_profiler", None)
     if profiler is None:
-        raise HTTPException(status_code=503, detail="Service not initialized")
+        return []
     profiles = profiler.get_profiles(agent_name=agent_name, limit=limit)
     return [p.model_dump(mode="json") for p in profiles]
 
@@ -974,6 +989,7 @@ async def invoke_agent_iterative(
 
     tool_context = ToolContext(
         user_scopes=user_scopes,
+        **_tool_context_allowlists(tool_registry),
         tool_policies=tool_policies,
         requested_by=token_payload.sub,
         tenant_id=token_payload.tenant_id or "",
@@ -1017,6 +1033,58 @@ async def invoke_agent_iterative(
         tenant_id=token_payload.tenant_id or "",
         session_id=session_id,
     )
+    runtime_enforcer = None
+    bound_autonomy_budget_id = body.autonomy_budget_id
+    if body.autonomy_budget_id and body.autonomy_level is not None:
+        raise HTTPException(
+            status_code=400,
+            detail="autonomy_budget_id and autonomy_level are mutually exclusive",
+        )
+    if body.autonomy_budget_id or body.autonomy_level is not None:
+        from agent33.api.routes.autonomy import get_autonomy_service
+        from agent33.autonomy.levels import autonomy_level_to_budget
+        from agent33.autonomy.models import PreflightStatus
+        from agent33.autonomy.service import (
+            BudgetNotFoundError,
+            InvalidStateTransitionError,
+            PreflightFailedError,
+        )
+
+        autonomy_service = getattr(request.app.state, "autonomy_service", None)
+        if autonomy_service is None:
+            autonomy_service = get_autonomy_service()
+        try:
+            if body.autonomy_level is not None:
+                task_label = (
+                    json.dumps(body.inputs, ensure_ascii=False)[:50]
+                    if body.inputs
+                    else "agent-task"
+                )
+                budget = autonomy_level_to_budget(body.autonomy_level, task_name=task_label)
+                autonomy_service.register_budget(budget)
+                bound_autonomy_budget_id = budget.budget_id
+            assert bound_autonomy_budget_id is not None
+            report = autonomy_service.run_preflight(bound_autonomy_budget_id)
+            if report.overall != PreflightStatus.PASS:
+                raise HTTPException(
+                    status_code=409,
+                    detail=(
+                        f"Budget preflight failed for {bound_autonomy_budget_id}: "
+                        f"{report.overall.value}"
+                    ),
+                )
+            runtime_enforcer = autonomy_service.get_enforcer(bound_autonomy_budget_id)
+            if runtime_enforcer is None:
+                runtime_enforcer = autonomy_service.create_enforcer(bound_autonomy_budget_id)
+        except BudgetNotFoundError:
+            raise HTTPException(
+                status_code=404,
+                detail=f"Budget not found: {bound_autonomy_budget_id}",
+            ) from None
+        except (InvalidStateTransitionError, PreflightFailedError) as exc:
+            raise HTTPException(status_code=409, detail=str(exc)) from None
+        except ValueError as exc:
+            raise HTTPException(status_code=422, detail=str(exc)) from None
 
     runtime = AgentRuntime(
         definition=definition,
@@ -1036,6 +1104,7 @@ async def invoke_agent_iterative(
         tool_context=tool_context,
         tool_activation_manager=tool_activation_manager,
         tool_discovery_mode=settings.tool_discovery_mode,
+        runtime_enforcer=runtime_enforcer,
         context_manager=context_manager,
         tenant_id=token_payload.tenant_id or "",
         domain=domain,
@@ -1057,7 +1126,7 @@ async def invoke_agent_iterative(
         result = await runtime.invoke_iterative(
             body.inputs,
             config=loop_config,
-            autonomy_level=body.autonomy_level,
+            autonomy_level=None if runtime_enforcer is not None else body.autonomy_level,
         )
     except ValueError as exc:
         _record_outcome_safe(
@@ -1166,6 +1235,7 @@ async def invoke_agent_iterative(
         tool_calls_made=result.tool_calls_made,
         tools_used=result.tools_used,
         termination_reason=result.termination_reason,
+        autonomy_budget_id=bound_autonomy_budget_id,
         routing=result.routing_decision,
         cadre_profile=definition.cadre_profile().model_dump(mode="json"),
     )
@@ -1227,6 +1297,7 @@ async def invoke_agent_iterative_stream(
 
     tool_context = ToolContext(
         user_scopes=token_payload.scopes,
+        **_tool_context_allowlists(tool_registry),
         tool_policies=definition.governance.tool_policies if definition.governance else {},
         requested_by=token_payload.sub,
         tenant_id=token_payload.tenant_id or "",

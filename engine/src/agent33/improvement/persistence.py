@@ -12,10 +12,13 @@ from typing import Protocol
 import structlog
 from pydantic import BaseModel, Field, ValidationError
 
-from agent33.improvement.models import (  # noqa: TC001
+from agent33.improvement.models import (  # noqa: TCH001
+    ImprovementChecklist,
     LearningSignal,
+    LessonLearned,
     MetricsSnapshot,
     ResearchIntake,
+    RoadmapRefresh,
 )
 
 logger = structlog.get_logger()
@@ -25,8 +28,18 @@ SUPPORTED_BACKUP_FORMAT_VERSIONS = frozenset({CURRENT_BACKUP_FORMAT_VERSION})
 
 
 class LearningPersistenceState(BaseModel):
-    """Durable state for learning signals and generated intakes."""
+    """Durable state for the improvement domain.
 
+    The original store only carried learning signals plus generated intakes.
+    These additional collections keep the Phase 20 intake, lesson, checklist,
+    metrics, and refresh workflows restart-safe while preserving the older
+    generated_intakes field for backup compatibility.
+    """
+
+    intakes: list[ResearchIntake] = Field(default_factory=list)
+    lessons: list[LessonLearned] = Field(default_factory=list)
+    checklists: list[ImprovementChecklist] = Field(default_factory=list)
+    refreshes: list[RoadmapRefresh] = Field(default_factory=list)
     signals: list[LearningSignal] = Field(default_factory=list)
     generated_intakes: list[ResearchIntake] = Field(default_factory=list)
     signal_intake_map: dict[str, str] = Field(default_factory=dict)
@@ -255,7 +268,21 @@ class SQLiteLearningSignalStore:
 
 
 def _state_has_data(state: LearningPersistenceState) -> bool:
-    return bool(state.signals or state.generated_intakes or state.signal_intake_map)
+    return bool(
+        state.intakes
+        or state.lessons
+        or state.checklists
+        or state.refreshes
+        or state.signals
+        or state.generated_intakes
+        or state.signal_intake_map
+        or state.metrics_snapshots
+    )
+
+
+def _state_intake_count(state: LearningPersistenceState) -> int:
+    """Return the portable intake count for current and legacy backups."""
+    return len(state.intakes) if state.intakes else len(state.generated_intakes)
 
 
 def should_migrate_file_learning_state_to_db(
@@ -321,7 +348,7 @@ def _build_backup_envelope(state: LearningPersistenceState) -> LearningStateBack
     return LearningStateBackupEnvelope(
         format_version=CURRENT_BACKUP_FORMAT_VERSION,
         signal_count=len(state.signals),
-        intake_count=len(state.generated_intakes),
+        intake_count=_state_intake_count(state),
         signal_intake_map_count=len(state.signal_intake_map),
         checksum_sha256=checksum,
         state=state,
@@ -334,7 +361,7 @@ def _validate_backup_envelope(envelope: LearningStateBackupEnvelope) -> Learning
     state = envelope.state
     if envelope.signal_count != len(state.signals):
         raise ValueError("Backup metadata signal_count does not match payload")
-    if envelope.intake_count != len(state.generated_intakes):
+    if envelope.intake_count != _state_intake_count(state):
         raise ValueError("Backup metadata intake_count does not match payload")
     if envelope.signal_intake_map_count != len(state.signal_intake_map):
         raise ValueError("Backup metadata signal_intake_map_count does not match payload")

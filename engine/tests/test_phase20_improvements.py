@@ -36,6 +36,7 @@ from agent33.improvement.models import (
     ResearchUrgency,
     RoadmapRefresh,
 )
+from agent33.improvement.persistence import InMemoryLearningSignalStore
 from agent33.improvement.service import ImprovementService
 from agent33.main import app
 from agent33.security.auth import create_access_token
@@ -64,8 +65,16 @@ def _reset_routes():
     settings.improvement_learning_persistence_backend = original_backend
 
 
-def _tenant_client(tenant_id: str) -> TestClient:
-    token = create_access_token("improvements-user", scopes=[], tenant_id=tenant_id)
+def _tenant_client(
+    tenant_id: str,
+    *,
+    scopes: list[str] | None = None,
+) -> TestClient:
+    token = create_access_token(
+        "improvements-user",
+        scopes=scopes or ["operator:read", "operator:write"],
+        tenant_id=tenant_id,
+    )
     return TestClient(app, headers={"Authorization": f"Bearer {token}"})
 
 
@@ -549,6 +558,43 @@ class TestService:
         with pytest.raises(ValueError, match="not found"):
             service.complete_refresh("nonexistent")
 
+    def test_core_workflows_persist_across_service_restart(self):
+        store = InMemoryLearningSignalStore()
+        service_one = ImprovementService(learning_store=store)
+
+        intake = service_one.submit_intake(
+            ResearchIntake(content=IntakeContent(title="Durable intake"))
+        )
+        service_one.transition_intake(intake.intake_id, IntakeStatus.TRIAGED)
+        lesson = service_one.record_lesson(
+            LessonLearned(actions=[LessonAction(description="Preserve action")])
+        )
+        service_one.complete_lesson_action(lesson.lesson_id, 0)
+        service_one.verify_lesson(lesson.lesson_id, evidence="phase-20-test")
+        checklist = service_one.create_checklist(ChecklistPeriod.PER_RELEASE, "v1.2.3")
+        service_one.complete_checklist_item(checklist.checklist_id, "CI-01", "done")
+        service_one.create_default_snapshot("2026-Q2")
+        refresh = service_one.record_refresh(RoadmapRefresh(scope=RefreshScope.MINOR))
+        service_one.complete_refresh(refresh.refresh_id, outcome="Kept", changes=["P20"])
+
+        service_two = ImprovementService(learning_store=store)
+
+        reloaded_intake = service_two.get_intake(intake.intake_id)
+        assert reloaded_intake is not None
+        assert reloaded_intake.disposition.status == IntakeStatus.TRIAGED
+        reloaded_lesson = service_two.get_lesson(lesson.lesson_id)
+        assert reloaded_lesson is not None
+        assert reloaded_lesson.implemented is True
+        assert reloaded_lesson.actions[0].status == LessonActionStatus.COMPLETED
+        reloaded_checklist = service_two.get_checklist(checklist.checklist_id)
+        assert reloaded_checklist is not None
+        assert reloaded_checklist.items[0].completed is True
+        assert service_two.latest_metrics() is not None
+        reloaded_refresh = service_two.get_refresh(refresh.refresh_id)
+        assert reloaded_refresh is not None
+        assert reloaded_refresh.completed_at is not None
+        assert reloaded_refresh.changes_made == ["P20"]
+
 
 # ===========================================================================
 # API Routes
@@ -580,6 +626,15 @@ class TestImprovementAPI:
         )
         assert resp.status_code == 403
         assert "Tenant mismatch" in resp.json()["detail"]
+
+    def test_submit_intake_requires_operator_write_scope(self):
+        read_only_client = _tenant_client("tenant-a", scopes=["operator:read"])
+        resp = read_only_client.post(
+            "/v1/improvements/intakes",
+            json={"title": "Missing write scope"},
+        )
+        assert resp.status_code == 403
+        assert "Missing required scope: operator:write" in resp.json()["detail"]
 
     def test_submit_intake_rejects_authenticated_user_without_tenant_context(self):
         tenantless_client = _tenant_client("")
@@ -616,6 +671,12 @@ class TestImprovementAPI:
         )
         assert resp.status_code == 403
         assert "Tenant mismatch" in resp.json()["detail"]
+
+    def test_list_intakes_requires_operator_read_scope(self):
+        write_only_client = _tenant_client("tenant-a", scopes=["operator:write"])
+        resp = write_only_client.get("/v1/improvements/intakes")
+        assert resp.status_code == 403
+        assert "Missing required scope: operator:read" in resp.json()["detail"]
 
     def test_submit_competitive_repo_intakes_batch(self, client: TestClient):
         resp = client.post(

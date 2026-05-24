@@ -75,6 +75,23 @@ def check_command_allowlist(
     return None
 
 
+def check_command_denylist(
+    command: str,
+    denylist: set[str] | None = None,
+) -> str | None:
+    """IV-01: Verify *command* is not explicitly denied.
+
+    A deny-list is evaluated separately from the allowlist so registry
+    governance can forbid dangerous commands even if a broad allowlist is
+    configured elsewhere.
+    """
+    if denylist is None:
+        return None
+    if command in denylist:
+        return f"IV-01: Command '{command}' is explicitly denied"
+    return None
+
+
 def check_argument_sanitization(arguments: list[str]) -> str | None:
     """IV-02: Detect shell metacharacters in arguments.
 
@@ -129,12 +146,14 @@ def validate_contract(
     contract: ExecutionContract,
     *,
     command_allowlist: set[str] | None = None,
+    command_denylist: set[str] | None = None,
 ) -> ValidationResult:
     """Run all validation checks against *contract*.
 
     Args:
         contract: The execution contract to validate.
         command_allowlist: Optional set of permitted command names.
+        command_denylist: Optional set of explicitly denied command names.
 
     Returns:
         A :class:`ValidationResult` indicating validity and any violations.
@@ -144,6 +163,9 @@ def validate_contract(
 
     # IV-01
     v = check_command_allowlist(inputs.command, command_allowlist)
+    if v:
+        violations.append(v)
+    v = check_command_denylist(inputs.command, command_denylist)
     if v:
         violations.append(v)
 

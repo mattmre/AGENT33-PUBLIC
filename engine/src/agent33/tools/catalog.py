@@ -48,6 +48,15 @@ class CatalogEntry(BaseModel):
     parameters_schema: dict[str, Any] = Field(default_factory=dict)
     result_schema: dict[str, Any] = Field(default_factory=dict)
     tags: list[str] = Field(default_factory=list)
+    governance: dict[str, Any] = Field(default_factory=dict)
+    owner: str = ""
+    status: str = ""
+    provenance: dict[str, Any] = Field(default_factory=dict)
+    scope: dict[str, Any] = Field(default_factory=dict)
+    approval: dict[str, Any] = Field(default_factory=dict)
+    last_review: str = ""
+    next_review: str = ""
+    deprecation_message: str = ""
 
 
 class CatalogSearchRequest(BaseModel):
@@ -137,6 +146,7 @@ class ToolCatalogService:
                         parameters_schema=schema,
                         result_schema=result_schema,
                         tags=tags,
+                        **self._phase12_metadata(entry_meta),
                     )
                 )
 
@@ -158,6 +168,7 @@ class ToolCatalogService:
                             parameters_schema=entry_meta.parameters_schema,
                             result_schema=entry_meta.result_schema,
                             tags=tags,
+                            **self._phase12_metadata(entry_meta),
                         )
                     )
 
@@ -199,6 +210,34 @@ class ToolCatalogService:
                     )
 
         return entries
+
+    @staticmethod
+    def _phase12_metadata(entry_meta: Any | None) -> dict[str, Any]:
+        """Return registry operations metadata for a catalog entry."""
+        if entry_meta is None:
+            return {
+                "governance": {},
+                "owner": "",
+                "status": "",
+                "provenance": {},
+                "scope": {},
+                "approval": {},
+                "last_review": "",
+                "next_review": "",
+                "deprecation_message": "",
+            }
+
+        return {
+            "governance": entry_meta.governance,
+            "owner": entry_meta.owner,
+            "status": entry_meta.status.value,
+            "provenance": entry_meta.provenance.model_dump(mode="json"),
+            "scope": entry_meta.scope.model_dump(mode="json"),
+            "approval": entry_meta.approval.model_dump(mode="json"),
+            "last_review": entry_meta.last_review.isoformat() if entry_meta.last_review else "",
+            "next_review": entry_meta.next_review.isoformat() if entry_meta.next_review else "",
+            "deprecation_message": entry_meta.deprecation_message,
+        }
 
     def list_tools(
         self,

@@ -7,7 +7,8 @@ import { HelpAssistantDrawer } from "./HelpAssistantDrawer";
 vi.mock("./ragApi", () => ({
   ragQuery: vi.fn().mockResolvedValue({
     augmented_prompt: "RAG answer about setup",
-    sources: [{ text: "source text", score: 0.8, metadata: {}, retrieval_method: "vector" }]
+    sources: [{ text: "source text", score: 0.8, metadata: {}, retrieval_method: "vector" }],
+    citations: []
   }),
   ollamaQuery: vi.fn().mockResolvedValue({
     text: "Ollama sidecar answer",
@@ -89,7 +90,8 @@ describe("HelpAssistantDrawer", () => {
     const user = userEvent.setup();
     mockRagQuery.mockResolvedValue({
       augmented_prompt: "RAG answer about setup",
-      sources: [{ text: "source text", score: 0.8, metadata: {}, retrieval_method: "vector" }]
+      sources: [{ text: "source text", score: 0.8, metadata: {}, retrieval_method: "vector" }],
+      citations: []
     });
 
     render(<HelpAssistantDrawer onNavigate={vi.fn()} />);

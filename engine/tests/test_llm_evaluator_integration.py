@@ -31,6 +31,7 @@ from agent33.evaluation.evaluator_registry import (
     register_llm_evaluator,
 )
 from agent33.evaluation.gates import GateEnforcer
+from agent33.evaluation.golden_tasks import tasks_for_gate
 from agent33.evaluation.llm_evaluator import LLMEvaluator
 from agent33.evaluation.metrics import MetricsCalculator
 from agent33.evaluation.models import (
@@ -156,6 +157,30 @@ def _make_input(
         actual_output=actual,
         expected_output=expected,
     )
+
+
+def _required_item_ids_for_gate(gate: GateType) -> list[str]:
+    required_tag = GateEnforcer().get_required_tag(gate)
+    assert required_tag is not None
+    return tasks_for_gate(required_tag)
+
+
+def _passing_gate_task_results(
+    gate: GateType,
+    *,
+    checks_total: int = 3,
+    duration_ms: int = 100,
+) -> list[TaskRunResult]:
+    return [
+        TaskRunResult(
+            item_id=item_id,
+            result=TaskResult.PASS,
+            checks_passed=checks_total,
+            checks_total=checks_total,
+            duration_ms=duration_ms,
+        )
+        for item_id in _required_item_ids_for_gate(gate)
+    ]
 
 
 # =========================================================================
@@ -421,7 +446,7 @@ class TestGateEnforcementWithRealisticScores:
         metrics = calculator.compute_all(task_results, rework_count=0, scope_violations=0)
         metric_values = {m.metric_id: m.value for m in metrics}
 
-        report = enforcer.check_gate(GateType.G_PR, metric_values, task_results)
+        report = enforcer.check_gate(GateType.G_PR, metric_values)
         assert report.overall == GateResult.PASS
 
     def test_pr_gate_fails_with_low_success_rate(self) -> None:
@@ -447,8 +472,8 @@ class TestGateEnforcementWithRealisticScores:
         metrics = calculator.compute_all(task_results, rework_count=0, scope_violations=0)
         metric_values = {m.metric_id: m.value for m in metrics}
 
-        pr_report = enforcer.check_gate(GateType.G_PR, metric_values, task_results)
-        mrg_report = enforcer.check_gate(GateType.G_MRG, metric_values, task_results)
+        pr_report = enforcer.check_gate(GateType.G_PR, metric_values)
+        mrg_report = enforcer.check_gate(GateType.G_MRG, metric_values)
 
         assert pr_report.overall == GateResult.PASS
         assert mrg_report.overall == GateResult.FAIL
@@ -463,8 +488,8 @@ class TestGateEnforcementWithRealisticScores:
         metrics = calculator.compute_all(task_results, rework_count=0, scope_violations=0)
         metric_values = {m.metric_id: m.value for m in metrics}
 
-        pr_report = enforcer.check_gate(GateType.G_PR, metric_values, task_results)
-        rel_report = enforcer.check_gate(GateType.G_REL, metric_values, task_results)
+        pr_report = enforcer.check_gate(GateType.G_PR, metric_values)
+        rel_report = enforcer.check_gate(GateType.G_REL, metric_values)
 
         assert pr_report.overall == GateResult.PASS
         assert rel_report.overall == GateResult.FAIL
@@ -534,25 +559,7 @@ class TestEvaluationServicePipelineIntegration:
         assert run.gate == GateType.G_PR
         assert run.completed_at is None
 
-        # 9/10 tasks pass = 90% success rate, exceeds G-PR 80% threshold
-        task_results = [
-            TaskRunResult(
-                item_id=f"GT-{i + 1:02d}",
-                result=TaskResult.PASS,
-                checks_passed=3,
-                checks_total=3,
-                duration_ms=120,
-            )
-            for i in range(9)
-        ] + [
-            TaskRunResult(
-                item_id="GT-10",
-                result=TaskResult.FAIL,
-                checks_passed=1,
-                checks_total=3,
-                duration_ms=200,
-            )
-        ]
+        task_results = _passing_gate_task_results(GateType.G_PR, duration_ms=120)
 
         completed = service.submit_results(run.run_id, task_results)
         assert completed is not None
@@ -563,7 +570,7 @@ class TestEvaluationServicePipelineIntegration:
 
         # Verify individual metric values
         metric_map = {m.metric_id: m.value for m in completed.metrics}
-        assert metric_map[MetricId.M_01] == pytest.approx(90.0)  # 90% success
+        assert metric_map[MetricId.M_01] == pytest.approx(100.0)  # all required items pass
         assert metric_map[MetricId.M_03] == pytest.approx(0.0)  # 0% rework
         assert metric_map[MetricId.M_05] == pytest.approx(100.0)  # 100% scope adherence
 
@@ -596,16 +603,7 @@ class TestEvaluationServicePipelineIntegration:
 
         # First run: establish baseline
         run1 = service.create_run(GateType.G_PR)
-        results1 = [
-            TaskRunResult(
-                item_id=f"GT-{i + 1:02d}",
-                result=TaskResult.PASS,
-                checks_passed=3,
-                checks_total=3,
-                duration_ms=100,
-            )
-            for i in range(10)
-        ]
+        results1 = _passing_gate_task_results(GateType.G_PR)
         completed1 = service.submit_results(run1.run_id, results1)
         assert completed1 is not None
 
@@ -634,20 +632,12 @@ class TestEvaluationServicePipelineIntegration:
         run_pr = service.create_run(GateType.G_PR, branch="feature/a")
         run_mrg = service.create_run(GateType.G_MRG, branch="main")
 
-        all_pass = [
-            TaskRunResult(
-                item_id=f"GT-{i + 1:02d}",
-                result=TaskResult.PASS,
-                checks_passed=3,
-                checks_total=3,
-                duration_ms=100,
-            )
-            for i in range(10)
-        ]
+        pr_all_pass = _passing_gate_task_results(GateType.G_PR)
+        mrg_all_pass = _passing_gate_task_results(GateType.G_MRG)
 
         # Submit to both runs
-        completed_pr = service.submit_results(run_pr.run_id, all_pass)
-        completed_mrg = service.submit_results(run_mrg.run_id, all_pass)
+        completed_pr = service.submit_results(run_pr.run_id, pr_all_pass)
+        completed_mrg = service.submit_results(run_mrg.run_id, mrg_all_pass)
 
         assert completed_pr is not None
         assert completed_mrg is not None
@@ -712,7 +702,7 @@ class TestLLMEvaluatorToGatePipeline:
         metric_values = {m.metric_id: m.value for m in metrics}
 
         enforcer = GateEnforcer()
-        report = enforcer.check_gate(GateType.G_PR, metric_values, task_results)
+        report = enforcer.check_gate(GateType.G_PR, metric_values)
 
         # 4/5 pass = 80%, exactly at G-PR threshold
         assert metric_values[MetricId.M_01] == pytest.approx(80.0)
@@ -1051,20 +1041,19 @@ class TestRealisticEndToEndFlow:
     async def test_end_to_end_passing_evaluation(self) -> None:
         """Complete end-to-end flow from LLM evaluation to gate pass."""
         # Step 1: Configure evaluator with realistic model
+        required_ids = _required_item_ids_for_gate(GateType.G_PR)
         responses = [
             {"verdict": "pass", "score": 0.92, "reason": "Correct implementation"},
             {"verdict": "pass", "score": 0.88, "reason": "Good coverage"},
             {"verdict": "pass", "score": 0.95, "reason": "Excellent quality"},
-            {"verdict": "pass", "score": 0.85, "reason": "Acceptable with minor issues"},
-            {"verdict": "fail", "score": 0.45, "reason": "Missing error handling"},
-        ]
+        ][: len(required_ids)]
         router = _make_router_sequence(responses)
         ev = LLMEvaluator(model_router=router, model="gpt-4o-mini")
 
         # Step 2: Run evaluations
         inputs = [
-            _make_input(task_id=f"e2e-{i}", prompt=f"Task {i}", actual=f"Output {i}")
-            for i in range(5)
+            _make_input(task_id=item_id, prompt=f"Task {item_id}", actual=f"Output {item_id}")
+            for item_id in required_ids
         ]
         eval_results = await ev.evaluate_batch(inputs)
 
@@ -1089,12 +1078,11 @@ class TestRealisticEndToEndFlow:
 
         assert completed is not None
         assert completed.gate_report is not None
-        # 4/5 = 80%, exactly at G-PR threshold
         assert completed.gate_report.overall == GateResult.PASS
 
         # Step 5: Verify metrics
         metric_map = {m.metric_id: m.value for m in completed.metrics}
-        assert metric_map[MetricId.M_01] == pytest.approx(80.0)
+        assert metric_map[MetricId.M_01] == pytest.approx(100.0)
         assert metric_map[MetricId.M_05] == pytest.approx(100.0)
 
     async def test_end_to_end_failing_evaluation(self) -> None:

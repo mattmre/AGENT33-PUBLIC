@@ -16,12 +16,12 @@ skills, workflows, and tools.  The canonical lifecycle is:
 Each stage has defined confidence/trust labels, transition rules, and required
 operator authorizations.  The governing architectural decisions are:
 
-- **Decision #17** — Evolver ingestion boundary: concept-only clean-room
-  adaptation; do not reuse Evolver code or prose directly while license
-  ambiguity or obfuscated-source concerns remain.
-- **Decision #18** — Imported-asset lifecycle:
+- **Decision #17** (PHASE-PLAN-POST-P72-2026.md): "Evolver ingestion boundary:
+  concept-only clean-room adaptation; do not reuse Evolver code or prose
+  directly while license ambiguity or obfuscated-source concerns remain."
+- **Decision #18** (PHASE-PLAN-POST-P72-2026.md): "Imported-asset lifecycle:
   ``candidate -> validated -> published -> revoked``, with confidence/trust
-  labels layered onto those states.
+  labels layered onto those states."
 
 Full design contract: ``docs/research/evolver-clean-room-guardrails.md``
 

@@ -71,6 +71,17 @@ When full test suite cannot execute:
 | Module | `pytest tests/unit/parser/` | 24 passed | 96 | Only parser changed |
 | None | N/A | N/A | 120 | Docs-only; no harness |
 
+### Minimal-Diff Verification
+Use this check when the change is documentation-only, evidence-only, or a narrow
+runtime fix:
+
+1. Run `git diff --check` to catch whitespace and patch-format defects.
+2. Run `git diff --stat` and confirm the changed files match the declared scope.
+3. Record why broader tests are unnecessary or list the targeted commands that
+   cover the touched surface.
+4. If a minimal-diff run touches shared code, escalate to the affected-module
+   or full-suite guidance above.
+
 ### Escalation
 If partial run is due to blocked environment, create follow-up task to:
 1. Fix environment issue

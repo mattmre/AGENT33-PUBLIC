@@ -46,6 +46,9 @@ describe("ragQuery", () => {
     });
 
     const result = await ragQuery("hello");
+    if ("unavailable" in result) {
+      throw new Error("Expected successful RAG query result");
+    }
     expect(result.augmented_prompt).toBe("Context: hello world");
     expect(result.sources).toHaveLength(1);
     expect(result.sources[0]?.score).toBe(0.9);

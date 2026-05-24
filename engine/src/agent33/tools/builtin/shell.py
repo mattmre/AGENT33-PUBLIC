@@ -13,7 +13,7 @@ _DEFAULT_TIMEOUT = 30
 
 # Patterns that indicate command chaining / subshell injection
 _SUBSHELL_PATTERNS = re.compile(r"\$\(|`")
-_CHAIN_OPERATORS = re.compile(r"\s*([|;&]|&&|\|\|)\s*")
+_CHAIN_OPERATORS = re.compile(r"\s*(&&|\|\||[|;&])\s*")
 
 
 class ShellTool:
@@ -88,14 +88,16 @@ class ShellTool:
         if not executables:
             return ToolResult.fail("No executable found in command")
 
+        if not context.command_allowlist:
+            return ToolResult.fail("Command allowlist not configured; shell execution denied")
+
         # Validate ALL executables against allowlist (not just the first one)
-        if context.command_allowlist:
-            for executable in executables:
-                if executable not in context.command_allowlist:
-                    return ToolResult.fail(
-                        f"Command '{executable}' is not in the allowlist. "
-                        f"Allowed: {', '.join(context.command_allowlist)}"
-                    )
+        for executable in executables:
+            if executable not in context.command_allowlist:
+                return ToolResult.fail(
+                    f"Command '{executable}' is not in the allowlist. "
+                    f"Allowed: {', '.join(context.command_allowlist)}"
+                )
 
         # Use only the first executable for subprocess (we pass full command
         # through shlex.split for proper handling)

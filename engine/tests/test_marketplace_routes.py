@@ -200,9 +200,7 @@ class TestMarketplaceRoutes:
         assert response.status_code == 200
         assert response.json()["refreshed"] is True
 
-    def test_list_marketplace_packs_no_marketplace_returns_503(
-        self, tmp_path: Path
-    ) -> None:
+    def test_list_marketplace_packs_no_marketplace_returns_503(self, tmp_path: Path) -> None:
         client = _create_test_app(tmp_path, configure_marketplace=False)
 
         response = client.get("/v1/marketplace/packs")
@@ -210,9 +208,7 @@ class TestMarketplaceRoutes:
         assert response.status_code == 503
         assert response.json()["detail"] == "Marketplace catalog not initialized"
 
-    def test_list_marketplace_versions_no_marketplace_returns_503(
-        self, tmp_path: Path
-    ) -> None:
+    def test_list_marketplace_versions_no_marketplace_returns_503(self, tmp_path: Path) -> None:
         client = _create_test_app(tmp_path, configure_marketplace=False)
 
         response = client.get("/v1/marketplace/packs/analytics-pack/versions")
@@ -220,9 +216,7 @@ class TestMarketplaceRoutes:
         assert response.status_code == 503
         assert response.json()["detail"] == "Marketplace catalog not initialized"
 
-    def test_search_marketplace_no_marketplace_returns_503(
-        self, tmp_path: Path
-    ) -> None:
+    def test_search_marketplace_no_marketplace_returns_503(self, tmp_path: Path) -> None:
         client = _create_test_app(tmp_path, configure_marketplace=False)
 
         response = client.get("/v1/marketplace/search", params={"q": "analytics"})

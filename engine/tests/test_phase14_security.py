@@ -17,7 +17,7 @@ Item 12: SecretStr for sensitive config (config.py)
 from __future__ import annotations
 
 import time
-from typing import TYPE_CHECKING
+from typing import TYPE_CHECKING, Any
 
 import pytest
 from pydantic import SecretStr
@@ -126,7 +126,7 @@ class TestGovernanceMultiSegment:
         ctx = ToolContext(command_allowlist=["echo"])
         assert not gov._validate_command("echo ok && rm -rf /", ctx)
 
-    def test_governance_allows_no_allowlist(self) -> None:
+    def test_governance_denies_no_allowlist(self) -> None:
         from agent33.tools.base import ToolContext
         from agent33.tools.governance import ToolGovernance
 
@@ -134,8 +134,18 @@ class TestGovernanceMultiSegment:
         ctx = ToolContext()  # No allowlist
         # Subshells are still blocked even without allowlist
         assert not gov._validate_command("echo $(whoami)", ctx)
-        # But normal commands pass without allowlist
-        assert gov._validate_command("ls -la", ctx)
+        # Normal commands are fail-closed without an explicit allowlist
+        assert not gov._validate_command("ls -la", ctx)
+
+    @pytest.mark.asyncio
+    async def test_shell_tool_denies_no_allowlist(self) -> None:
+        from agent33.tools.base import ToolContext
+        from agent33.tools.builtin.shell import ShellTool
+
+        tool = ShellTool()
+        result = await tool.execute({"command": "echo hello"}, ToolContext())
+        assert not result.success
+        assert "allowlist not configured" in result.error.lower()
 
 
 # ============================================================================
@@ -201,7 +211,7 @@ class TestAutonomyLevels:
         from agent33.tools.governance import ToolGovernance
 
         gov = ToolGovernance()
-        ctx = ToolContext(user_scopes=["tools:execute"])
+        ctx = ToolContext(user_scopes=["tools:execute"], command_allowlist=["ls"])
         assert gov.pre_execute_check(
             "shell", {"command": "ls"}, ctx, autonomy_level=AutonomyLevel.FULL
         )
@@ -272,7 +282,7 @@ class TestRateLimiting:
         gov._rate_limiter = __import__(
             "agent33.tools.governance", fromlist=["_RateLimiter"]
         )._RateLimiter(per_minute=2, burst=100)
-        ctx = ToolContext(user_scopes=["tools:execute"])
+        ctx = ToolContext(user_scopes=["tools:execute"], command_allowlist=["ls"])
         assert gov.pre_execute_check("shell", {"command": "ls"}, ctx)
         assert gov.pre_execute_check("shell", {"command": "ls"}, ctx)
         assert not gov.pre_execute_check("shell", {"command": "ls"}, ctx)
@@ -292,6 +302,20 @@ class TestRateLimiting:
 
 class TestPathTraversalHardening:
     """FileOpsTool blocks path traversal attacks."""
+
+    @pytest.mark.asyncio
+    async def test_file_ops_denies_no_path_allowlist(self, tmp_path: Path) -> None:
+        from agent33.tools.base import ToolContext
+        from agent33.tools.builtin.file_ops import FileOpsTool
+
+        target = tmp_path / "safe.txt"
+        target.write_text("secret", encoding="utf-8")
+        tool = FileOpsTool()
+
+        result = await tool.execute({"operation": "read", "path": str(target)}, ToolContext())
+
+        assert not result.success
+        assert "outside the allowed directories" in result.error
 
     @pytest.mark.asyncio
     async def test_null_byte_blocked(self, tmp_path: Path) -> None:
@@ -637,6 +661,7 @@ class TestGovernanceToolPolicies:
         ctx = ToolContext(
             user_scopes=["tools:execute"],
             tool_policies={"shell": "allow"},
+            command_allowlist=["ls"],
         )
         assert gov.pre_execute_check("shell", {"command": "ls"}, ctx)
 
@@ -660,6 +685,7 @@ class TestGovernanceToolPolicies:
         ctx = ToolContext(
             user_scopes=["tools:execute"],
             tool_policies={"file_ops:write": "deny"},
+            path_allowlist=["/tmp"],
         )
         # write blocked
         assert not gov.pre_execute_check("file_ops", {"operation": "write", "path": "/tmp/x"}, ctx)
@@ -671,8 +697,8 @@ class TestGovernanceToolPolicies:
         from agent33.tools.governance import ToolGovernance
 
         gov = ToolGovernance()
-        ctx = ToolContext(user_scopes=["tools:execute"])
-        # No policies, should pass normal scope check
+        ctx = ToolContext(user_scopes=["tools:execute"], command_allowlist=["ls"])
+        # No policies, should pass normal scope and command allowlist checks
         assert gov.pre_execute_check("shell", {"command": "ls"}, ctx)
 
 
@@ -771,6 +797,52 @@ class TestRequestSizeLimits:
         )
         assert resp.status_code == 413
         assert "too large" in resp.json()["detail"].lower()
+
+    @pytest.mark.asyncio
+    async def test_oversized_stream_without_content_length_rejected(
+        self, monkeypatch: pytest.MonkeyPatch
+    ) -> None:
+        from agent33.config import settings
+        from agent33.main import RequestSizeLimitMiddleware
+
+        monkeypatch.setattr(settings, "max_request_size_bytes", 8)
+
+        async def app(scope: dict[str, Any], receive: Any, send: Any) -> None:
+            while True:
+                message = await receive()
+                if message["type"] == "http.request" and not message.get("more_body", False):
+                    break
+            await send(
+                {
+                    "type": "http.response.start",
+                    "status": 200,
+                    "headers": [(b"content-length", b"2")],
+                }
+            )
+            await send({"type": "http.response.body", "body": b"ok"})
+
+        middleware = RequestSizeLimitMiddleware(app)
+        messages = [
+            {"type": "http.request", "body": b"12345", "more_body": True},
+            {"type": "http.request", "body": b"6789", "more_body": False},
+        ]
+        sent: list[dict[str, Any]] = []
+
+        async def receive() -> dict[str, Any]:
+            return messages.pop(0)
+
+        async def send(message: dict[str, Any]) -> None:
+            sent.append(message)
+
+        await middleware(
+            {"type": "http", "method": "POST", "path": "/stream", "headers": []},
+            receive,
+            send,
+        )
+
+        assert sent[0]["type"] == "http.response.start"
+        assert sent[0]["status"] == 413
+        assert b"too large" in sent[1]["body"].lower()
 
     def test_max_request_size_config(self) -> None:
         from agent33.config import Settings

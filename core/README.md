@@ -11,7 +11,7 @@ It defines the model-agnostic orchestration system, AEP workflow, and reusable t
 - `orchestrator/integrations/`: Platform integration specs (channels, voice/media, credentials, privacy).
 - `workflows/`: Canonical GitHub workflow templates and instructions.
 - `roadmap/`, `phases/`, `research/`, `user-guide/`, `api/`: Project documentation canon.
-- `logs/`: Session logs and session handoff narratives, partitioned by source repo.
+- `logs/`: Session logs and next-session narratives, partitioned by source repo.
 
 ## Orchestration Overview
 - `core/ORCHESTRATION_INDEX.md`: links the orchestration system, AEP workflow, and workflows.
@@ -27,4 +27,5 @@ It defines the model-agnostic orchestration system, AEP workflow, and reusable t
 
 ## Canonicalization
 - Canonical choices are logged in `core/CHANGELOG.md`.
+- Promoted Markdown source/rationale coverage is tracked in `core/P02_SOURCE_RATIONALE_MANIFEST.json` and enforced by `scripts/validate_p02_source_rationale.py`.
 - Non-canonical variants are archived under `core/agents/sources/` and `core/workflows/sources/`.

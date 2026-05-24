@@ -11,6 +11,7 @@ import structlog
 from agent33.execution.models import (
     AdapterDefinition,
     AdapterStatus,
+    AdapterType,
     ExecutionContract,
     ExecutionResult,
     SandboxConfig,
@@ -45,6 +46,14 @@ class CodeExecutor:
         self._tool_registry = tool_registry
         self._command_allowlist = command_allowlist
         self._adapters: dict[str, BaseAdapter] = {}
+
+    def set_tool_registry(self, tool_registry: ToolRegistry | None) -> None:
+        """Attach the live ToolRegistry used for runtime governance."""
+        self._tool_registry = tool_registry
+
+    def set_command_allowlist(self, command_allowlist: set[str] | None) -> None:
+        """Set a global fallback command allowlist for contracts without registry metadata."""
+        self._command_allowlist = command_allowlist
 
     # ------------------------------------------------------------------
     # Adapter management
@@ -99,9 +108,11 @@ class CodeExecutor:
         start = time.monotonic()
 
         # 1. Validate
+        command_allowlist, command_denylist = self._resolve_command_policy(contract)
         vr = validate_contract(
             contract,
-            command_allowlist=self._command_allowlist,
+            command_allowlist=command_allowlist,
+            command_denylist=command_denylist,
         )
         if not vr.is_valid:
             elapsed = (time.monotonic() - start) * 1000
@@ -155,6 +166,22 @@ class CodeExecutor:
         if adapter.definition.sandbox_override:
             sandbox_data = _deep_merge(sandbox_data, adapter.definition.sandbox_override)
         merged_sandbox = SandboxConfig.model_validate(sandbox_data)
+
+        sandbox_error = self._validate_adapter_sandbox_enforcement(adapter, merged_sandbox)
+        if sandbox_error is not None:
+            elapsed = (time.monotonic() - start) * 1000
+            logger.warning(
+                "adapter_sandbox_enforcement_failed",
+                execution_id=contract.execution_id,
+                adapter_id=adapter.adapter_id,
+                error=sandbox_error,
+            )
+            return ExecutionResult(
+                execution_id=contract.execution_id,
+                success=False,
+                error=sandbox_error,
+                duration_ms=round(elapsed, 2),
+            )
 
         contract_with_sandbox = contract.model_copy(
             update={"sandbox": merged_sandbox},
@@ -225,10 +252,85 @@ class CodeExecutor:
         assert last_result is not None
         return last_result
 
+    def _resolve_command_policy(
+        self,
+        contract: ExecutionContract,
+    ) -> tuple[set[str] | None, set[str] | None]:
+        """Resolve command allow/deny policy from registry metadata.
+
+        Registry metadata is authoritative when present. The constructor
+        allowlist remains a fallback for tests and standalone executors.
+        """
+        allowlist = self._command_allowlist
+        denylist: set[str] | None = None
+        if self._tool_registry is None:
+            return allowlist, denylist
+
+        entry = self._tool_registry.get_entry(contract.tool_id)
+        if entry is None:
+            return allowlist, denylist
+
+        governance = entry.governance if isinstance(entry.governance, dict) else {}
+        scope_commands = _string_set(getattr(entry.scope, "commands", []))
+        governance_has_allowlist = "command_allowlist" in governance
+        governance_commands = _string_set(governance.get("command_allowlist"))
+        if governance_has_allowlist or scope_commands:
+            allowlist = governance_commands | scope_commands
+
+        deny_commands = _string_set(governance.get("deny_list"))
+        deny_commands |= _string_set(governance.get("command_denylist"))
+        deny_commands |= _string_set(governance.get("denylist"))
+        if deny_commands:
+            denylist = deny_commands
+
+        return allowlist, denylist
+
+    def _validate_adapter_sandbox_enforcement(
+        self,
+        adapter: BaseAdapter,
+        sandbox: SandboxConfig,
+    ) -> str | None:
+        """Fail closed when a local adapter cannot enforce sandbox controls."""
+        definition = adapter.definition
+        enforcement = str(definition.metadata.get("sandbox_enforcement", "")).strip().lower()
+
+        if definition.type == AdapterType.CLI:
+            if enforcement in {"external", "isolated", "container", "sandboxed"}:
+                return None
+            return (
+                f"Adapter '{adapter.adapter_id}' is a local CLI backend without declared "
+                "sandbox_enforcement; execution denied because memory, CPU, filesystem, "
+                "and network controls cannot be enforced by the local subprocess adapter"
+            )
+
+        if definition.type == AdapterType.KERNEL:
+            container_enabled = bool(definition.kernel and definition.kernel.container.enabled)
+            if container_enabled:
+                return None
+            if enforcement in {"external", "isolated", "container", "sandboxed"}:
+                return None
+            return (
+                f"Adapter '{adapter.adapter_id}' is a local kernel backend without declared "
+                "sandbox_enforcement; execution denied because memory, CPU, filesystem, "
+                "and network controls cannot be enforced by the local kernel adapter"
+            )
+
+        del sandbox
+        return None
+
 
 # ---------------------------------------------------------------------------
 # Helpers
 # ---------------------------------------------------------------------------
+
+
+def _string_set(value: Any) -> set[str]:
+    """Normalize scalar/list policy values into a stripped string set."""
+    if isinstance(value, str):
+        return {value.strip()} if value.strip() else set()
+    if isinstance(value, list):
+        return {str(item).strip() for item in value if str(item).strip()}
+    return set()
 
 
 def _deep_merge(base: dict[str, Any], override: dict[str, Any]) -> dict[str, Any]:

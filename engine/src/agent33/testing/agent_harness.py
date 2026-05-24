@@ -136,7 +136,7 @@ class AgentTestHarness:
         responses = responses or {}
 
         provider = _CannedProvider(responses)
-        router = ModelRouter()
+        router = ModelRouter(default_provider="mock")
         router.register("mock", provider)
 
         runtime = AgentRuntime(definition=defn, router=router, model="mock")

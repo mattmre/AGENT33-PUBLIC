@@ -1,0 +1,61 @@
+{
+  "$schema": "./schemas/agent.schema.json",
+  "name": "security",
+  "version": "1.0.0",
+  "role": "security",
+  "description": "Assesses security implications, dependency risk, permissions, and policy compliance.",
+  "agent_id": "AGT-008",
+  "status": "active",
+  "capabilities": [
+    "code-analysis",
+    "validation"
+  ],
+  "spec_capabilities": ["R-02", "R-04", "R-05", "X-03"],
+  "governance": {
+    "scope": "security-review",
+    "commands": "security-scan,read-only",
+    "network": "none",
+    "approval_required": []
+  },
+  "ownership": {
+    "owner": "platform-team",
+    "escalation_target": "director"
+  },
+  "inputs": {
+    "target": {
+      "type": "string",
+      "description": "Security-sensitive artifact or change set",
+      "required": true
+    }
+  },
+  "outputs": {
+    "security_review": {
+      "type": "object",
+      "description": "Security findings and remediation guidance"
+    }
+  },
+  "dependencies": [
+    {
+      "agent": "reviewer",
+      "optional": true,
+      "purpose": "Coordinates release-blocking findings"
+    }
+  ],
+  "prompts": {
+    "system": "prompts/security/system.md",
+    "user": "prompts/security/user.md",
+    "examples": []
+  },
+  "constraints": {
+    "max_tokens": 8192,
+    "timeout_seconds": 180,
+    "max_retries": 1,
+    "parallel_allowed": true
+  },
+  "metadata": {
+    "author": "agent-33",
+    "created": "2026-05-24",
+    "updated": "2026-05-24",
+    "tags": ["security", "risk", "compliance"]
+  }
+}

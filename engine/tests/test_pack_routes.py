@@ -375,7 +375,7 @@ class TestPackRoutesWithRegistry:
                 ---
                 name: planning-with-files
                 description: Planning support
-                provenance: imported-external
+                provenance: imported-evokore
                 ---
                 # Planning
                 """
@@ -389,7 +389,7 @@ class TestPackRoutesWithRegistry:
         assert resp.status_code == 200
         data = resp.json()
         assert data["skills"][0]["category"] == "workflow"
-        assert data["skills"][0]["provenance"] == "imported-external"
+        assert data["skills"][0]["provenance"] == "imported-evokore"
 
     def test_get_pack_not_found(self, tmp_path: Path) -> None:
         client, _, _, _ = self._setup(tmp_path)

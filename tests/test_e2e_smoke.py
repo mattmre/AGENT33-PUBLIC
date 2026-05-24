@@ -1,4 +1,4 @@
-"""Production-surface smoke test for the AGENT-33 engine."""
+"""Stage-1 Brutal Honesty smoke test for the AGENT33 production surface."""
 
 from __future__ import annotations
 

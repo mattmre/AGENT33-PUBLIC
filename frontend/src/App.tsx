@@ -22,6 +22,8 @@ import AgentBuilderPage from "./features/agent-builder/AgentBuilderPage";
 import "./features/agent-builder/AgentBuilderPage.css";
 import { PackMarketplacePage } from "./features/pack-marketplace";
 import "./features/pack-marketplace/PackMarketplacePage.css";
+import { PluginManagerPanel } from "./features/plugin-manager";
+import "./features/plugin-manager/PluginManagerPanel.css";
 import { SpawnerPage } from "./features/spawner";
 import { ToolCatalogPage } from "./features/tool-catalog";
 import { ImpactDashboardPanel } from "./features/impact-dashboard";
@@ -59,10 +61,17 @@ import {
 } from "./data/navigation";
 import {
   DEFAULT_WORKSPACE_SESSION_ID,
+  WORKSPACE_SESSIONS,
   getWorkspaceSession,
   isWorkspaceSessionId,
-  type WorkspaceSessionId
+  type WorkspaceSessionId,
+  type WorkspaceSessionSummary
 } from "./data/workspaces";
+import type { WorkspaceRecoverySummary } from "./data/workspaceRecovery";
+import {
+  fetchWorkspaceRecoverySummary,
+  fetchWorkspaceSessions
+} from "./data/workspaceApi";
 import {
   DEFAULT_PERMISSION_MODE_ID,
   isPermissionModeId,
@@ -159,12 +168,18 @@ export default function App(): JSX.Element {
   const [workflowStarterDraft, setWorkflowStarterDraft] = useState<WorkflowStarterDraft | null>(null);
   const [selectedRole, setSelectedRole] = useState<UserRoleId | null>(getSavedUserRole);
   const [selectedWorkspaceId, setSelectedWorkspaceId] = useState<WorkspaceSessionId>(initialCockpitUrlState.workspaceId);
+  const [liveWorkspaceSessions, setLiveWorkspaceSessions] = useState<ReadonlyArray<WorkspaceSessionSummary>>([]);
+  const [liveRecoverySummaries, setLiveRecoverySummaries] = useState<
+    Partial<Record<WorkspaceSessionId, WorkspaceRecoverySummary>>
+  >({});
   const [permissionModeId, setPermissionModeId] = useState<PermissionModeId>(initialCockpitUrlState.permissionModeId);
   const [drawerSectionId, setDrawerSectionId] = useState<ArtifactDrawerSectionId>(
     initialCockpitUrlState.drawerSectionId
   );
   const [isSidebarOpen, setIsSidebarOpen] = useState(false);
-  const selectedWorkspace = getWorkspaceSession(selectedWorkspaceId);
+  const workspaceSessions = liveWorkspaceSessions.length > 0 ? liveWorkspaceSessions : WORKSPACE_SESSIONS;
+  const selectedWorkspace = workspaceSessions.find((workspace) => workspace.id === selectedWorkspaceId) ?? getWorkspaceSession(selectedWorkspaceId);
+  const selectedRecoverySummary = liveRecoverySummaries[selectedWorkspaceId];
   const selectedWorkspaceStatus = selectedWorkspace.status.toLowerCase();
   const showCockpitDashboard = activeTab === "operations";
   const activeTabGroup = getAppTabGroup(activeTab);
@@ -223,6 +238,56 @@ export default function App(): JSX.Element {
   useEffect(() => {
     setIsSidebarOpen(false);
   }, [activeTab]);
+
+  useEffect(() => {
+    if (!token && !apiKey) {
+      setLiveWorkspaceSessions([]);
+      setLiveRecoverySummaries({});
+      return;
+    }
+
+    let cancelled = false;
+    fetchWorkspaceSessions(token, apiKey)
+      .then((sessions) => {
+        if (!cancelled) {
+          setLiveWorkspaceSessions(sessions);
+        }
+      })
+      .catch((error: unknown) => {
+        console.warn("Workspace API unavailable; using local workspace templates.", error);
+        if (!cancelled) {
+          setLiveWorkspaceSessions([]);
+        }
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [apiKey, token]);
+
+  useEffect(() => {
+    if (!token && !apiKey) {
+      return;
+    }
+
+    let cancelled = false;
+    fetchWorkspaceRecoverySummary(selectedWorkspaceId, token, apiKey)
+      .then((summary) => {
+        if (!cancelled) {
+          setLiveRecoverySummaries((previous) => ({
+            ...previous,
+            [selectedWorkspaceId]: summary
+          }));
+        }
+      })
+      .catch((error: unknown) => {
+        console.warn("Workspace recovery API unavailable; using local recovery summary.", error);
+      });
+
+    return () => {
+      cancelled = true;
+    };
+  }, [apiKey, selectedWorkspaceId, token]);
 
   function setToken(tokenValue: string): void {
     setTokenState(tokenValue);
@@ -393,6 +458,9 @@ export default function App(): JSX.Element {
           </section>
           <WorkspaceSessionSelector
             selectedWorkspaceId={selectedWorkspaceId}
+            selectedWorkspace={selectedWorkspace}
+            workspaceSessions={workspaceSessions}
+            recoverySummary={selectedRecoverySummary}
             onSelectWorkspace={selectWorkspace}
             onOpenRuns={() => setActiveTab("operations")}
             onOpenWorkflows={openWorkflowStarter}
@@ -679,6 +747,7 @@ export default function App(): JSX.Element {
               <WorkspaceTaskBoard
                 workspace={selectedWorkspace}
                 permissionModeId={permissionModeId}
+                recoverySummary={selectedRecoverySummary}
                 onOpenSafety={() => setActiveTab("safety")}
                 onOpenWorkflows={openWorkflowStarter}
               />
@@ -721,6 +790,16 @@ export default function App(): JSX.Element {
               token={token || null}
               apiKey={apiKey || null}
               onOpenWorkflowStarter={openWorkflowStarter}
+            />
+          </div>
+        )}
+
+        {activeTab === "plugins" && (
+          <div className="consumer-plugins-layout">
+            <PluginManagerPanel
+              token={token || null}
+              apiKey={apiKey || null}
+              onOpenSetup={() => setActiveTab("setup")}
             />
           </div>
         )}

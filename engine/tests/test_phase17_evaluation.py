@@ -147,24 +147,28 @@ class TestMetricsCalculator:
                 result=TaskResult.PASS,
                 duration_ms=100,
                 checks_total=4,
+                diff_lines=12,
             ),
             TaskRunResult(
                 item_id="GT-02",
                 result=TaskResult.PASS,
                 duration_ms=200,
                 checks_total=4,
+                diff_lines=24,
             ),
             TaskRunResult(
                 item_id="GT-03",
                 result=TaskResult.FAIL,
                 duration_ms=300,
                 checks_total=4,
+                diff_lines=18,
             ),
             TaskRunResult(
                 item_id="GT-04",
                 result=TaskResult.PASS,
                 duration_ms=150,
                 checks_total=4,
+                diff_lines=6,
             ),
         ]
 
@@ -203,7 +207,20 @@ class TestMetricsCalculator:
     def test_diff_size(self):
         m = self.calc.diff_size(self.results)
         assert m.metric_id == MetricId.M_04
-        assert m.value == 4.0  # all checks_total=4
+        assert m.value == 15.0  # average actual diff_lines, not checks_total
+
+    def test_diff_size_does_not_use_checks_total_proxy(self):
+        m = self.calc.diff_size(
+            [
+                TaskRunResult(
+                    item_id="GT-01",
+                    result=TaskResult.PASS,
+                    checks_total=99,
+                    diff_lines=0,
+                )
+            ]
+        )
+        assert m.value == 0.0
 
     def test_scope_adherence(self):
         m = self.calc.scope_adherence(self.results, scope_violations=1)
@@ -231,6 +248,10 @@ class TestGateEnforcer:
 
     def setup_method(self):
         self.enforcer = GateEnforcer()
+
+    @staticmethod
+    def _passing_results(item_ids: list[str]) -> list[TaskRunResult]:
+        return [TaskRunResult(item_id=item_id, result=TaskResult.PASS) for item_id in item_ids]
 
     def test_default_thresholds_exist(self):
         assert len(DEFAULT_THRESHOLDS) == 10
@@ -273,29 +294,54 @@ class TestGateEnforcer:
 
     def test_golden_task_failures_block_merge(self):
         metrics = {MetricId.M_01: 95.0, MetricId.M_03: 10.0, MetricId.M_05: 100.0}
-        failed_results = [
-            TaskRunResult(item_id="GT-05", result=TaskResult.FAIL),
-        ]
+        failed_results = self._passing_results(tasks_for_gate(GoldenTag.GT_CRITICAL))
+        failed_results[0] = TaskRunResult(
+            item_id=failed_results[0].item_id,
+            result=TaskResult.FAIL,
+        )
         report = self.enforcer.check_gate(GateType.G_MRG, metrics, failed_results)
         assert report.overall == GateResult.FAIL
 
     def test_golden_task_pass_at_merge(self):
         metrics = {MetricId.M_01: 95.0, MetricId.M_03: 10.0, MetricId.M_05: 100.0}
-        passing_results = [
-            TaskRunResult(item_id="GT-01", result=TaskResult.PASS),
-            TaskRunResult(item_id="GT-02", result=TaskResult.PASS),
-        ]
+        passing_results = self._passing_results(tasks_for_gate(GoldenTag.GT_CRITICAL))
         report = self.enforcer.check_gate(GateType.G_MRG, metrics, passing_results)
         assert report.overall == GateResult.PASS
 
-    def test_skipped_tasks_dont_block(self):
+    def test_skipped_non_required_tasks_dont_block(self):
         metrics = {MetricId.M_01: 95.0, MetricId.M_03: 10.0, MetricId.M_05: 100.0}
         results = [
-            TaskRunResult(item_id="GT-01", result=TaskResult.PASS),
+            *self._passing_results(tasks_for_gate(GoldenTag.GT_CRITICAL)),
             TaskRunResult(item_id="GT-03", result=TaskResult.SKIP),
         ]
         report = self.enforcer.check_gate(GateType.G_MRG, metrics, results)
         assert report.overall == GateResult.PASS
+
+    def test_missing_required_gate_items_fail_closed(self):
+        metrics = {MetricId.M_01: 100.0, MetricId.M_03: 0.0, MetricId.M_05: 100.0}
+        report = self.enforcer.check_gate(
+            GateType.G_PR,
+            metrics,
+            [TaskRunResult(item_id="GT-01", result=TaskResult.PASS)],
+        )
+        assert report.overall == GateResult.FAIL
+        assert "GC-01" in report.missing_required_items
+
+    def test_skipped_required_gate_items_fail_closed(self):
+        metrics = {MetricId.M_01: 100.0, MetricId.M_03: 0.0, MetricId.M_05: 100.0}
+        results = self._passing_results(tasks_for_gate(GoldenTag.GT_SMOKE))
+        results[0] = TaskRunResult(item_id=results[0].item_id, result=TaskResult.SKIP)
+        report = self.enforcer.check_gate(GateType.G_PR, metrics, results)
+        assert report.overall == GateResult.FAIL
+        assert results[0].item_id in report.skipped_required_items
+
+    def test_failed_extra_items_fail_blocking_gate(self):
+        metrics = {MetricId.M_01: 100.0, MetricId.M_03: 0.0, MetricId.M_05: 100.0}
+        results = self._passing_results(tasks_for_gate(GoldenTag.GT_SMOKE))
+        results.append(TaskRunResult(item_id="GT-05", result=TaskResult.FAIL))
+        report = self.enforcer.check_gate(GateType.G_PR, metrics, results)
+        assert report.overall == GateResult.FAIL
+        assert "GT-05" in report.failed_extra_items
 
     def test_get_thresholds_for_gate(self):
         pr_thresholds = self.enforcer.get_thresholds_for_gate(GateType.G_PR)
@@ -395,6 +441,52 @@ class TestRegressionDetector:
         ]
         regressions = self.detector.detect(baseline, current_metrics, [])
         assert len(regressions) == 0  # 30% increase is below 50% threshold
+
+    def test_ri03_new_failure_category(self):
+        baseline = BaselineSnapshot(
+            task_results=[
+                TaskRunResult(
+                    item_id="GT-01",
+                    result=TaskResult.FAIL,
+                    failure_category="F-OLD",
+                ),
+            ],
+        )
+        current = [
+            TaskRunResult(
+                item_id="GT-02",
+                result=TaskResult.FAIL,
+                failure_category="F-NEW",
+                notes="new parser failure",
+            ),
+        ]
+        regressions = self.detector.detect(baseline, [], current)
+        assert len(regressions) == 1
+        assert regressions[0].indicator == RegressionIndicator.RI_03
+        assert regressions[0].failure_category == "F-NEW"
+        assert regressions[0].severity == RegressionSeverity.MEDIUM
+
+    def test_ri05_flaky_test_becomes_consistent_failure(self):
+        baseline = BaselineSnapshot(
+            task_results=[
+                TaskRunResult(item_id="GT-05", result=TaskResult.PASS, flaky=True),
+            ],
+        )
+        current = [
+            TaskRunResult(
+                item_id="GT-05",
+                result=TaskResult.FAIL,
+                flaky=False,
+                notes="fails every run",
+            ),
+        ]
+        regressions = self.detector.detect(baseline, [], current)
+        assert len(regressions) == 2
+        indicators = {r.indicator for r in regressions}
+        assert RegressionIndicator.RI_01 in indicators
+        assert RegressionIndicator.RI_05 in indicators
+        ri05 = next(r for r in regressions if r.indicator == RegressionIndicator.RI_05)
+        assert ri05.severity == RegressionSeverity.HIGH
 
     def test_no_regressions_without_baseline_data(self):
         baseline = BaselineSnapshot()
@@ -506,6 +598,16 @@ class TestEvaluationService:
         task_ids = self.service.get_tasks_for_gate(GateType.G_PR)
         assert "GT-01" in task_ids  # GT-SMOKE
         assert "GT-04" in task_ids  # GT-SMOKE
+        assert "GC-01" in task_ids  # GT-SMOKE golden case
+
+    def test_get_tasks_for_merge_gate_includes_cases(self):
+        task_ids = self.service.get_tasks_for_gate(GateType.G_MRG)
+        assert "GT-01" in task_ids
+        assert "GT-02" in task_ids
+        assert "GT-05" in task_ids
+        assert "GT-06" in task_ids
+        assert "GC-02" in task_ids
+        assert "GC-03" in task_ids
 
     def test_create_and_get_run(self):
         run = self.service.create_run(GateType.G_PR, commit_hash="abc123")
@@ -525,6 +627,7 @@ class TestEvaluationService:
         results = [
             TaskRunResult(item_id="GT-01", result=TaskResult.PASS, duration_ms=100),
             TaskRunResult(item_id="GT-04", result=TaskResult.PASS, duration_ms=150),
+            TaskRunResult(item_id="GC-01", result=TaskResult.PASS, duration_ms=125),
         ]
         completed = self.service.submit_results(run.run_id, results)
         assert completed is not None
@@ -539,6 +642,7 @@ class TestEvaluationService:
         results = [
             TaskRunResult(item_id="GT-01", result=TaskResult.PASS),
             TaskRunResult(item_id="GT-04", result=TaskResult.PASS),
+            TaskRunResult(item_id="GC-01", result=TaskResult.PASS),
         ]
         completed = self.service.submit_results(run.run_id, results)
         assert completed is not None
@@ -620,6 +724,7 @@ class TestEvaluationAPI:
         data = resp.json()
         assert isinstance(data, list)
         assert "GT-01" in data
+        assert "GC-01" in data
 
     def test_create_run(self):
         resp = self.client.post(
@@ -656,8 +761,32 @@ class TestEvaluationAPI:
             f"/v1/evaluations/runs/{run_id}/results",
             json={
                 "task_results": [
-                    {"item_id": "GT-01", "result": "pass", "duration_ms": 100},
-                    {"item_id": "GT-04", "result": "pass", "duration_ms": 200},
+                    {
+                        "item_id": "GT-01",
+                        "result": "pass",
+                        "checks_passed": 4,
+                        "checks_total": 4,
+                        "diff_lines": 10,
+                        "duration_ms": 100,
+                    },
+                    {
+                        "item_id": "GT-04",
+                        "result": "pass",
+                        "checks_passed": 4,
+                        "checks_total": 4,
+                        "diff_lines": 20,
+                        "duration_ms": 200,
+                    },
+                    {
+                        "item_id": "GC-01",
+                        "result": "pass",
+                        "checks_passed": 5,
+                        "checks_total": 5,
+                        "diff_lines": 30,
+                        "duration_ms": 150,
+                        "failure_category": "",
+                        "flaky": False,
+                    },
                 ],
             },
         )
@@ -665,6 +794,8 @@ class TestEvaluationAPI:
         data = resp.json()
         assert data["gate_result"] == "pass"
         assert len(data["metrics"]) == 5
+        m04 = next(m for m in data["metrics"] if m["metric_id"] == "M-04")
+        assert m04["value"] == 20.0
 
     def test_submit_results_not_found(self):
         resp = self.client.post(

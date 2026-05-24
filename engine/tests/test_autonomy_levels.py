@@ -248,7 +248,7 @@ class TestLevel2AutonomousExceptDestructive:
     def test_enforcer_allows_safe_command(self) -> None:
         budget = autonomy_level_to_budget(2)
         enforcer = RuntimeEnforcer(budget)
-        # No allowlist means anything not in deny is allowed
+        # Wildcard allowlist means anything not in deny is explicitly allowed.
         result = enforcer.check_command("python -m pytest tests/")
         assert result == EnforcementResult.ALLOWED
 
@@ -293,13 +293,14 @@ class TestLevel3FullyAutonomous:
 
     def test_no_command_restrictions(self) -> None:
         budget = autonomy_level_to_budget(3)
+        assert budget.allowed_commands[0].command == "*"
         assert budget.denied_commands == []
         assert budget.require_approval_commands == []
 
     def test_network_fully_enabled(self) -> None:
         budget = autonomy_level_to_budget(3)
         assert budget.network.enabled is True
-        assert budget.network.allowed_domains == []
+        assert budget.network.allowed_domains == ["*"]
         assert budget.network.denied_domains == []
 
     def test_enforcer_allows_any_network(self) -> None:

@@ -15,6 +15,7 @@ from agent33.autonomy.models import (
     EscalationRecord,
     EscalationUrgency,
     PreflightReport,
+    PreflightStatus,
 )
 from agent33.autonomy.preflight import PreflightChecker
 
@@ -61,6 +62,20 @@ class InvalidStateTransitionError(Exception):
 
 class EnforcerNotFoundError(Exception):
     """Raised when an enforcer is not found for a budget."""
+
+
+class PreflightFailedError(Exception):
+    """Raised when an active budget does not pass preflight."""
+
+    def __init__(self, report: PreflightReport) -> None:
+        self.report = report
+        failed = [
+            f"{check.check_id}: {check.message or check.name}"
+            for check in report.checks
+            if check.status == PreflightStatus.FAIL
+        ]
+        detail = "; ".join(failed) if failed else f"Preflight status {report.overall.value}"
+        super().__init__(f"Budget preflight failed for {report.budget_id}: {detail}")
 
 
 class AutonomyService:
@@ -166,6 +181,19 @@ class AutonomyService:
         self._persist_state()
         return budget
 
+    def register_budget(self, budget: AutonomyBudget) -> AutonomyBudget:
+        """Register an already constructed budget and persist it.
+
+        This is used when a caller selects a templated autonomy level.  The
+        generated level budget still receives a durable budget_id and runtime
+        enforcer state instead of remaining an untracked transient object.
+        """
+        if budget.budget_id in self._budgets:
+            raise ValueError(f"Budget already exists: {budget.budget_id}")
+        self._budgets[budget.budget_id] = budget
+        self._persist_state()
+        return budget
+
     def get_budget(self, budget_id: str) -> AutonomyBudget:
         """Get a budget by ID."""
         budget = self._budgets.get(budget_id)
@@ -255,6 +283,9 @@ class AutonomyService:
         budget = self.get_budget(budget_id)
         if budget.state != BudgetState.ACTIVE:
             raise InvalidStateTransitionError(budget.state, BudgetState.ACTIVE)
+        report = self._checker.check(budget)
+        if report.overall != PreflightStatus.PASS:
+            raise PreflightFailedError(report)
         enforcer = RuntimeEnforcer(budget)
         self._enforcers[budget_id] = enforcer
         self._persist_state()

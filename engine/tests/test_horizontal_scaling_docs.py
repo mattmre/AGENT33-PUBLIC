@@ -67,7 +67,7 @@ _REFERENCED_PATHS = {
     / "operators"
     / "service-level-objectives.md": "service-level-objectives.md",
     _REPO_ROOT
-    / "docs"
+    / "_internal"
     / "research"
     / "session102-p11-scaling-scope.md": "session102-p11-scaling-scope.md",
 }

@@ -113,8 +113,24 @@ async def execute(
                         packs=applied,
                     )
 
-    handler = get_agent(agent)
-    result = await handler(inputs)
+    handler_inputs = dict(inputs)
+    handler = _agent_registry.get(agent)
+
+    if handler is None:
+        default_handler = _agent_registry.get("__default__")
+        if default_handler is not None:
+            handler = default_handler
+            handler_inputs = {**inputs, "agent_name": agent}
+        else:
+            handler = get_agent(agent)
+
+    if not callable(handler):
+        raise TypeError(
+            f"Agent '{agent}' resolves to a definition but no executable handler "
+            "or __default__ bridge is registered"
+        )
+
+    result = await handler(handler_inputs)
 
     if not isinstance(result, dict):
         result = {"result": result}

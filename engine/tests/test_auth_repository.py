@@ -7,6 +7,7 @@ import pytest
 from agent33.security.auth_repository import (
     AuthRepository,
     InMemoryAuthRepository,
+    SqliteAuthRepository,
     get_auth_repository,
     set_auth_repository,
 )
@@ -240,6 +241,64 @@ class TestAuthRepositoryProtocol:
     def test_inmemory_is_auth_repository(self) -> None:
         repo = InMemoryAuthRepository()
         assert isinstance(repo, AuthRepository)
+
+    def test_sqlite_is_auth_repository(self) -> None:
+        repo = SqliteAuthRepository(":memory:")
+        try:
+            assert isinstance(repo, AuthRepository)
+        finally:
+            repo.close()
+
+
+class TestSqliteAuthRepository:
+    """SQLite auth repository persistence behaviour."""
+
+    def test_users_persist_across_repository_instances(self, tmp_path) -> None:
+        db_path = tmp_path / "auth.db"
+        repo = SqliteAuthRepository(str(db_path))
+        repo.create_user(
+            username="alice",
+            password_hash="hash123",
+            tenant_id="tenant-a",
+            role="admin",
+            salt="aabbcc",
+            scopes=["admin", "workspaces:read"],
+        )
+        repo.close()
+
+        reopened = SqliteAuthRepository(str(db_path))
+        try:
+            user = reopened.get_user("alice")
+            assert user is not None
+            assert user["tenant_id"] == "tenant-a"
+            assert user["scopes"] == ["admin", "workspaces:read"]
+            assert [item["username"] for item in reopened.list_users("tenant-a")] == ["alice"]
+        finally:
+            reopened.close()
+
+    def test_api_keys_persist_and_revoke_by_owner(self, tmp_path) -> None:
+        db_path = tmp_path / "auth.db"
+        repo = SqliteAuthRepository(str(db_path))
+        repo.create_api_key(
+            key_hash="hash1",
+            key_id="key-1",
+            subject="alice",
+            scopes=["workspaces:read"],
+            tenant_id="tenant-a",
+            expires_at=0,
+        )
+        repo.close()
+
+        reopened = SqliteAuthRepository(str(db_path))
+        try:
+            key = reopened.get_api_key("hash1")
+            assert key is not None
+            assert key["subject"] == "alice"
+            assert reopened.revoke_api_key_by_id("key-1", requesting_subject="bob") is False
+            assert reopened.revoke_api_key_by_id("key-1", requesting_subject="alice") is True
+            assert reopened.get_api_key("hash1") is None
+        finally:
+            reopened.close()
 
 
 class TestAuthRepositoryAccessors:

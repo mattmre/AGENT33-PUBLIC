@@ -44,6 +44,26 @@ async def test_apply_patch_dry_run_previews_without_writing(tmp_path) -> None:
     assert records[0].status == "preview"
 
 
+async def test_apply_patch_denies_missing_path_allowlist(tmp_path) -> None:
+    tool = ApplyPatchTool()
+    patch = "\n".join(
+        [
+            "*** Begin Patch",
+            "*** Add File: notes.txt",
+            "+hello",
+            "*** End Patch",
+        ]
+    )
+
+    result = await tool.execute(
+        {"patch": patch},
+        ToolContext(user_scopes=["tools:execute"], working_dir=tmp_path),
+    )
+
+    assert result.success is False
+    assert "Path allowlist not configured" in result.error
+
+
 async def test_apply_patch_updates_and_moves_file(tmp_path) -> None:
     source = tmp_path / "src.txt"
     source.write_text("alpha\nbeta\n", encoding="utf-8")

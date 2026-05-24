@@ -16,7 +16,7 @@ from agent33.tools.catalog import (
     CatalogEntry,
     ToolCatalogService,
 )
-from agent33.tools.registry_entry import ToolRegistryEntry
+from agent33.tools.registry_entry import ToolProvenance, ToolRegistryEntry
 
 # ---------------------------------------------------------------------------
 # Fixtures
@@ -57,6 +57,7 @@ def _make_entry(
     version: str = "1.0.0",
     tags: list[str] | None = None,
     parameters_schema: dict[str, Any] | None = None,
+    governance: dict[str, Any] | None = None,
 ) -> ToolRegistryEntry:
     return ToolRegistryEntry(
         tool_id=name,
@@ -64,6 +65,12 @@ def _make_entry(
         version=version,
         tags=tags or [],
         parameters_schema=parameters_schema or {},
+        owner="agent33-core",
+        provenance=ToolProvenance(
+            repo_url="https://github.com/agent-33/agent-33",
+            license="MIT",
+        ),
+        governance=governance or {},
     )
 
 
@@ -82,6 +89,10 @@ def _build_catalog_service() -> ToolCatalogService:
             "type": "object",
             "properties": {"command": {"type": "string"}},
             "required": ["command"],
+        },
+        governance={
+            "required_scope": "tools:execute",
+            "command_allowlist": ["git", "python"],
         },
     )
     web_entry = _make_entry("web_fetch", version="1.0.0", tags=["network"])
@@ -163,6 +174,11 @@ class TestListTools:
         assert "provider" in tool
         assert "has_schema" in tool
         assert "enabled" in tool
+        assert "owner" in tool
+        assert "provenance" in tool
+        assert "scope" in tool
+        assert "governance" in tool
+        assert "status" in tool
 
     def test_filter_by_category(self, tools_client: TestClient) -> None:
         resp = tools_client.get("/v1/catalog/tools?category=system")
@@ -260,6 +276,10 @@ class TestGetToolDetail:
         assert body["version"] == "2.0.0"
         assert body["has_schema"] is True
         assert body["parameters_schema"]["type"] == "object"
+        assert body["owner"] == "agent33-core"
+        assert body["status"] == "active"
+        assert body["provenance"]["license"] == "MIT"
+        assert body["governance"]["command_allowlist"] == ["git", "python"]
 
     def test_not_found(self, tools_client: TestClient) -> None:
         resp = tools_client.get("/v1/catalog/tools/nonexistent")

@@ -149,7 +149,10 @@ class TaskRunResult(BaseModel):
     result: TaskResult = TaskResult.PASS
     checks_passed: int = 0
     checks_total: int = 0
+    diff_lines: int = 0
     duration_ms: int = 0
+    failure_category: str = ""
+    flaky: bool = False
     notes: str = ""
 
 
@@ -188,6 +191,11 @@ class GateReport(BaseModel):
     overall: GateResult = GateResult.PASS
     check_results: list[GateCheckResult] = Field(default_factory=list)
     golden_task_results: list[TaskRunResult] = Field(default_factory=list)
+    required_item_ids: list[str] = Field(default_factory=list)
+    missing_required_items: list[str] = Field(default_factory=list)
+    skipped_required_items: list[str] = Field(default_factory=list)
+    failed_required_items: list[str] = Field(default_factory=list)
+    failed_extra_items: list[str] = Field(default_factory=list)
     timestamp: datetime = Field(default_factory=lambda: datetime.now(UTC))
 
 

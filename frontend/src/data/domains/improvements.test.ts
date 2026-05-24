@@ -1,6 +1,10 @@
 import { describe, expect, it } from "vitest";
 
-import { improvementsDomain } from "./improvements";
+import {
+  improvementsDomain,
+  phase20CoreOperationIds,
+  postPhase20OperationIds
+} from "./improvements";
 
 function getOperation(id: string) {
   const operation = improvementsDomain.operations.find((entry) => entry.id === id);
@@ -55,6 +59,50 @@ describe("improvementsDomain", () => {
       "POST /v1/improvements/learning/backup",
       "POST /v1/improvements/learning/restore"
     ]);
+  });
+
+  it("separates Phase 20 core acceptance from later improvement enhancements", () => {
+    expect(phase20CoreOperationIds).toHaveLength(23);
+    expect(postPhase20OperationIds).toHaveLength(9);
+
+    const operationsById = new Map(
+      improvementsDomain.operations.map((operation) => [operation.id, operation])
+    );
+    const phase20Routes = phase20CoreOperationIds.map((id) => {
+      const operation = operationsById.get(id);
+      expect(operation).toBeDefined();
+      return `${operation!.method} ${operation!.path}`;
+    });
+
+    expect(phase20Routes).toEqual([
+      "POST /v1/improvements/intakes",
+      "GET /v1/improvements/intakes",
+      "GET /v1/improvements/intakes/{intake_id}",
+      "POST /v1/improvements/intakes/{intake_id}/transition",
+      "POST /v1/improvements/lessons",
+      "GET /v1/improvements/lessons",
+      "GET /v1/improvements/lessons/{lesson_id}",
+      "POST /v1/improvements/lessons/{lesson_id}/complete-action",
+      "POST /v1/improvements/lessons/{lesson_id}/verify",
+      "POST /v1/improvements/checklists",
+      "GET /v1/improvements/checklists",
+      "GET /v1/improvements/checklists/{checklist_id}",
+      "POST /v1/improvements/checklists/{checklist_id}/complete",
+      "GET /v1/improvements/checklists/{checklist_id}/evaluate",
+      "GET /v1/improvements/metrics",
+      "GET /v1/improvements/metrics/history",
+      "POST /v1/improvements/metrics/snapshot",
+      "POST /v1/improvements/metrics/default-snapshot",
+      "GET /v1/improvements/metrics/trend/{metric_id}",
+      "POST /v1/improvements/refreshes",
+      "GET /v1/improvements/refreshes",
+      "GET /v1/improvements/refreshes/{refresh_id}",
+      "POST /v1/improvements/refreshes/{refresh_id}/complete"
+    ]);
+
+    expect([...phase20CoreOperationIds, ...postPhase20OperationIds].sort()).toEqual(
+      improvementsDomain.operations.map((operation) => operation.id).sort()
+    );
   });
 
   it("uses the current intake and lesson payload contracts", () => {

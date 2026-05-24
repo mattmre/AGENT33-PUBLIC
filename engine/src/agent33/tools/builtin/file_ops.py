@@ -146,7 +146,7 @@ class FileOpsTool:
         Uses Path containment checks that are resilient to ``..`` traversal.
         """
         if not context.path_allowlist:
-            return True
+            return False
         for allowed in context.path_allowlist:
             allowed_resolved = Path(allowed).resolve()
             try:

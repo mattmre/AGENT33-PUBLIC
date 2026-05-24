@@ -177,6 +177,7 @@ def test_config_auto_jwt_in_lite_mode() -> None:
     s = Settings(
         agent33_mode="lite",
         environment="production",  # would normally fail, but lite mode auto-generates
+        _env_file=None,
     )
     # Must NOT be the default placeholder
     assert s.jwt_secret.get_secret_value() != "change-me-in-production"
@@ -188,7 +189,7 @@ def test_config_auto_jwt_in_development_env() -> None:
     """In development environment, config auto-generates if secret is default."""
     from agent33.config import Settings
 
-    s = Settings(environment="development")
+    s = Settings(environment="development", _env_file=None)
     assert s.jwt_secret.get_secret_value() != "change-me-in-production"
 
 
@@ -199,7 +200,7 @@ def test_config_explicit_jwt_secret_preserved() -> None:
     from agent33.config import Settings
 
     explicit = "my-explicit-secret-that-is-very-long-and-random"
-    s = Settings(agent33_mode="lite", jwt_secret=SecretStr(explicit))
+    s = Settings(agent33_mode="lite", jwt_secret=SecretStr(explicit), _env_file=None)
     assert s.jwt_secret.get_secret_value() == explicit
 
 
@@ -227,4 +228,4 @@ def test_config_standard_mode_non_dev_env_raises() -> None:
     from agent33.config import Settings
 
     with pytest.raises(SystemExit):
-        Settings(agent33_mode="standard", environment="production")
+        Settings(agent33_mode="standard", environment="production", _env_file=None)

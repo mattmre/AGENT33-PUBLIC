@@ -91,6 +91,19 @@ describe("ExplanationView", () => {
     expect(markup).not.toContain("<p><!DOCTYPE");
   });
 
+  it("keeps HTML previews sandboxed without script permission", () => {
+    const htmlExplanation: ExplanationData = {
+      ...mockExplanation,
+      content: "<!DOCTYPE html><html><body><script>alert('blocked')</script></body></html>"
+    };
+    const markup = renderToStaticMarkup(
+      createElement(ExplanationView, { explanation: htmlExplanation })
+    );
+    expect(markup).toContain("<iframe");
+    expect(markup).toContain('sandbox="allow-same-origin"');
+    expect(markup).not.toContain("allow-scripts");
+  });
+
   it("renders HTML content starting with <html in an iframe", () => {
     const htmlExplanation: ExplanationData = {
       ...mockExplanation,

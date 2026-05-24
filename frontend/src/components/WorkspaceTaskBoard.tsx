@@ -15,10 +15,12 @@ import {
   groupWorkspaceTasksByStatus
 } from "../data/workspaceBoard";
 import { getWorkspaceRecoverySummary } from "../data/workspaceRecovery";
+import type { WorkspaceRecoverySummary } from "../data/workspaceRecovery";
 
 interface WorkspaceTaskBoardProps {
   workspace: WorkspaceSessionSummary;
   permissionModeId: PermissionModeId;
+  recoverySummary?: WorkspaceRecoverySummary;
   onOpenSafety: () => void;
   onOpenWorkflows: (draft?: WorkflowStarterDraft) => void;
 }
@@ -34,6 +36,7 @@ const TASK_ACTION_BY_STATUS: Record<(typeof WORKSPACE_TASK_STATUSES)[number], Pe
 export function WorkspaceTaskBoard({
   workspace,
   permissionModeId,
+  recoverySummary,
   onOpenSafety,
   onOpenWorkflows
 }: WorkspaceTaskBoardProps): JSX.Element {
@@ -41,7 +44,7 @@ export function WorkspaceTaskBoard({
   const tasksByStatus = useMemo(() => groupWorkspaceTasksByStatus(board.tasks), [board.tasks]);
   const templateStarters = getWorkspaceTemplateStarters(workspace.id);
   const workflowGate = getPermissionActionGate(permissionModeId, "start-workflow");
-  const recoverySummary = getWorkspaceRecoverySummary(workspace.id);
+  const effectiveRecoverySummary = recoverySummary ?? getWorkspaceRecoverySummary(workspace.id);
 
   return (
     <section className="workspace-board" aria-label={`${workspace.name} task board`}>
@@ -112,10 +115,10 @@ export function WorkspaceTaskBoard({
       <section className="workspace-recovery-panel" aria-label={`${workspace.template} recovery controls`}>
         <div className="workspace-template-starters-header">
           <h3>Recovery and workspace controls</h3>
-          <p>{recoverySummary.primaryMessage} {recoverySummary.nextAction}</p>
+          <p>{effectiveRecoverySummary.primaryMessage} {effectiveRecoverySummary.nextAction}</p>
         </div>
         <div className="workspace-recovery-grid">
-          {recoverySummary.snapshots.map((snapshot) => (
+          {effectiveRecoverySummary.snapshots.map((snapshot) => (
             <article key={snapshot.id} className={`workspace-recovery-card workspace-recovery-card--${snapshot.status}`}>
               <span>{snapshot.status}</span>
               <strong>{snapshot.label}</strong>

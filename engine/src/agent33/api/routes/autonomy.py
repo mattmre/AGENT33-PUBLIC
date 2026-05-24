@@ -3,18 +3,28 @@
 # NOTE: no ``from __future__ import annotations`` — Pydantic needs these
 # types at runtime for request-body validation.
 
-from typing import Any
+from typing import Any, Literal
 
 import structlog
 from fastapi import APIRouter, HTTPException
 from pydantic import BaseModel, Field
 
-from agent33.autonomy.models import BudgetState, EscalationUrgency
+from agent33.autonomy.models import (
+    BudgetState,
+    CommandPermission,
+    EscalationTrigger,
+    EscalationUrgency,
+    FileScope,
+    NetworkScope,
+    ResourceLimits,
+    StopCondition,
+)
 from agent33.autonomy.service import (
     AutonomyService,
     BudgetNotFoundError,
     EnforcerNotFoundError,
     InvalidStateTransitionError,
+    PreflightFailedError,
 )
 from agent33.security.permissions import require_scope
 
@@ -47,6 +57,14 @@ class CreateBudgetRequest(BaseModel):
     agent_id: str = ""
     in_scope: list[str] = Field(default_factory=list)
     out_of_scope: list[str] = Field(default_factory=list)
+    files: FileScope = Field(default_factory=FileScope)
+    allowed_commands: list[CommandPermission] = Field(default_factory=list)
+    denied_commands: list[str] = Field(default_factory=list)
+    require_approval_commands: list[str] = Field(default_factory=list)
+    network: NetworkScope = Field(default_factory=NetworkScope)
+    limits: ResourceLimits = Field(default_factory=ResourceLimits)
+    stop_conditions: list[StopCondition] = Field(default_factory=list)
+    escalation_triggers: list[EscalationTrigger] = Field(default_factory=list)
     default_escalation_target: str = "orchestrator"
 
 
@@ -57,7 +75,8 @@ class TransitionRequest(BaseModel):
 
 class CheckFileRequest(BaseModel):
     path: str
-    mode: str = "read"  # "read" or "write"
+    mode: Literal["read", "write"] | None = None
+    action: Literal["read", "write"] | None = None
     lines: int = 0
 
 
@@ -66,7 +85,10 @@ class CheckCommandRequest(BaseModel):
 
 
 class CheckNetworkRequest(BaseModel):
-    domain: str
+    domain: str = ""
+    host: str = ""
+    url: str = ""
+    protocol: str = "https"
 
 
 class TriggerEscalationRequest(BaseModel):
@@ -92,6 +114,14 @@ async def create_budget(body: CreateBudgetRequest) -> dict[str, Any]:
         agent_id=body.agent_id,
         in_scope=body.in_scope,
         out_of_scope=body.out_of_scope,
+        files=body.files,
+        allowed_commands=body.allowed_commands,
+        denied_commands=body.denied_commands,
+        require_approval_commands=body.require_approval_commands,
+        network=body.network,
+        limits=body.limits,
+        stop_conditions=body.stop_conditions,
+        escalation_triggers=body.escalation_triggers,
         default_escalation_target=body.default_escalation_target,
     )
     return {
@@ -258,6 +288,8 @@ async def create_enforcer(budget_id: str) -> dict[str, str]:
         raise HTTPException(status_code=404, detail=f"Budget not found: {budget_id}") from None
     except InvalidStateTransitionError as exc:
         raise HTTPException(status_code=409, detail=str(exc)) from None
+    except PreflightFailedError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from None
     return {"budget_id": budget_id, "status": "enforcer_created"}
 
 
@@ -267,11 +299,12 @@ async def create_enforcer(budget_id: str) -> dict[str, str]:
 )
 async def enforce_file(budget_id: str, body: CheckFileRequest) -> dict[str, Any]:
     """Check file access against budget enforcement rules."""
+    mode = body.mode or body.action or "read"
     try:
         result = _service.enforce_file(
             budget_id=budget_id,
             path=body.path,
-            mode=body.mode,
+            mode=mode,
             lines=body.lines,
         )
     except EnforcerNotFoundError:
@@ -279,7 +312,7 @@ async def enforce_file(budget_id: str, body: CheckFileRequest) -> dict[str, Any]
             status_code=404,
             detail=f"No enforcer for budget: {budget_id}",
         ) from None
-    return {"result": result.value, "path": body.path, "mode": body.mode}
+    return {"result": result.value, "path": body.path, "mode": mode}
 
 
 @router.post(
@@ -304,14 +337,22 @@ async def enforce_command(budget_id: str, body: CheckCommandRequest) -> dict[str
 )
 async def enforce_network(budget_id: str, body: CheckNetworkRequest) -> dict[str, Any]:
     """Check network access against budget enforcement rules."""
+    from urllib.parse import urlparse
+
+    domain = body.domain or body.host
+    if not domain and body.url:
+        parsed = urlparse(body.url)
+        domain = parsed.hostname or ""
+    if not domain:
+        raise HTTPException(status_code=422, detail="domain, host, or url is required")
     try:
-        result = _service.enforce_network(budget_id=budget_id, domain=body.domain)
+        result = _service.enforce_network(budget_id=budget_id, domain=domain)
     except EnforcerNotFoundError:
         raise HTTPException(
             status_code=404,
             detail=f"No enforcer for budget: {budget_id}",
         ) from None
-    return {"result": result.value, "domain": body.domain}
+    return {"result": result.value, "domain": domain}
 
 
 # ---------------------------------------------------------------------------

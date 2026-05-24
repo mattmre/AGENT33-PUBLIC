@@ -172,7 +172,9 @@ Use the highest applicable risk level from this matrix:
 | **L2_REVIEW** | L2 reviewer assigned and reviewing | L2_APPROVED, L2_CHANGES_REQUESTED |
 | **L2_CHANGES_REQUESTED** | L2 found issues requiring fixes | DRAFT |
 | **L2_APPROVED** | L2 approved | APPROVED |
-| **APPROVED** | All required reviews complete | MERGED |
+| **APPROVED** | All required reviews complete; final signoff may still request rework or defer before merge | CHANGES_REQUESTED, DEFERRED, MERGED |
+| **CHANGES_REQUESTED** | Final signoff requires rework after review approval | DRAFT |
+| **DEFERRED** | Final signoff defers merge pending follow-up evidence or operator decision | READY |
 | **MERGED** | Changes merged to target branch | - |
 
 ### Signoff Record Schema

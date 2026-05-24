@@ -13,8 +13,12 @@ export const tracesDomain: DomainConfig = {
       description: "Create a trace session.",
       defaultBody: JSON.stringify(
         {
-          run_id: "run-001",
-          metadata: { source: "ui" }
+          task_id: "T-001",
+          session_id: "SES-20260524-120000-A1B2",
+          run_id: "RUN-20260524-120001-C3D4",
+          agent_id: "AGT-006",
+          agent_role: "implementer",
+          model: "gpt-5"
         },
         null,
         2
@@ -48,8 +52,14 @@ export const tracesDomain: DomainConfig = {
       },
       defaultBody: JSON.stringify(
         {
-          action: "read_file",
-          status: "ok"
+          step_id: "STP-001",
+          action_id: "ACT-001",
+          tool: "shell",
+          input_data: "echo hello",
+          output_data: "hello",
+          exit_code: 0,
+          duration_ms: 100,
+          status: "success"
         },
         null,
         2
@@ -64,7 +74,15 @@ export const tracesDomain: DomainConfig = {
       defaultPathParams: {
         trace_id: "replace-with-trace-id"
       },
-      defaultBody: "{}"
+      defaultBody: JSON.stringify(
+        {
+          status: "completed",
+          failure_code: "",
+          failure_message: ""
+        },
+        null,
+        2
+      )
     },
     {
       id: "traces-failure-add",
@@ -77,8 +95,10 @@ export const tracesDomain: DomainConfig = {
       },
       defaultBody: JSON.stringify(
         {
-          code: "ERR_TIMEOUT",
-          message: "Timeout during external call"
+          message: "Timeout during external call",
+          category: "F-TMO",
+          severity: "medium",
+          subcode: "F-TMO-003"
         },
         null,
         2

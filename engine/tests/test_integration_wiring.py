@@ -224,6 +224,14 @@ class TestLifespanState:
         app, _, _ = patched_app
         assert isinstance(app.state.tool_registry, ToolRegistry)
 
+    def test_state_has_code_executor_wired_to_tool_registry(self, patched_app):
+        """Startup should attach the live ToolRegistry to CodeExecutor governance."""
+        from agent33.execution.executor import CodeExecutor
+
+        app, _, _ = patched_app
+        assert isinstance(app.state.code_executor, CodeExecutor)
+        assert app.state.code_executor._tool_registry is app.state.tool_registry
+
     def test_builtin_tools_are_registered_with_live_runtime_dependencies(self, patched_app):
         """Builtin tools should be registered against the startup runtime objects."""
         from agent33.config import settings

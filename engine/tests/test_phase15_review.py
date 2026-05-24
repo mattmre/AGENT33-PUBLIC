@@ -289,6 +289,23 @@ class TestSignoffStateMachine:
         assert SignoffStateMachine.can_transition(SignoffState.DRAFT, SignoffState.READY) is True
         assert SignoffStateMachine.can_transition(SignoffState.DRAFT, SignoffState.MERGED) is False
 
+    def test_state_count_matches_extended_contract(self):
+        """Runtime state enum includes final rationale rework states."""
+        assert [state.value for state in SignoffState] == [
+            "draft",
+            "ready",
+            "l1-review",
+            "l1-changes-requested",
+            "l1-approved",
+            "l2-review",
+            "l2-changes-requested",
+            "l2-approved",
+            "approved",
+            "changes-requested",
+            "deferred",
+            "merged",
+        ]
+
 
 # ===================================================================
 # 5. Review service lifecycle
@@ -461,6 +478,26 @@ class TestReviewServiceChangesRequested:
         )
         assert record.state == SignoffState.L2_CHANGES_REQUESTED
 
+    def test_final_changes_requested_returns_to_ready(self):
+        record = self.svc.create(task_id="T-302")
+        self.svc.assess_risk(record.id, [RiskTrigger.CODE_ISOLATED])
+        self.svc.mark_ready(record.id)
+        self.svc.assign_l1(record.id)
+        record = self.svc.submit_l1(record.id, decision=ReviewDecision.APPROVED)
+        assert record.state == SignoffState.APPROVED
+
+        record = self.svc.approve_with_rationale(
+            record.id,
+            approver_id="operator-1",
+            decision="changes_requested",
+            rationale="Final signoff found missing regression coverage.",
+            modification_summary="Add regression coverage before resubmission.",
+        )
+        assert record.state == SignoffState.CHANGES_REQUESTED
+
+        record = self.svc.mark_ready(record.id)
+        assert record.state == SignoffState.READY
+
 
 class TestReviewServiceEscalation:
     """Test L1 escalation triggering L2 requirement."""
@@ -481,6 +518,26 @@ class TestReviewServiceEscalation:
         record = self.svc.submit_l1(record.id, decision=ReviewDecision.ESCALATED)
         assert record.risk_assessment.l2_required is True
         assert record.state == SignoffState.L1_APPROVED
+
+    def test_high_risk_reassessment_blocks_l1_only_finalization(self):
+        """A post-approval risk increase must not bypass L2 signoff."""
+        record = self.svc.create(task_id="T-401")
+        self.svc.assess_risk(record.id, [RiskTrigger.CODE_ISOLATED])
+        self.svc.mark_ready(record.id)
+        self.svc.assign_l1(record.id)
+        record = self.svc.submit_l1(record.id, decision=ReviewDecision.APPROVED)
+        assert record.state == SignoffState.APPROVED
+        assert record.risk_assessment.l2_required is False
+
+        record = self.svc.assess_risk(record.id, [RiskTrigger.SECURITY])
+        assert record.state == SignoffState.APPROVED
+        assert record.risk_assessment.l2_required is True
+        assert record.l2_review.decision is None
+
+        with pytest.raises(ReviewStateError, match="requires approved L2"):
+            self.svc.approve(record.id, approver_id="operator-1")
+        with pytest.raises(ReviewStateError, match="requires approved L2"):
+            self.svc.merge(record.id)
 
 
 class TestReviewServiceErrors:
@@ -748,6 +805,30 @@ class TestReviewAPI:
         )
         assert resp.status_code == 200
         assert resp.json()["state"] == "l1-changes-requested"
+
+    def test_final_changes_requested_ready_api_flow(self):
+        created = self._create_review()
+        rid = created["id"]
+
+        self.client.post(f"/v1/reviews/{rid}/assess", json={"triggers": ["code-isolated"]})
+        self.client.post(f"/v1/reviews/{rid}/ready")
+        self.client.post(f"/v1/reviews/{rid}/assign-l1")
+        self.client.post(f"/v1/reviews/{rid}/l1", json={"decision": "approved"})
+
+        resp = self.client.post(
+            f"/v1/reviews/{rid}/approve-with-rationale",
+            json={
+                "decision": "changes_requested",
+                "rationale": "Final signoff found missing regression coverage.",
+                "modification_summary": "Add regression coverage before resubmission.",
+            },
+        )
+        assert resp.status_code == 200
+        assert resp.json()["state"] == "changes-requested"
+
+        resp = self.client.post(f"/v1/reviews/{rid}/ready")
+        assert resp.status_code == 200
+        assert resp.json()["state"] == "ready"
 
     def test_assess_not_found_returns_404(self):
         resp = self.client.post(

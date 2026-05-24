@@ -1,0 +1,329 @@
+{
+  "schema_version": "1.0",
+  "manifest_id": "p02-promoted-file-source-rationale-coverage",
+  "generated_on": "2026-05-24",
+  "promoted_file_universe": "all core/**/*.md files in the current worktree",
+  "coverage_groups": [
+    {
+      "id": "p02-core-entrypoints-and-decision-log",
+      "evidence_basis": "Phase 02 acceptance criteria and canonicalization decision log.",
+      "sources": [
+        "docs/architecture/PHASE-02-CANONICAL-CORE-ARCHITECTURE.md",
+        "core/CHANGELOG.md"
+      ],
+      "rationale": "These files define the canonical core layout, navigation entrypoints, orchestration index, and canonicalization decision discipline required by Phase 02.",
+      "files": [
+        "core/CHANGELOG.md",
+        "core/INDEX.md",
+        "core/ORCHESTRATION_INDEX.md",
+        "core/README.md"
+      ]
+    },
+    {
+      "id": "phase21-artifact-memory",
+      "evidence_basis": "Phase 21 extensibility artifacts recorded in core/CHANGELOG.md and phase plan.",
+      "sources": [
+        "core/CHANGELOG.md",
+        "docs/architecture/PHASE-21-EXTENSIBILITY-PATTERNS-INTEGRATION.md"
+      ],
+      "rationale": "These files were promoted as canonical relationship and artifact-discovery infrastructure for reusable core governance.",
+      "files": [
+        "core/ARTIFACT_INDEX.md",
+        "core/agents/AGENT_MEMORY_PROTOCOL.md"
+      ]
+    },
+    {
+      "id": "agent-guidance",
+      "evidence_basis": "core/CHANGELOG.md exact agent rows plus archived source rows.",
+      "sources": [
+        "core/CHANGELOG.md",
+        "collected/*/CLAUDE.md",
+        "collected/*/AGENTS.md",
+        "collected/*/docs/CLAUDE_SESSION_WRAP_CONTEXT_AGENT.md"
+      ],
+      "rationale": "Agent guidance files were selected from the most complete or identical collected variants, then normalized into model-agnostic core guidance.",
+      "files": [
+        "core/agents/AGENTS.md",
+        "core/agents/CLAUDE.md",
+        "core/agents/CLAUDE_SESSION_WRAP_CONTEXT_AGENT.md",
+        "core/agents/README.md"
+      ]
+    },
+    {
+      "id": "aep-architecture",
+      "evidence_basis": "core/CHANGELOG.md wildcard row for core/arch/*.",
+      "sources": [
+        "core/CHANGELOG.md",
+        "collected/*/docs/Architecture & Planning/*"
+      ],
+      "rationale": "AEP templates and guides were promoted as identical collected copies and retained as the canonical architecture baseline.",
+      "files": [
+        "core/arch/CHANGE_EVENT_TYPES.md",
+        "core/arch/README.md",
+        "core/arch/REGRESSION_GATES.md",
+        "core/arch/active-tracker-template.md",
+        "core/arch/agent-learning.md",
+        "core/arch/backlog-index.md",
+        "core/arch/backlog-template.md",
+        "core/arch/change-log.md",
+        "core/arch/cycle-layout-template.md",
+        "core/arch/cycle-summaries/README.md",
+        "core/arch/cycle-summary-template.md",
+        "core/arch/evaluation-harness.md",
+        "core/arch/evaluation-report-template.md",
+        "core/arch/glossary.md",
+        "core/arch/phase-planning.md",
+        "core/arch/phase-summaries/2026-01-16_PR-000_summary.md",
+        "core/arch/phase-summaries/README.md",
+        "core/arch/phase-summary-template.md",
+        "core/arch/risk-memo-template.md",
+        "core/arch/risk-memos/README.md",
+        "core/arch/risk-memos/closed/README.md",
+        "core/arch/schedule-and-tracking.md",
+        "core/arch/scope-lock-template.md",
+        "core/arch/templates.md",
+        "core/arch/test-matrix.md",
+        "core/arch/tier-close-checklist.md",
+        "core/arch/tracker-index.md",
+        "core/arch/tracker-pointer.md",
+        "core/arch/verification-log.md",
+        "core/arch/workflow.md"
+      ]
+    },
+    {
+      "id": "api-reference-stub",
+      "evidence_basis": "Public-release stub retained in core/api/PHASE-01-API.md.",
+      "sources": [
+        "core/api/PHASE-01-API.md"
+      ],
+      "rationale": "The file preserves the original Phase 1 API reference path while making the public-release removal explicit.",
+      "files": [
+        "core/api/PHASE-01-API.md"
+      ]
+    },
+    {
+      "id": "prompt-assets",
+      "evidence_basis": "core/CHANGELOG.md prompt rows and n8n research dossier evidence.",
+      "sources": [
+        "core/CHANGELOG.md",
+        "docs/research/repo_dossiers/n8n-workflows.md"
+      ],
+      "rationale": "Prompt assets are retained as reusable prompt templates or review frameworks tied to collected prompt sources and n8n workflow research.",
+      "files": [
+        "core/prompts/agentic-review-framework.md",
+        "core/prompts/agentic-review-prompts.md",
+        "core/prompts/n8n-automation-prompt.md"
+      ]
+    },
+    {
+      "id": "orchestrator-system",
+      "evidence_basis": "core/CHANGELOG.md core/orchestrator/* row plus CA-007 through CA-062 canonicalization rows.",
+      "sources": [
+        "core/CHANGELOG.md",
+        "collected/*/local-agent-orchestrator/*",
+        "docs/competitive-analysis/*"
+      ],
+      "rationale": "Orchestrator files form the canonical model-agnostic orchestration system and later competitive-feature specifications, with source/rationale captured in changelog decision rows.",
+      "files": [
+        "core/orchestrator/AGENT_REGISTRY.md",
+        "core/orchestrator/AGENT_ROUTING_MAP.md",
+        "core/orchestrator/AUTONOMY_ENFORCEMENT.md",
+        "core/orchestrator/CHEAT_SHEET.md",
+        "core/orchestrator/CODE_EXECUTION_CONTRACT.md",
+        "core/orchestrator/COMPETITIVE_FEATURES_INDEX.md",
+        "core/orchestrator/CONTINUOUS_IMPROVEMENT.md",
+        "core/orchestrator/DECISIONS.md",
+        "core/orchestrator/GLOSSARY.md",
+        "core/orchestrator/OPERATOR_MANUAL.md",
+        "core/orchestrator/PROMPT_PACK.md",
+        "core/orchestrator/QWEN_CODE_TOOL_PROTOCOL.md",
+        "core/orchestrator/README.md",
+        "core/orchestrator/RELATIONSHIP_TYPES.md",
+        "core/orchestrator/RELEASE_CADENCE.md",
+        "core/orchestrator/REVIEW_INTAKE.md",
+        "core/orchestrator/SECURITY_HARDENING.md",
+        "core/orchestrator/TOOLS_AS_CODE.md",
+        "core/orchestrator/TOOL_DEPRECATION_ROLLBACK.md",
+        "core/orchestrator/TOOL_GOVERNANCE.md",
+        "core/orchestrator/TOOL_REGISTRY_CHANGE_CONTROL.md",
+        "core/orchestrator/TRACE_SCHEMA.md",
+        "core/orchestrator/TWO_LAYER_REVIEW.md",
+        "core/orchestrator/agent-protocols/AGENT_HANDOFF_PROTOCOL.md",
+        "core/orchestrator/agent-protocols/COMMUNICATION_FLOW_SCHEMA.md",
+        "core/orchestrator/agent-protocols/GUARDRAILS_VALIDATION_HOOKS.md",
+        "core/orchestrator/agents/CLAUDE_ORCHESTRATOR_RULES.md",
+        "core/orchestrator/agents/DIRECTOR_RULES.md",
+        "core/orchestrator/agents/GEMINI_REVIEW_RULES.md",
+        "core/orchestrator/agents/QWEN_WORKER_RULES.md",
+        "core/orchestrator/analysis/ORCHESTRATION_META_ANALYSIS.md",
+        "core/orchestrator/analysis/README.md",
+        "core/orchestrator/analytics/METRICS_CATALOG.md",
+        "core/orchestrator/analytics/README.md",
+        "core/orchestrator/community/GOVERNANCE_COMMUNITY_SPEC.md",
+        "core/orchestrator/community/README.md",
+        "core/orchestrator/config-gen/GENERATOR_SPEC.md",
+        "core/orchestrator/config-gen/README.md",
+        "core/orchestrator/decision/DECISION_ROUTING_SPEC.md",
+        "core/orchestrator/dependencies/DEPENDENCY_GRAPH_SPEC.md",
+        "core/orchestrator/dependencies/README.md",
+        "core/orchestrator/distribution/DISTRIBUTION_SYNC_SPEC.md",
+        "core/orchestrator/distribution/README.md",
+        "core/orchestrator/filters/GLOB_PATTERNS.md",
+        "core/orchestrator/filters/README.md",
+        "core/orchestrator/handoff/AUTONOMY_BUDGET.md",
+        "core/orchestrator/handoff/DECISIONS.md",
+        "core/orchestrator/handoff/DEFINITION_OF_DONE.md",
+        "core/orchestrator/handoff/ESCALATION_PATHS.md",
+        "core/orchestrator/handoff/EVIDENCE_CAPTURE.md",
+        "core/orchestrator/handoff/HARNESS_INITIALIZER.md",
+        "core/orchestrator/handoff/PLAN.md",
+        "core/orchestrator/handoff/PRIORITIES.md",
+        "core/orchestrator/handoff/PROGRESS_LOG_FORMAT.md",
+        "core/orchestrator/handoff/REVIEW_CAPTURE.md",
+        "core/orchestrator/handoff/REVIEW_CHECKLIST.md",
+        "core/orchestrator/handoff/SESSION_WRAP.md",
+        "core/orchestrator/handoff/SPEC_FIRST_CHECKLIST.md",
+        "core/orchestrator/handoff/STATUS.md",
+        "core/orchestrator/handoff/TASKS.md",
+        "core/orchestrator/incremental/ARTIFACT_GRAPH.md",
+        "core/orchestrator/incremental/CHANGE_DETECTION.md",
+        "core/orchestrator/incremental/README.md",
+        "core/orchestrator/integrations/CHANNEL_INTEGRATION_SPEC.md",
+        "core/orchestrator/integrations/CREDENTIAL_MANAGEMENT_SPEC.md",
+        "core/orchestrator/integrations/PRIVACY_ARCHITECTURE.md",
+        "core/orchestrator/integrations/README.md",
+        "core/orchestrator/integrations/VOICE_MEDIA_SPEC.md",
+        "core/orchestrator/lineage/LINEAGE_TRACKING_SPEC.md",
+        "core/orchestrator/modes/DRY_RUN_SPEC.md",
+        "core/orchestrator/modes/README.md",
+        "core/orchestrator/observability/HEALTH_DASHBOARD_SPEC.md",
+        "core/orchestrator/parallel/EXECUTION_MODES.md",
+        "core/orchestrator/parallel/README.md",
+        "core/orchestrator/parallel/SEMAPHORE_CONTROL.md",
+        "core/orchestrator/plugins/PLUGIN_REGISTRY_SPEC.md",
+        "core/orchestrator/prompts/SYSTEM.md",
+        "core/orchestrator/prompts/WORKER_RULES.md",
+        "core/orchestrator/sensors/ARTIFACT_SENSOR_SPEC.md",
+        "core/orchestrator/statecharts/BACKPRESSURE_SPEC.md",
+        "core/orchestrator/statecharts/STATECHART_WORKFLOW_FORMAT.md",
+        "core/orchestrator/statecharts/TASK_DEFINITION_REGISTRY.md",
+        "core/orchestrator/testing/WORKFLOW_TESTING_FRAMEWORK.md",
+        "core/orchestrator/triggers/README.md",
+        "core/orchestrator/triggers/TRIGGER_CATALOG.md",
+        "core/orchestrator/workflows/ASSET_FIRST_WORKFLOW_SCHEMA.md",
+        "core/orchestrator/workflows/DAG_EXECUTION_ENGINE.md",
+        "core/orchestrator/workflows/EXPRESSION_LANGUAGE_SPEC.md",
+        "core/orchestrator/workflows/README.md"
+      ]
+    },
+    {
+      "id": "policy-pack-v1",
+      "evidence_basis": "Phase 05 policy-pack criteria and current drift evidence.",
+      "sources": [
+        "docs/architecture/PHASE-05-POLICY-PACK-AND-RISK-TRIGGERS.md",
+        "docs/architecture/reviews/phase-05-policy-pack-risk-trigger-drift-2026-05-24.md",
+        "core/ARTIFACT_INDEX.md"
+      ],
+      "rationale": "Policy pack files are canonical governance artifacts for agent behavior, evidence, promotion, review triggers, and modular reusable rules.",
+      "files": [
+        "core/packs/policy-pack-v1/ACCEPTANCE_CHECKS.md",
+        "core/packs/policy-pack-v1/AGENTS.md",
+        "core/packs/policy-pack-v1/EVIDENCE.md",
+        "core/packs/policy-pack-v1/ORCHESTRATION.md",
+        "core/packs/policy-pack-v1/PROMOTION_GUIDE.md",
+        "core/packs/policy-pack-v1/RISK_TRIGGERS.md",
+        "core/packs/policy-pack-v1/rules/README.md",
+        "core/packs/policy-pack-v1/rules/agents.md",
+        "core/packs/policy-pack-v1/rules/coding-style.md",
+        "core/packs/policy-pack-v1/rules/git-workflow.md",
+        "core/packs/policy-pack-v1/rules/patterns.md",
+        "core/packs/policy-pack-v1/rules/performance.md",
+        "core/packs/policy-pack-v1/rules/security.md",
+        "core/packs/policy-pack-v1/rules/testing.md"
+      ]
+    },
+    {
+      "id": "mdc-rules",
+      "evidence_basis": "CA-012 MDC rules entry in core/ORCHESTRATION_INDEX.md and competitive features index.",
+      "sources": [
+        "core/ORCHESTRATION_INDEX.md",
+        "core/orchestrator/COMPETITIVE_FEATURES_INDEX.md"
+      ],
+      "rationale": "The MDC rules README documents the canonical rule-pack format for IDE-compatible orchestration rules.",
+      "files": [
+        "core/packs/mdc-rules/README.md"
+      ]
+    },
+    {
+      "id": "schema-index",
+      "evidence_basis": "CA-010 configuration schema entry in core/ORCHESTRATION_INDEX.md.",
+      "sources": [
+        "core/ORCHESTRATION_INDEX.md"
+      ],
+      "rationale": "The schema README is the canonical navigation artifact for configuration schema locations referenced by orchestration.",
+      "files": [
+        "core/schemas/README.md"
+      ]
+    },
+    {
+      "id": "workflow-assets",
+      "evidence_basis": "core/CHANGELOG.md core/workflows/* row and workflow-specific promotion rows.",
+      "sources": [
+        "core/CHANGELOG.md",
+        "collected/*/.github/*"
+      ],
+      "rationale": "Workflow files and skills are retained as reusable GitHub workflow, command, hook, skill, and promotion assets selected from collected workflow sources.",
+      "files": [
+        "core/workflows/ISSUE_TEMPLATE/bug_report.md",
+        "core/workflows/ISSUE_TEMPLATE/feature_request.md",
+        "core/workflows/PROMOTION_CRITERIA.md",
+        "core/workflows/PULL_REQUEST_TEMPLATE.md",
+        "core/workflows/README.md",
+        "core/workflows/SOURCES_INDEX.md",
+        "core/workflows/commands/COMMAND_REGISTRY.md",
+        "core/workflows/commands/README.md",
+        "core/workflows/commands/build-fix.md",
+        "core/workflows/commands/docs.md",
+        "core/workflows/commands/e2e.md",
+        "core/workflows/commands/handoff.md",
+        "core/workflows/commands/plan.md",
+        "core/workflows/commands/refactor.md",
+        "core/workflows/commands/review.md",
+        "core/workflows/commands/status.md",
+        "core/workflows/commands/tasks.md",
+        "core/workflows/commands/tdd.md",
+        "core/workflows/commands/verify.md",
+        "core/workflows/hooks/HOOK_REGISTRY.md",
+        "core/workflows/hooks/README.md",
+        "core/workflows/hooks/examples/evidence-capture-hook.md",
+        "core/workflows/hooks/examples/pre-commit-security-hook.md",
+        "core/workflows/hooks/examples/scope-validation-hook.md",
+        "core/workflows/hooks/examples/session-end-handoff-hook.md",
+        "core/workflows/improvement-cycle-metrics-review.md",
+        "core/workflows/improvement-cycle-retrospective.md",
+        "core/workflows/improvement-cycle/README.md",
+        "core/workflows/instructions/csharp.instructions.md",
+        "core/workflows/instructions/python.instructions.md",
+        "core/workflows/skills/README.md",
+        "core/workflows/skills/backend-patterns.md",
+        "core/workflows/skills/coding-standards.md",
+        "core/workflows/skills/imported-capability-packs.md",
+        "core/workflows/skills/security-review.md",
+        "core/workflows/skills/tdd-workflow.md"
+      ]
+    },
+    {
+      "id": "research-log",
+      "evidence_basis": "Phase 20 current closeout and continuous-improvement source references.",
+      "sources": [
+        "docs/architecture/PHASE-20-CONTINUOUS-IMPROVEMENT-AND-RESEARCH-INTAKE.md",
+        "docs/architecture/reviews/phase-20-continuous-improvement-closeout-2026-05-24.md",
+        "core/orchestrator/CONTINUOUS_IMPROVEMENT.md"
+      ],
+      "rationale": "The research log is the durable core pointer for accepted, deferred, and rejected research intake evidence.",
+      "files": [
+        "core/research/RESEARCH_LOG.md"
+      ]
+    }
+  ]
+}

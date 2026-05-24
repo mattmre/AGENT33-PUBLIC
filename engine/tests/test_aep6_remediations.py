@@ -372,6 +372,7 @@ class TestApprovedToolBypassesAskPolicy:
         ctx = ToolContext(
             user_scopes=["tools:execute"],
             tool_policies={"shell": "ask"},
+            command_allowlist=["ls"],
         )
 
         result = gov.pre_execute_check("shell", {"command": "ls"}, ctx)

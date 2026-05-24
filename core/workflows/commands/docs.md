@@ -83,7 +83,7 @@ Related docs:
 ## Cross-Reference Verification
 
 Check these reference types:
-- Internal markdown links: `[text](./path.md)`
+- Internal markdown links and relative markdown file paths
 - Anchor links: `[text](#section)`
 - File references in code blocks
 - Import paths in examples

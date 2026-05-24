@@ -2,7 +2,7 @@
 
 from __future__ import annotations
 
-from datetime import date  # noqa: TC003 – Pydantic needs runtime access
+from datetime import date  # noqa: TCH003 - Pydantic needs runtime access
 from enum import StrEnum
 from typing import Any, Literal
 
@@ -60,6 +60,10 @@ class ToolRegistryEntry(BaseModel):
     next_review: date | None = None
     deprecation_message: str = ""
     tags: list[str] = Field(default_factory=list)
+    governance: dict[str, Any] = Field(
+        default_factory=dict,
+        description="Raw governance metadata loaded from tool definitions.",
+    )
     parameters_schema: dict[str, Any] = Field(
         default_factory=dict,
         description="JSON Schema for tool input parameters.",

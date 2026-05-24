@@ -489,14 +489,8 @@ class ToolLoop:
                 return self._build_result(state, last_raw, last_model, "error")
 
             if self._runtime_enforcer is not None:
-                from agent33.autonomy.models import EnforcementResult
-
-                iter_result = self._runtime_enforcer.record_iteration()
-                if iter_result == EnforcementResult.BLOCKED:
-                    return self._build_result(state, last_raw, last_model, "budget_exceeded")
-
-                dur_result = self._runtime_enforcer.check_duration()
-                if dur_result == EnforcementResult.BLOCKED:
+                blocked, _phase = self._check_runtime_budget()
+                if blocked:
                     return self._build_result(state, last_raw, last_model, "budget_exceeded")
 
         # --- Max iterations exhausted -----------------------------------------
@@ -946,25 +940,12 @@ class ToolLoop:
                     break
 
                 if self._runtime_enforcer is not None:
-                    from agent33.autonomy.models import EnforcementResult
-
-                    iter_result = self._runtime_enforcer.record_iteration()
-                    if iter_result == EnforcementResult.BLOCKED:
+                    blocked, phase = self._check_runtime_budget()
+                    if blocked:
                         yield ToolLoopEvent(
                             event_type="tool_call_blocked",
                             iteration=state.iteration,
-                            data={"reason": "budget_exceeded", "phase": "iteration"},
-                        )
-                        termination_reason = "budget_exceeded"
-                        final_response = response
-                        break
-
-                    dur_result = self._runtime_enforcer.check_duration()
-                    if dur_result == EnforcementResult.BLOCKED:
-                        yield ToolLoopEvent(
-                            event_type="tool_call_blocked",
-                            iteration=state.iteration,
-                            data={"reason": "budget_exceeded", "phase": "duration"},
+                            data={"reason": "budget_exceeded", "phase": phase},
                         )
                         termination_reason = "budget_exceeded"
                         final_response = response
@@ -1182,6 +1163,35 @@ class ToolLoop:
 
         recent_calls = state.call_history[-threshold:]
         return len(set(recent_calls)) == 1
+
+    def _check_runtime_budget(self) -> tuple[bool, str]:
+        """Advance runtime budget accounting and evaluate live stop conditions."""
+        if self._runtime_enforcer is None:
+            return False, ""
+
+        from agent33.autonomy.models import EnforcementResult
+
+        iter_result = self._runtime_enforcer.record_iteration()
+        if iter_result == EnforcementResult.BLOCKED:
+            return True, "iteration"
+
+        dur_result = self._runtime_enforcer.check_duration()
+        if dur_result == EnforcementResult.BLOCKED:
+            return True, "duration"
+
+        evaluate_stop_conditions = getattr(
+            self._runtime_enforcer,
+            "evaluate_stop_conditions",
+            None,
+        )
+        if callable(evaluate_stop_conditions):
+            triggered = evaluate_stop_conditions()
+            context = getattr(self._runtime_enforcer, "context", None)
+            stopped = getattr(context, "stopped", False)
+            if isinstance(triggered, list) and triggered and stopped is True:
+                return True, "stop_condition"
+
+        return False, ""
 
     async def _execute_with_delegation_relay(
         self,
