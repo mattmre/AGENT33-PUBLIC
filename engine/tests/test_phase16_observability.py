@@ -11,10 +11,13 @@ Covers:
 
 from __future__ import annotations
 
+from pathlib import Path
+
 import pytest
 from fastapi.testclient import TestClient
 
 from agent33.main import app
+from agent33.observability import trace_collector as trace_collector_module
 from agent33.observability.failure import (
     FailureCategory,
     FailureRecord,
@@ -40,6 +43,17 @@ from agent33.observability.trace_models import (
     TraceStep,
 )
 from agent33.security.auth import create_access_token
+
+
+class _CapturingLogger:
+    def __init__(self) -> None:
+        self.entries: list[tuple[str, str, dict[str, object]]] = []
+
+    def info(self, event: str, **fields: object) -> None:
+        self.entries.append(("info", event, fields))
+
+    def warning(self, event: str, **fields: object) -> None:
+        self.entries.append(("warning", event, fields))
 
 # ===================================================================
 # 1. Trace models
@@ -159,6 +173,26 @@ class TestFailureTaxonomy:
         for cat in FailureCategory:
             assert isinstance(is_retryable(cat), bool)
             assert isinstance(escalate_after(cat), int)
+
+    def test_failure_retry_taxonomy_matches_trace_schema(self):
+        """Runtime retry metadata must match TRACE_SCHEMA.md and phase docs."""
+        expected = {
+            FailureCategory.ENVIRONMENT: (True, 2),
+            FailureCategory.INPUT: (False, 0),
+            FailureCategory.EXECUTION: (True, 1),
+            FailureCategory.TIMEOUT: (True, 1),
+            FailureCategory.RESOURCE: (True, 1),
+            FailureCategory.SECURITY: (False, 0),
+            FailureCategory.DEPENDENCY: (True, 3),
+            FailureCategory.VALIDATION: (False, 0),
+            FailureCategory.REVIEW: (False, 0),
+            FailureCategory.UNKNOWN: (False, 0),
+        }
+
+        assert {
+            category: (is_retryable(category), escalate_after(category))
+            for category in FailureCategory
+        } == expected
 
 
 # ===================================================================
@@ -343,6 +377,47 @@ class TestTraceCollector:
         assert tenant_failures[0].trace_id == tenant_a_trace.trace_id
         assert tenant_failures[0].message == "tenant-a failure"
 
+    def test_trace_collector_emits_structured_trace_logs(self, monkeypatch):
+        logger = _CapturingLogger()
+        monkeypatch.setattr(trace_collector_module, "logger", logger)
+        collector = TraceCollector()
+
+        trace = collector.start_trace(
+            task_id="T-LOG",
+            tenant_id="tenant-log",
+            agent_id="AGT-LOG",
+        )
+        collector.record_failure(
+            trace.trace_id,
+            message="dependency unavailable",
+            category=FailureCategory.DEPENDENCY,
+        )
+        collector.complete_trace(trace.trace_id, status=TraceStatus.FAILED)
+
+        events = {event: fields for _, event, fields in logger.entries}
+        assert events["trace_started"] == {
+            "trace_id": trace.trace_id,
+            "task_id": "T-LOG",
+            "tenant_id": "tenant-log",
+            "agent_id": "AGT-LOG",
+        }
+        assert events["failure_recorded"]["trace_id"] == trace.trace_id
+        assert events["failure_recorded"]["category"] == "F-DEP"
+        assert events["failure_recorded"]["retryable"] is True
+        assert events["failure_recorded"]["escalate_after"] == 3
+        assert events["trace_completed"]["trace_id"] == trace.trace_id
+        assert events["trace_completed"]["status"] == "failed"
+        assert events["trace_completed"]["tenant_id"] == "tenant-log"
+
+    def test_trace_collector_source_uses_structured_log_fields(self):
+        source = Path(trace_collector_module.__file__).read_text(encoding="utf-8")
+
+        assert 'logger.info("trace_started id=%s' not in source
+        assert 'logger.info("trace_completed id=%s' not in source
+        assert 'logger.info("failure_recorded id=%s' not in source
+        assert 'logger.warning("trace_restore_failed id=%s' not in source
+        assert 'logger.warning("trace_failure_restore_failed id=%s' not in source
+
 
 # ===================================================================
 # 4. Artifact retention
@@ -450,6 +525,17 @@ class TestTraceAPI:
         assert data["trace_id"].startswith("TRC-")
         assert data["status"] == "running"
 
+    def test_start_trace_rejects_legacy_metadata_body(self):
+        resp = self.client.post(
+            "/v1/traces/",
+            json={
+                "run_id": "RUN-LEGACY",
+                "metadata": {"source": "stale-ui-default"},
+            },
+        )
+        assert resp.status_code == 422
+        assert "metadata" in str(resp.json())
+
     def test_list_traces(self):
         self._start_trace("T-1")
         self._start_trace("T-2")
@@ -520,6 +606,22 @@ class TestTraceAPI:
         assert resp.status_code == 200
         assert resp.json()["action_id"] == "ACT-001"
 
+    def test_add_action_rejects_legacy_action_body(self):
+        created = self._start_trace()
+        tid = created["trace_id"]
+        resp = self.client.post(
+            f"/v1/traces/{tid}/actions",
+            json={
+                "step_id": "STP-001",
+                "action_id": "ACT-001",
+                "tool": "shell",
+                "action": "read_file",
+                "status": "ok",
+            },
+        )
+        assert resp.status_code == 422
+        assert "action" in str(resp.json())
+
     def test_add_action_not_found(self):
         resp = self.client.post(
             "/v1/traces/TRC-nope/actions",
@@ -588,6 +690,19 @@ class TestTraceAPI:
         data = resp.json()
         assert data["failure_id"].startswith("FLR-")
         assert data["category"] == "F-SEC"
+
+    def test_record_failure_rejects_legacy_code_body(self):
+        created = self._start_trace()
+        tid = created["trace_id"]
+        resp = self.client.post(
+            f"/v1/traces/{tid}/failures",
+            json={
+                "code": "ERR_TIMEOUT",
+                "message": "Timeout during external call",
+            },
+        )
+        assert resp.status_code == 422
+        assert "code" in str(resp.json())
 
     def test_list_failures(self):
         created = self._start_trace()

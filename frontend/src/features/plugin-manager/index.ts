@@ -1,0 +1,1 @@
+export { PluginManagerPanel } from "./PluginManagerPanel";

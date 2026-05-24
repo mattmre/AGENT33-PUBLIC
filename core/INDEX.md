@@ -12,34 +12,25 @@ AGENT-33 is a master aggregation repo for model-agnostic orchestration workflows
 |----------|-------------|
 | [Orchestration Index](ORCHESTRATION_INDEX.md) | Entry point for orchestration workflows |
 | [Core README](README.md) | Canonical core structure and usage |
-| [Phase Planning](../docs/phase-planning.md) | AGENT-33 development phases |
-| [Phase Index](../docs/phases/README.md) | AGENT-33 phase list and sequencing |
+| [P02 Source/Rationale Manifest](P02_SOURCE_RATIONALE_MANIFEST.json) | Machine-readable promoted-file source/rationale coverage |
+| [Phase Planning](../docs/architecture/phase-planning.md) | AGENT-33 development phases |
+| [Phase Index](../docs/architecture/README.md) | AGENT-33 phase list and sequencing |
 
 ---
 
 ## Research Documents
 
-| Document | Description |
-|----------|-------------|
-| [Agentic Orchestration Trends 2025H2](research/agentic-orchestration-trends-2025H2.md) | Industry trends and guidance for agentic coding |
-| [Security Analysis](research/06-SECURITY-ANALYSIS.md) | External platform security vulnerability analysis |
-| [Feature Parity](research/07-FEATURE-PARITY.md) | Feature comparison and security hardening mapping |
-
----
-
-## Phase Templates (Generic)
-
-| Document | Description |
-|----------|-------------|
-| [Phase Templates](phases/README.md) | Generic, reusable phase outlines (examples) |
+Historical research notes are archived under `docs/research/`. They are not
+canonical `core/` index entries unless a current source artifact links them
+directly.
 
 ---
 
 ## AGENT-33 Phase Plan
 
-The canonical AGENT-33 phases live in `docs/phases/`.
+The canonical AGENT-33 phases live in `docs/architecture/`.
 Use the phase index for sequencing and dependency order:
-`../docs/phases/README.md`
+`../docs/architecture/README.md`
 
 ---
 
@@ -62,10 +53,9 @@ Use the phase index for sequencing and dependency order:
 | Document | Description |
 |----------|-------------|
 | [Architecture & Planning Overview](arch/README.md) | Narrative overview for Architecture & Planning |
-| [Architecture & Planning Orchestrator Briefing](arch/orchestrator-briefing.md) | Session-start narrative and folder index |
 | [Architecture & Planning Workflow Spec](arch/workflow.md) | End-to-end workflow specification |
 | [Architecture & Planning Templates](arch/templates.md) | ID, branch, and tracker conventions |
-| Architecture & Planning Session Handoff | Session handoff checklist (operator-maintained) |
+| [Architecture & Planning Next Session](../docs/RELEASE_CHECKLIST.md) | Session handoff checklist |
 | [Architecture & Planning Phase Planning](arch/phase-planning.md) | Long-running planning record |
 | [Architecture & Planning Schedule And Tracking](arch/schedule-and-tracking.md) | Cadence and gates |
 | [Architecture & Planning Tier Close Checklist](arch/tier-close-checklist.md) | Tier close audit checklist |
@@ -114,8 +104,8 @@ Use the phase index for sequencing and dependency order:
 3. Use `core/orchestrator/AGENT_ROUTING_MAP.md` for task routing
 
 ### For Project Planning
-1. Review `docs/phases/README.md` for phase index
-2. Consult [Feature Comparison Matrix](research/05-FEATURE-COMPARISON-MATRIX.md)
+1. Review `docs/architecture/README.md` for phase index
+2. Consult `docs/research/` for archived research notes when a current artifact cites them
 3. Review `core/orchestrator/COMPETITIVE_FEATURES_INDEX.md` for feature backlog
 
 ---

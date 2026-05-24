@@ -8,6 +8,7 @@ from __future__ import annotations
 
 import logging
 
+from agent33.evaluation.golden_tasks import tasks_for_gate
 from agent33.evaluation.models import (
     GateAction,
     GateCheckResult,
@@ -114,6 +115,8 @@ GATE_REQUIRED_TAGS: dict[GateType, GoldenTag] = {
     GateType.G_MON: GoldenTag.GT_OPTIONAL,
 }
 
+BLOCKING_GATES = {GateType.G_PR, GateType.G_MRG, GateType.G_REL}
+
 
 def _check_threshold(threshold: GateThreshold, actual: float) -> bool:
     """Evaluate a threshold comparison."""
@@ -183,16 +186,52 @@ class GateEnforcer:
         # Check golden task pass requirements
         if task_results is not None:
             report.golden_task_results = list(task_results)
-            failed_tasks = [
-                r for r in task_results if r.result not in (TaskResult.PASS, TaskResult.SKIP)
+            required_tag = self.get_required_tag(gate)
+            required_ids = tasks_for_gate(required_tag) if required_tag is not None else []
+            result_by_id = {r.item_id: r for r in task_results}
+            report.required_item_ids = required_ids
+            report.missing_required_items = [
+                item_id for item_id in required_ids if item_id not in result_by_id
             ]
-            if failed_tasks and gate in (GateType.G_MRG, GateType.G_REL):
+            report.skipped_required_items = [
+                item_id
+                for item_id in required_ids
+                if result_by_id.get(item_id) is not None
+                and result_by_id[item_id].result == TaskResult.SKIP
+            ]
+            report.failed_required_items = [
+                item_id
+                for item_id in required_ids
+                if result_by_id.get(item_id) is not None
+                and result_by_id[item_id].result in (TaskResult.FAIL, TaskResult.ERROR)
+            ]
+            report.failed_extra_items = [
+                r.item_id
+                for r in task_results
+                if r.item_id not in required_ids
+                and r.result in (TaskResult.FAIL, TaskResult.ERROR)
+            ]
+
+            required_gate_breaches = (
+                report.missing_required_items
+                + report.skipped_required_items
+                + report.failed_required_items
+                + report.failed_extra_items
+            )
+            if required_gate_breaches and gate in BLOCKING_GATES:
                 report.overall = GateResult.FAIL
                 logger.warning(
-                    "gate_failed gate=%s failed_tasks=%d",
+                    "gate_failed gate=%s required_items=%d missing=%d skipped=%d "
+                    "failed=%d extra_failed=%d",
                     gate.value,
-                    len(failed_tasks),
+                    len(required_ids),
+                    len(report.missing_required_items),
+                    len(report.skipped_required_items),
+                    len(report.failed_required_items),
+                    len(report.failed_extra_items),
                 )
+            elif required_gate_breaches and report.overall != GateResult.FAIL:
+                report.overall = GateResult.WARN
 
         if report.overall == GateResult.PASS:
             logger.info("gate_passed gate=%s", gate.value)

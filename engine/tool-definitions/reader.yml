@@ -5,8 +5,8 @@ description: >
 version: "1.0"
 owner: agent33-core
 provenance:
-  repo_url: https://github.com/mattmre/AGENT33-PUBLIC
-  license: Apache-2.0
+  repo_url: https://github.com/agent-33/agent-33
+  license: MIT
 status: active
 
 parameters:

@@ -77,7 +77,7 @@ class LearningPersistencePolicy:
 
 
 class ImprovementService:
-    """In-memory service for continuous improvement operations."""
+    """Service for continuous improvement operations with pluggable persistence."""
 
     @staticmethod
     def _normalize_auto_intake_min_severity(
@@ -204,8 +204,7 @@ class ImprovementService:
         """Submit a new research intake."""
         intake.disposition.status = IntakeStatus.SUBMITTED
         self._intakes[intake.intake_id] = intake
-        if intake.generated_from_signal_id is not None:
-            self._persist_learning_state()
+        self._persist_learning_state()
         logger.info("intake_submitted", extra={"intake_id": intake.intake_id})
         return intake
 
@@ -268,8 +267,7 @@ class ImprovementService:
                 "to_status": new_status.value,
             },
         )
-        if intake.generated_from_signal_id is not None:
-            self._persist_learning_state()
+        self._persist_learning_state()
         return intake
 
     # ----- Lessons Learned -------------------------------------------------
@@ -277,6 +275,7 @@ class ImprovementService:
     def record_lesson(self, lesson: LessonLearned) -> LessonLearned:
         """Record a new lesson learned."""
         self._lessons[lesson.lesson_id] = lesson
+        self._persist_learning_state()
         logger.info("lesson_recorded", extra={"lesson_id": lesson.lesson_id})
         return lesson
 
@@ -307,6 +306,7 @@ class ImprovementService:
         if action_index < 0 or action_index >= len(lesson.actions):
             raise ValueError(f"Action index {action_index} out of range")
         lesson.actions[action_index].status = LessonActionStatus.COMPLETED
+        self._persist_learning_state()
         return lesson
 
     def verify_lesson(self, lesson_id: str, evidence: str = "") -> LessonLearned:
@@ -318,6 +318,7 @@ class ImprovementService:
         lesson.verified_at = datetime.now(UTC)
         if evidence:
             lesson.evidence = evidence
+        self._persist_learning_state()
         return lesson
 
     # ----- Improvement Checklists ------------------------------------------
@@ -328,6 +329,7 @@ class ImprovementService:
         """Create a new periodic improvement checklist."""
         checklist = build_checklist(period, reference)
         self._checklists[checklist.checklist_id] = checklist
+        self._persist_learning_state()
         return checklist
 
     def get_checklist(self, checklist_id: str) -> ImprovementChecklist | None:
@@ -352,6 +354,7 @@ class ImprovementService:
         item = self._checklist_evaluator.complete_item(checklist, check_id, notes)
         if item is None:
             raise ValueError(f"Check {check_id} not found in checklist")
+        self._persist_learning_state()
         return checklist
 
     def evaluate_checklist(self, checklist_id: str) -> tuple[bool, list[str]]:
@@ -390,13 +393,14 @@ class ImprovementService:
             period=period,
             metrics=default_metrics(),
         )
-        return self._metrics_tracker.save_snapshot(snapshot)
+        return self.save_metrics_snapshot(snapshot)
 
     # ----- Roadmap Refresh -------------------------------------------------
 
     def record_refresh(self, refresh: RoadmapRefresh) -> RoadmapRefresh:
         """Record a roadmap refresh event."""
         self._refreshes[refresh.refresh_id] = refresh
+        self._persist_learning_state()
         logger.info(
             "roadmap_refresh_recorded",
             extra={
@@ -430,6 +434,7 @@ class ImprovementService:
             refresh.outcome = outcome
         if changes:
             refresh.changes_made = changes
+        self._persist_learning_state()
         return refresh
 
     # ----- Learning Signals -------------------------------------------------
@@ -839,10 +844,18 @@ class ImprovementService:
                 signal.first_seen_at = signal.recorded_at
             if signal.last_seen_at is None:
                 signal.last_seen_at = signal.recorded_at
+        self._intakes = {intake.intake_id: intake for intake in state.intakes}
+        for intake in state.generated_intakes:
+            self._intakes.setdefault(intake.intake_id, intake)
+        self._lessons = {lesson.lesson_id: lesson for lesson in state.lessons}
+        self._checklists = {
+            checklist.checklist_id: checklist for checklist in state.checklists
+        }
+        self._refreshes = {
+            refresh.refresh_id: refresh for refresh in state.refreshes
+        }
         self._learning_signals = {signal.signal_id: signal for signal in state.signals}
         self._learning_signal_intake_map = dict(state.signal_intake_map)
-        for intake in state.generated_intakes:
-            self._intakes[intake.intake_id] = intake
         # Stash persisted metrics snapshots for later restoration into tracker
         if hasattr(self, "_metrics_tracker"):
             self._metrics_tracker._snapshots = list(state.metrics_snapshots)
@@ -960,6 +973,22 @@ class ImprovementService:
             metrics_snapshots = list(self._metrics_tracker._snapshots)
         self._learning_store.save(
             LearningPersistenceState(
+                intakes=sorted(
+                    self._intakes.values(),
+                    key=lambda intake: intake.intake_id,
+                ),
+                lessons=sorted(
+                    self._lessons.values(),
+                    key=lambda lesson: lesson.lesson_id,
+                ),
+                checklists=sorted(
+                    self._checklists.values(),
+                    key=lambda checklist: checklist.checklist_id,
+                ),
+                refreshes=sorted(
+                    self._refreshes.values(),
+                    key=lambda refresh: refresh.refresh_id,
+                ),
                 signals=signals,
                 generated_intakes=generated_intakes,
                 signal_intake_map=dict(self._learning_signal_intake_map),

@@ -6,6 +6,7 @@ import fnmatch
 import json
 import logging
 import re
+import shlex
 import time
 from collections import defaultdict
 from datetime import UTC, datetime
@@ -32,7 +33,7 @@ logger = logging.getLogger(__name__)
 _audit_logger = logging.getLogger("agent33.tools.audit")
 
 # Patterns that indicate command chaining / subshell injection
-_CHAIN_OPERATORS = re.compile(r"[|;&]|&&|\|\|")
+_CHAIN_OPERATORS = re.compile(r"\s*(?:&&|\|\||[|;&])\s*")
 _SUBSHELL_PATTERNS = re.compile(r"\$\(|`")
 
 # Tools that always perform write/execute operations (blocked in read-only mode)
@@ -151,7 +152,7 @@ class ToolGovernance:
         1. Rate limiting (per-subject sliding window).
         2. Autonomy level enforcement.
         3. The user has the required scope (``tools:execute`` by default).
-        4. For the shell tool, the command passes multi-segment validation.
+        4. For the shell tool, the command passes fail-closed multi-segment validation.
         5. For file operations, the path is within the path allowlist.
         6. For web fetch, the domain is in the domain allowlist.
         """
@@ -280,9 +281,21 @@ class ToolGovernance:
                 return False
 
         # --- File ops: path allowlist ---
-        if tool_name == "file_ops" and context.path_allowlist:
+        if tool_name == "file_ops":
             path = params.get("path", "")
-            if not any(path.startswith(allowed) for allowed in context.path_allowlist):
+            if not context.path_allowlist:
+                logger.warning("Path allowlist not configured; file operation denied")
+                return False
+            from pathlib import Path
+
+            resolved_path = Path(str(path)).resolve(strict=False)
+            allowed_paths = [
+                Path(allowed).resolve(strict=False) for allowed in context.path_allowlist
+            ]
+            if not any(
+                self._is_path_within_allowlist(resolved_path, allowed)
+                for allowed in allowed_paths
+            ):
                 logger.warning(
                     "Path not in allowlist: %s (allowed: %s)",
                     path,
@@ -291,11 +304,14 @@ class ToolGovernance:
                 return False
 
         # --- Web fetch: domain allowlist ---
-        if tool_name == "web_fetch" and context.domain_allowlist:
+        if tool_name == "web_fetch":
             url = params.get("url", "")
             from urllib.parse import urlparse
 
             domain = urlparse(url).hostname or ""
+            if not context.domain_allowlist:
+                logger.warning("Domain allowlist not configured; web fetch denied")
+                return False
             if not any(
                 domain == allowed or domain.endswith(f".{allowed}")
                 for allowed in context.domain_allowlist
@@ -490,13 +506,23 @@ class ToolGovernance:
             tool_name in _DESTRUCTIVE_PARAMS and operation in _DESTRUCTIVE_PARAMS[tool_name]
         )
 
+    @staticmethod
+    def _is_path_within_allowlist(path: Path, allowed: Path) -> bool:
+        """Return True when *path* is contained by *allowed*."""
+        try:
+            path.relative_to(allowed)
+            return True
+        except ValueError:
+            return False
+
     def _validate_command(self, command: str, context: ToolContext) -> bool:
         """Validate a shell command, checking all segments against the allowlist.
 
         Multi-segment validation (inspired by ZeroClaw ``security/policy.rs``):
         1. Reject subshell patterns: ``$(...)`` and backticks.
-        2. Split on chain operators: ``|``, ``&&``, ``||``, ``;``.
-        3. Validate every segment's executable against the allowlist.
+        2. Require an explicit command allowlist.
+        3. Split on chain operators: ``|``, ``&&``, ``||``, ``;``.
+        4. Validate every segment's executable against the allowlist.
         """
         if not command:
             return True
@@ -507,8 +533,8 @@ class ToolGovernance:
             return False
 
         if not context.command_allowlist:
-            # No allowlist configured — allow (governance is opt-in per-agent)
-            return True
+            logger.warning("Command allowlist not configured; shell execution denied")
+            return False
 
         # Split on chain operators and validate each segment
         segments = _CHAIN_OPERATORS.split(command)
@@ -516,7 +542,12 @@ class ToolGovernance:
             segment = segment.strip()
             if not segment:
                 continue
-            executable = segment.split()[0] if segment.split() else ""
+            try:
+                parts = shlex.split(segment)
+            except ValueError as exc:
+                logger.warning("Invalid command syntax blocked: %s", exc)
+                return False
+            executable = parts[0] if parts else ""
             if executable and executable not in context.command_allowlist:
                 logger.warning(
                     "Command not in allowlist: %s (segment of: %s, allowed: %s)",

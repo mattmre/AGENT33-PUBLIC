@@ -16,6 +16,8 @@ from typing import TYPE_CHECKING
 import pytest
 
 if TYPE_CHECKING:
+    from pathlib import Path
+
     from starlette.testclient import TestClient
 
 from agent33.component_security.models import FindingsSummary, SecurityGatePolicy
@@ -23,6 +25,7 @@ from agent33.release.checklist import ChecklistEvaluator, build_checklist
 from agent33.release.models import (
     CheckStatus,
     Release,
+    ReleaseEvidence,
     ReleaseStatus,
     ReleaseType,
     RollbackRecord,
@@ -228,14 +231,54 @@ class TestSyncEngine:
         assert exe.status == SyncStatus.FAILED
         assert len(exe.errors) == 1
 
-    def test_execute(self):
+    def test_execute_copies_files_after_approved_dry_run(self, tmp_path: Path):
         engine, rule = self._engine_with_rule()
         files = ["core/orchestrator/RELEASE.md"]
-        exe = engine.execute(rule.rule_id, files, release_version="1.0.0")
+        source_root = tmp_path / "source"
+        target_root = tmp_path / "target"
+        source_file = source_root / "core" / "orchestrator" / "RELEASE.md"
+        source_file.parent.mkdir(parents=True)
+        source_file.write_text("# Release\n", encoding="utf-8")
+
+        dry_run = engine.dry_run(rule.rule_id, files, release_version="1.0.0")
+        exe = engine.execute(
+            rule.rule_id,
+            files,
+            release_version="1.0.0",
+            approved_dry_run_execution_id=dry_run.execution_id,
+            source_root=str(source_root),
+            target_root=str(target_root),
+            confirm_real_io=True,
+        )
         assert exe.status == SyncStatus.COMPLETED
         assert exe.dry_run is False
         assert exe.files_added == 1
         assert exe.completed_at is not None
+        assert exe.io_mode == "local_copy"
+        assert (target_root / "docs" / "agent33" / "RELEASE.md").read_text(
+            encoding="utf-8"
+        ) == "# Release\n"
+        assert exe.file_results[0].checksum_valid is True
+
+    def test_execute_without_approved_dry_run_fails_closed(self, tmp_path: Path):
+        engine, rule = self._engine_with_rule()
+        source_root = tmp_path / "source"
+        target_root = tmp_path / "target"
+        source_file = source_root / "core" / "orchestrator" / "RELEASE.md"
+        source_file.parent.mkdir(parents=True)
+        source_file.write_text("# Release\n", encoding="utf-8")
+
+        exe = engine.execute(
+            rule.rule_id,
+            ["core/orchestrator/RELEASE.md"],
+            release_version="1.0.0",
+            source_root=str(source_root),
+            target_root=str(target_root),
+            confirm_real_io=True,
+        )
+        assert exe.status == SyncStatus.FAILED
+        assert "approved_dry_run_execution_id" in exe.errors[0]
+        assert not (target_root / "docs" / "agent33" / "RELEASE.md").exists()
 
     def test_execute_missing_rule(self):
         engine = SyncEngine()
@@ -245,7 +288,7 @@ class TestSyncEngine:
     def test_list_executions(self):
         engine, rule = self._engine_with_rule()
         engine.dry_run(rule.rule_id, ["core/orchestrator/A.md"])
-        engine.execute(rule.rule_id, ["core/orchestrator/B.md"])
+        engine.dry_run(rule.rule_id, ["core/orchestrator/B.md"])
         exes = engine.list_executions()
         assert len(exes) == 2
 
@@ -369,6 +412,25 @@ class TestReleaseService:
         svc = ReleaseService()
         release = svc.create_release(version="1.0.0", description="Initial release")
         assert release.status == ReleaseStatus.PLANNED
+        assert len(release.evidence.checklist) == 8
+
+    def test_create_release_preserves_evidence_fields(self):
+        svc = ReleaseService()
+        release = svc.create_release(
+            version="1.0.0",
+            evidence=ReleaseEvidence(
+                branch="main",
+                commit_hash="abc123",
+                build_id="build-42",
+                changelog_ref="core/CHANGELOG.md",
+                release_notes_ref="release-notes/1.0.0.md",
+            ),
+        )
+        assert release.evidence.branch == "main"
+        assert release.evidence.commit_hash == "abc123"
+        assert release.evidence.build_id == "build-42"
+        assert release.evidence.changelog_ref == "core/CHANGELOG.md"
+        assert release.evidence.release_notes_ref == "release-notes/1.0.0.md"
         assert len(release.evidence.checklist) == 8
 
     def test_get_release(self):
@@ -509,6 +571,16 @@ class TestReleaseService:
         rollbacks = svc.rollback_manager.list_all(release_id=rid)
         assert len(rollbacks) == 1
 
+    def test_initiate_rollback_rejects_unreleased_release(self):
+        svc = ReleaseService()
+        release = svc.create_release(version="1.0.0")
+        with pytest.raises(InvalidReleaseTransitionError):
+            svc.initiate_rollback(
+                release.release_id,
+                reason="Cannot roll back an unreleased release",
+            )
+        assert svc.rollback_manager.list_all(release_id=release.release_id) == []
+
 
 # ===================================================================
 # API Endpoints
@@ -543,6 +615,32 @@ class TestReleaseAPI:
         assert data["version"] == "1.0.0"
         assert data["status"] == "planned"
         assert data["checklist_items"] == 8
+
+    def test_create_release_captures_evidence_fields(self, client: TestClient):
+        resp = client.post(
+            "/v1/releases",
+            json={
+                "version": "1.0.0",
+                "release_type": "minor",
+                "description": "Evidence-backed release",
+                "branch": "main",
+                "commit_hash": "abc123",
+                "build_id": "build-42",
+                "changelog_ref": "core/CHANGELOG.md",
+                "release_notes_ref": "release-notes/1.0.0.md",
+            },
+        )
+        assert resp.status_code == 201
+        data = resp.json()
+        assert data["evidence"]["branch"] == "main"
+        assert data["evidence"]["commit_hash"] == "abc123"
+        assert data["evidence"]["build_id"] == "build-42"
+        assert data["evidence"]["changelog_ref"] == "core/CHANGELOG.md"
+        assert data["evidence"]["release_notes_ref"] == "release-notes/1.0.0.md"
+
+        get_resp = client.get(f"/v1/releases/{data['release_id']}")
+        assert get_resp.status_code == 200
+        assert get_resp.json()["evidence"]["commit_hash"] == "abc123"
 
     def test_list_releases(self, client: TestClient):
         client.post("/v1/releases", json={"version": "1.0.0"})
@@ -709,7 +807,52 @@ class TestReleaseAPI:
         assert data["dry_run"] is True
         assert data["files_added"] == 2
 
-    def test_sync_execute(self, client: TestClient):
+    def test_sync_execute(self, client: TestClient, tmp_path: Path):
+        source_root = tmp_path / "source"
+        target_root = tmp_path / "target"
+        source_file = source_root / "core" / "orchestrator" / "A.md"
+        source_file.parent.mkdir(parents=True)
+        source_file.write_text("# A\n", encoding="utf-8")
+
+        rule_resp = client.post(
+            "/v1/releases/sync/rules",
+            json={
+                "source_pattern": "core/**/*.md",
+                "target_repo": "org/webapp",
+                "target_path": "docs/agent33",
+            },
+        )
+        rule_id = rule_resp.json()["rule_id"]
+
+        dry_run_resp = client.post(
+            f"/v1/releases/sync/rules/{rule_id}/dry-run",
+            json={
+                "available_files": ["core/orchestrator/A.md"],
+                "release_version": "1.0.0",
+            },
+        )
+        assert dry_run_resp.status_code == 200
+
+        resp = client.post(
+            f"/v1/releases/sync/rules/{rule_id}/execute",
+            json={
+                "available_files": ["core/orchestrator/A.md"],
+                "release_version": "1.0.0",
+                "approved_dry_run_execution_id": dry_run_resp.json()["execution_id"],
+                "source_root": str(source_root),
+                "target_root": str(target_root),
+                "confirm_real_io": True,
+            },
+        )
+        assert resp.status_code == 200
+        assert resp.json()["dry_run"] is False
+        assert resp.json()["status"] == "completed"
+        assert resp.json()["io_mode"] == "local_copy"
+        assert (target_root / "docs" / "agent33" / "A.md").read_text(
+            encoding="utf-8"
+        ) == "# A\n"
+
+    def test_sync_execute_without_dry_run_approval_returns_409(self, client: TestClient):
         rule_resp = client.post(
             "/v1/releases/sync/rules",
             json={
@@ -723,11 +866,12 @@ class TestReleaseAPI:
             f"/v1/releases/sync/rules/{rule_id}/execute",
             json={
                 "available_files": ["core/orchestrator/A.md"],
+                "release_version": "1.0.0",
+                "confirm_real_io": True,
             },
         )
-        assert resp.status_code == 200
-        assert resp.json()["dry_run"] is False
-        assert resp.json()["status"] == "completed"
+        assert resp.status_code == 409
+        assert "approved_dry_run_execution_id" in resp.text
 
     def test_rollback_lifecycle(self, client: TestClient):
         # Create and publish a release
@@ -753,7 +897,22 @@ class TestReleaseAPI:
 
         # List rollbacks
         list_resp = client.get("/v1/releases/rollbacks")
+        assert list_resp.status_code == 200
         assert len(list_resp.json()) >= 1
+
+    def test_rollback_unreleased_release_returns_409(self, client: TestClient):
+        create_resp = client.post("/v1/releases", json={"version": "1.0.0"})
+        rid = create_resp.json()["release_id"]
+
+        rb_resp = client.post(
+            f"/v1/releases/{rid}/rollback",
+            json={"reason": "No released artifact exists", "initiated_by": "admin"},
+        )
+        assert rb_resp.status_code == 409
+
+        list_resp = client.get("/v1/releases/rollbacks")
+        assert list_resp.status_code == 200
+        assert all(record["release_id"] != rid for record in list_resp.json())
 
     def test_rollback_recommend(self, client: TestClient):
         resp = client.post(

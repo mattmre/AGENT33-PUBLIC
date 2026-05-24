@@ -4,7 +4,7 @@ This directory contains benchmark run metadata for the `main` branch.
 
 ## SkillsBench Results
 
-Full SkillsBench results are stored on the [`benchmarks`](https://github.com/mattmre/AGENT33-PUBLIC/tree/benchmarks) branch to avoid polluting `main` git history with large JSON files.
+Full SkillsBench results are stored on the [`benchmarks`](https://github.com/mattmre/AGENT33/tree/benchmarks) branch to avoid polluting `main` git history with large JSON files.
 
 ### Viewing Results
 

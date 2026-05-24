@@ -100,6 +100,12 @@ DEFAULT_RUNTIME_STATE_PATH_SPECS: tuple[RuntimeStatePathSpec, ...] = (
         "pack_rollback_archive_dir",
     ),
     RuntimeStatePathSpec("sqlite-memory", "SQLite memory store", "sqlite_memory_db_path"),
+    RuntimeStatePathSpec("phase23-auth", "Phase 23 auth lifecycle store", "phase23_auth_db_path"),
+    RuntimeStatePathSpec(
+        "phase23-workspaces",
+        "Phase 23 workspace lifecycle store",
+        "phase23_workspace_db_path",
+    ),
     RuntimeStatePathSpec(
         "synthetic-environment-bundles",
         "Synthetic environment bundles",

@@ -17,6 +17,7 @@ from agent33.release.checklist import ChecklistEvaluator, build_checklist
 from agent33.release.models import (
     CheckStatus,
     Release,
+    ReleaseEvidence,
     ReleaseStatus,
     ReleaseType,
     RollbackType,
@@ -152,12 +153,14 @@ class ReleaseService:
         version: str,
         release_type: ReleaseType = ReleaseType.MINOR,
         description: str = "",
+        evidence: ReleaseEvidence | None = None,
     ) -> Release:
         """Create a new release in PLANNED state with a populated checklist."""
         release = Release(
             version=version,
             release_type=release_type,
             description=description,
+            evidence=evidence.model_copy(deep=True) if evidence is not None else ReleaseEvidence(),
         )
         release.evidence.checklist = build_checklist(release)
         self._releases[release.release_id] = release
@@ -387,6 +390,8 @@ class ReleaseService:
     ) -> Release:
         """Initiate a rollback for a released version."""
         release = self.get_release(release_id)
+        if release.status != ReleaseStatus.RELEASED:
+            raise InvalidReleaseTransitionError(release.status, ReleaseStatus.ROLLED_BACK)
         self._rollback.create(
             release_id=release_id,
             reason=reason,
@@ -394,7 +399,6 @@ class ReleaseService:
             target_version=target_version,
             initiated_by=initiated_by,
         )
-        if release.status == ReleaseStatus.RELEASED:
-            self.transition(release_id, ReleaseStatus.ROLLED_BACK)
+        self.transition(release_id, ReleaseStatus.ROLLED_BACK)
         self._persist_state()
         return release

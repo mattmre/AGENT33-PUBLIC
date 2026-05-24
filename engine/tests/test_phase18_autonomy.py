@@ -41,6 +41,7 @@ from agent33.autonomy.service import (
     AutonomyService,
     BudgetNotFoundError,
     InvalidStateTransitionError,
+    PreflightFailedError,
 )
 
 # ===================================================================
@@ -185,26 +186,26 @@ class TestPreflightChecker:
         pf04 = next(c for c in report.checks if c.check_id == "PF-04")
         assert pf04.status == PreflightStatus.FAIL
 
-    def test_pf05_files_warn_when_empty(self):
+    def test_pf05_files_fail_when_empty(self):
         checker = PreflightChecker()
         budget = self._active_budget(files=FileScope())
         report = checker.check(budget)
         pf05 = next(c for c in report.checks if c.check_id == "PF-05")
-        assert pf05.status == PreflightStatus.WARN
+        assert pf05.status == PreflightStatus.FAIL
 
-    def test_pf06_commands_warn_when_empty(self):
+    def test_pf06_commands_fail_when_empty(self):
         checker = PreflightChecker()
         budget = self._active_budget(allowed_commands=[])
         report = checker.check(budget)
         pf06 = next(c for c in report.checks if c.check_id == "PF-06")
-        assert pf06.status == PreflightStatus.WARN
+        assert pf06.status == PreflightStatus.FAIL
 
-    def test_pf07_network_warn_when_open(self):
+    def test_pf07_network_fails_when_open(self):
         checker = PreflightChecker()
         budget = self._active_budget(network=NetworkScope(enabled=True, allowed_domains=[]))
         report = checker.check(budget)
         pf07 = next(c for c in report.checks if c.check_id == "PF-07")
-        assert pf07.status == PreflightStatus.WARN
+        assert pf07.status == PreflightStatus.FAIL
 
     def test_pf07_network_pass_when_disabled(self):
         checker = PreflightChecker()
@@ -363,6 +364,10 @@ class TestRuntimeEnforcer:
         e = self._enforcer()
         assert e.check_network("api.example.com") == EnforcementResult.ALLOWED
 
+    def test_ef04_network_allowed_url_extracts_hostname(self):
+        e = self._enforcer()
+        assert e.check_network("https://api.example.com/v1/data") == EnforcementResult.ALLOWED
+
     def test_ef04_network_denied_domain(self):
         e = self._enforcer()
         assert e.check_network("evil.com") == EnforcementResult.BLOCKED
@@ -443,6 +448,27 @@ class TestRuntimeEnforcer:
         record = e.trigger_escalation("No target specified")
         assert record.target == "lead"
 
+    def test_empty_file_scopes_fail_closed(self):
+        e = self._enforcer(files=FileScope(read=[], write=[]))
+        assert e.check_file_read("src/main.py") == EnforcementResult.BLOCKED
+        assert e.check_file_write("src/main.py") == EnforcementResult.BLOCKED
+
+    def test_empty_command_allowlist_fails_closed(self):
+        e = self._enforcer(allowed_commands=[])
+        assert e.check_command("python -m pytest") == EnforcementResult.BLOCKED
+
+    def test_wildcard_command_allowlist_is_explicit_full_scope(self):
+        e = self._enforcer(allowed_commands=[CommandPermission(command="*")])
+        assert e.check_command("python -m pytest") == EnforcementResult.ALLOWED
+
+    def test_enabled_network_without_allowlist_fails_closed(self):
+        e = self._enforcer(network=NetworkScope(enabled=True, allowed_domains=[]))
+        assert e.check_network("api.example.com") == EnforcementResult.BLOCKED
+
+    def test_wildcard_network_allowlist_is_explicit_full_scope(self):
+        e = self._enforcer(network=NetworkScope(enabled=True, allowed_domains=["*"]))
+        assert e.check_network("api.example.com") == EnforcementResult.ALLOWED
+
 
 # ===================================================================
 # Autonomy Service
@@ -458,6 +484,19 @@ class TestAutonomyService:
         assert budget.state == BudgetState.DRAFT
         assert budget.task_id == "task-1"
         assert budget.agent_id == "agent-1"
+
+    def test_register_budget_persists_existing_template(self):
+        svc = AutonomyService()
+        budget = AutonomyBudget(
+            budget_id="BDG-template",
+            state=BudgetState.ACTIVE,
+            in_scope=["test"],
+            files=FileScope(read=["src/**"], write=["src/**"]),
+            allowed_commands=[CommandPermission(command="pytest")],
+            stop_conditions=[StopCondition(description="Stop when iteration limit reached")],
+        )
+        assert svc.register_budget(budget).budget_id == "BDG-template"
+        assert svc.get_budget("BDG-template") is budget
 
     def test_get_budget(self):
         svc = AutonomyService()
@@ -565,11 +604,23 @@ class TestAutonomyService:
     # Enforcer
     def test_create_enforcer_for_active(self):
         svc = AutonomyService()
-        budget = svc.create_budget()
+        budget = svc.create_budget(
+            in_scope=["test"],
+            files=FileScope(read=["src/**"], write=["src/**"]),
+            allowed_commands=[CommandPermission(command="pytest")],
+            stop_conditions=[StopCondition(description="Stop when iteration limit reached")],
+        )
         svc.activate(budget.budget_id)
         enforcer = svc.create_enforcer(budget.budget_id)
         assert enforcer is not None
         assert svc.get_enforcer(budget.budget_id) is enforcer
+
+    def test_create_enforcer_fails_when_preflight_fails(self):
+        svc = AutonomyService()
+        budget = svc.create_budget(in_scope=["test"])
+        svc.activate(budget.budget_id)
+        with pytest.raises(PreflightFailedError):
+            svc.create_enforcer(budget.budget_id)
 
     def test_create_enforcer_for_draft_fails(self):
         svc = AutonomyService()
@@ -584,7 +635,12 @@ class TestAutonomyService:
     # Escalations
     def test_list_escalations_from_enforcer(self):
         svc = AutonomyService()
-        budget = svc.create_budget()
+        budget = svc.create_budget(
+            in_scope=["test"],
+            files=FileScope(read=["src/**"], write=["src/**"]),
+            allowed_commands=[CommandPermission(command="pytest")],
+            stop_conditions=[StopCondition(description="Stop when iteration limit reached")],
+        )
         svc.activate(budget.budget_id)
         enforcer = svc.create_enforcer(budget.budget_id)
         enforcer.trigger_escalation("Test escalation")
@@ -594,7 +650,12 @@ class TestAutonomyService:
 
     def test_acknowledge_escalation(self):
         svc = AutonomyService()
-        budget = svc.create_budget()
+        budget = svc.create_budget(
+            in_scope=["test"],
+            files=FileScope(read=["src/**"], write=["src/**"]),
+            allowed_commands=[CommandPermission(command="pytest")],
+            stop_conditions=[StopCondition(description="Stop when iteration limit reached")],
+        )
         svc.activate(budget.budget_id)
         enforcer = svc.create_enforcer(budget.budget_id)
         record = enforcer.trigger_escalation("Test")
@@ -602,7 +663,12 @@ class TestAutonomyService:
 
     def test_resolve_escalation(self):
         svc = AutonomyService()
-        budget = svc.create_budget()
+        budget = svc.create_budget(
+            in_scope=["test"],
+            files=FileScope(read=["src/**"], write=["src/**"]),
+            allowed_commands=[CommandPermission(command="pytest")],
+            stop_conditions=[StopCondition(description="Stop when iteration limit reached")],
+        )
         svc.activate(budget.budget_id)
         enforcer = svc.create_enforcer(budget.budget_id)
         record = enforcer.trigger_escalation("Test")
@@ -634,6 +700,23 @@ class TestAutonomyAPI:
         _service._escalations.clear()
 
         return TestClient(app, headers={"Authorization": f"Bearer {auth_token}"})
+
+    def _create_active_enforcer_budget(self, client: TestClient) -> str:
+        create_resp = client.post(
+            "/v1/autonomy/budgets",
+            json={
+                "in_scope": ["testing"],
+                "files": {"read": ["src/**"], "write": ["src/**"]},
+                "allowed_commands": [{"command": "pytest"}],
+                "stop_conditions": [{"description": "Stop when iteration limit reached"}],
+            },
+        )
+        assert create_resp.status_code == 201
+        budget_id = create_resp.json()["budget_id"]
+        client.post(f"/v1/autonomy/budgets/{budget_id}/activate")
+        enforcer_resp = client.post(f"/v1/autonomy/budgets/{budget_id}/enforcer")
+        assert enforcer_resp.status_code == 201
+        return budget_id
 
     def test_create_budget(self, client: TestClient):
         resp = client.post(
@@ -724,41 +807,57 @@ class TestAutonomyAPI:
         budget_id = create_resp.json()["budget_id"]
         client.post(f"/v1/autonomy/budgets/{budget_id}/activate")
         resp = client.post(f"/v1/autonomy/budgets/{budget_id}/enforcer")
+        assert resp.status_code == 409
+
+    def test_create_scoped_budget_and_enforcer(self, client: TestClient):
+        create_resp = client.post(
+            "/v1/autonomy/budgets",
+            json={
+                "task_id": "t-scoped",
+                "in_scope": ["testing"],
+                "files": {"read": ["src/**"], "write": ["src/**"], "deny": ["*.env"]},
+                "allowed_commands": [{"command": "pytest"}],
+                "network": {"enabled": True, "allowed_domains": ["api.example.com"]},
+                "stop_conditions": [
+                    {
+                        "description": "Stop when iteration limit reached",
+                        "action": "stop",
+                    }
+                ],
+            },
+        )
+        assert create_resp.status_code == 201
+        budget_id = create_resp.json()["budget_id"]
+        client.post(f"/v1/autonomy/budgets/{budget_id}/activate")
+        preflight = client.get(f"/v1/autonomy/budgets/{budget_id}/preflight")
+        assert preflight.json()["overall"] == "pass"
+        resp = client.post(f"/v1/autonomy/budgets/{budget_id}/enforcer")
         assert resp.status_code == 201
         assert resp.json()["status"] == "enforcer_created"
 
     def test_enforce_file_read(self, client: TestClient):
-        create_resp = client.post("/v1/autonomy/budgets", json={})
-        budget_id = create_resp.json()["budget_id"]
-        client.post(f"/v1/autonomy/budgets/{budget_id}/activate")
-        client.post(f"/v1/autonomy/budgets/{budget_id}/enforcer")
+        budget_id = self._create_active_enforcer_budget(client)
         resp = client.post(
             f"/v1/autonomy/budgets/{budget_id}/enforce/file",
             json={"path": "test.py", "mode": "read"},
         )
         assert resp.status_code == 200
-        assert resp.json()["result"] in ("allowed", "blocked")
+        assert resp.json()["result"] == "blocked"
 
     def test_enforce_command(self, client: TestClient):
-        create_resp = client.post("/v1/autonomy/budgets", json={})
-        budget_id = create_resp.json()["budget_id"]
-        client.post(f"/v1/autonomy/budgets/{budget_id}/activate")
-        client.post(f"/v1/autonomy/budgets/{budget_id}/enforcer")
+        budget_id = self._create_active_enforcer_budget(client)
         resp = client.post(
             f"/v1/autonomy/budgets/{budget_id}/enforce/command",
             json={"command": "echo hello"},
         )
         assert resp.status_code == 200
-        assert resp.json()["result"] in ("allowed", "blocked")
+        assert resp.json()["result"] == "blocked"
 
     def test_enforce_network(self, client: TestClient):
-        create_resp = client.post("/v1/autonomy/budgets", json={})
-        budget_id = create_resp.json()["budget_id"]
-        client.post(f"/v1/autonomy/budgets/{budget_id}/activate")
-        client.post(f"/v1/autonomy/budgets/{budget_id}/enforcer")
+        budget_id = self._create_active_enforcer_budget(client)
         resp = client.post(
             f"/v1/autonomy/budgets/{budget_id}/enforce/network",
-            json={"domain": "example.com"},
+            json={"host": "example.com", "protocol": "https"},
         )
         assert resp.status_code == 200
         # Network disabled by default, so blocked
@@ -775,10 +874,7 @@ class TestAutonomyAPI:
 
     def test_escalation_lifecycle(self, client: TestClient):
         # Create budget → activate → enforcer → escalate → ack → resolve
-        create_resp = client.post("/v1/autonomy/budgets", json={})
-        budget_id = create_resp.json()["budget_id"]
-        client.post(f"/v1/autonomy/budgets/{budget_id}/activate")
-        client.post(f"/v1/autonomy/budgets/{budget_id}/enforcer")
+        budget_id = self._create_active_enforcer_budget(client)
 
         # Trigger escalation
         esc_resp = client.post(

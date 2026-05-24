@@ -2,6 +2,44 @@ import type { DomainConfig } from "../../types";
 
 const prettyJson = (value: unknown): string => JSON.stringify(value, null, 2);
 
+export const phase20CoreOperationIds = [
+  "imp-intake-create",
+  "imp-intake-list",
+  "imp-intake-get",
+  "imp-intake-transition",
+  "imp-lesson-create",
+  "imp-lesson-list",
+  "imp-lesson-get",
+  "imp-lesson-complete-action",
+  "imp-lesson-verify",
+  "imp-checklist-create",
+  "imp-checklist-list",
+  "imp-checklist-get",
+  "imp-checklist-complete",
+  "imp-checklist-evaluate",
+  "imp-metrics",
+  "imp-metrics-history",
+  "imp-metrics-snapshot",
+  "imp-metrics-default",
+  "imp-metrics-trend",
+  "imp-refresh-create",
+  "imp-refresh-list",
+  "imp-refresh-get",
+  "imp-refresh-complete"
+] as const;
+
+export const postPhase20OperationIds = [
+  "imp-intake-competitive-repos",
+  "imp-feature-candidates-score",
+  "imp-learning-signal-create",
+  "imp-learning-signal-list",
+  "imp-learning-summary",
+  "imp-learning-trends",
+  "imp-learning-calibration",
+  "imp-learning-backup",
+  "imp-learning-restore"
+] as const;
+
 export const improvementsDomain: DomainConfig = {
   id: "improvements",
   title: "Improvements",

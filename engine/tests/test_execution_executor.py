@@ -17,6 +17,8 @@ from agent33.execution.models import (
     ExecutionContract,
     ExecutionInputs,
     ExecutionResult,
+    KernelContainerPolicy,
+    KernelInterface,
     RetryConfig,
 )
 
@@ -42,6 +44,7 @@ def _make_adapter(
                 retryable_codes=retryable_codes or [],
             ),
         ),
+        metadata={"sandbox_enforcement": "external"},
     )
     adapter = MagicMock(spec=BaseAdapter)
     adapter.adapter_id = adapter_id
@@ -155,6 +158,79 @@ class TestExecutePipeline:
         adapter.execute.assert_not_called()
 
     @pytest.mark.asyncio
+    async def test_registry_command_allowlist_blocks_disallowed_command(self) -> None:
+        from agent33.tools.registry import ToolRegistry
+        from agent33.tools.registry_entry import ToolRegistryEntry
+
+        registry = ToolRegistry()
+        registry._entries["TL-001"] = ToolRegistryEntry(
+            tool_id="TL-001",
+            name="TL-001",
+            version="1.0",
+            governance={"command_allowlist": ["python"]},
+        )
+
+        executor = CodeExecutor(tool_registry=registry)
+        adapter = _make_adapter()
+        executor.register_adapter(adapter)
+
+        result = await executor.execute(_make_contract(command="curl"))
+
+        assert result.success is False
+        assert "IV-01" in (result.error or "")
+        assert "allowlist" in (result.error or "")
+        adapter.execute.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_registry_command_denylist_blocks_even_when_allowed(self) -> None:
+        from agent33.tools.registry import ToolRegistry
+        from agent33.tools.registry_entry import ToolRegistryEntry
+
+        registry = ToolRegistry()
+        registry._entries["TL-001"] = ToolRegistryEntry(
+            tool_id="TL-001",
+            name="TL-001",
+            version="1.0",
+            governance={
+                "command_allowlist": ["echo", "rm"],
+                "deny_list": ["rm"],
+            },
+        )
+
+        executor = CodeExecutor(tool_registry=registry)
+        adapter = _make_adapter()
+        executor.register_adapter(adapter)
+
+        result = await executor.execute(_make_contract(command="rm"))
+
+        assert result.success is False
+        assert "explicitly denied" in (result.error or "")
+        adapter.execute.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_set_tool_registry_enables_late_startup_governance(self) -> None:
+        from agent33.tools.registry import ToolRegistry
+        from agent33.tools.registry_entry import ToolRegistryEntry
+
+        registry = ToolRegistry()
+        registry._entries["TL-001"] = ToolRegistryEntry(
+            tool_id="TL-001",
+            name="TL-001",
+            version="1.0",
+            governance={"command_allowlist": ["echo"]},
+        )
+
+        executor = CodeExecutor()
+        executor.set_tool_registry(registry)
+        adapter = _make_adapter()
+        executor.register_adapter(adapter)
+
+        result = await executor.execute(_make_contract(command="echo"))
+
+        assert result.success is True
+        adapter.execute.assert_called_once()
+
+    @pytest.mark.asyncio
     async def test_adapter_not_found(self) -> None:
         executor = CodeExecutor()
         contract = _make_contract(tool_id="TL-MISSING")
@@ -192,6 +268,69 @@ class TestExecutePipeline:
         call_args = adapter.execute.call_args
         merged_contract = call_args[0][0]
         assert merged_contract.sandbox.timeout_ms == 5000
+
+    @pytest.mark.asyncio
+    async def test_unisolated_cli_adapter_fails_closed(self) -> None:
+        executor = CodeExecutor()
+        adapter = _make_adapter()
+        adapter.definition = adapter.definition.model_copy(update={"metadata": {}})
+        executor.register_adapter(adapter)
+
+        result = await executor.execute(_make_contract(command="echo"))
+
+        assert result.success is False
+        assert "local CLI backend" in (result.error or "")
+        assert "execution denied" in (result.error or "")
+        adapter.execute.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_local_kernel_adapter_fails_closed(self) -> None:
+        executor = CodeExecutor()
+        defn = AdapterDefinition(
+            adapter_id="kernel-local",
+            name="kernel-local",
+            tool_id="TL-001",
+            type=AdapterType.KERNEL,
+            kernel=KernelInterface(container=KernelContainerPolicy(enabled=False)),
+        )
+        adapter = MagicMock(spec=BaseAdapter)
+        adapter.adapter_id = "kernel-local"
+        adapter.tool_id = "TL-001"
+        adapter.definition = defn
+        adapter.execute = AsyncMock(
+            return_value=ExecutionResult(execution_id="test", success=True)
+        )
+        executor.register_adapter(adapter)
+
+        result = await executor.execute(_make_contract(command="python"))
+
+        assert result.success is False
+        assert "local kernel backend" in (result.error or "")
+        adapter.execute.assert_not_called()
+
+    @pytest.mark.asyncio
+    async def test_docker_kernel_adapter_is_allowed(self) -> None:
+        executor = CodeExecutor()
+        defn = AdapterDefinition(
+            adapter_id="kernel-docker",
+            name="kernel-docker",
+            tool_id="TL-001",
+            type=AdapterType.KERNEL,
+            kernel=KernelInterface(container=KernelContainerPolicy(enabled=True)),
+        )
+        adapter = MagicMock(spec=BaseAdapter)
+        adapter.adapter_id = "kernel-docker"
+        adapter.tool_id = "TL-001"
+        adapter.definition = defn
+        adapter.execute = AsyncMock(
+            return_value=ExecutionResult(execution_id="test", success=True, stdout="ok")
+        )
+        executor.register_adapter(adapter)
+
+        result = await executor.execute(_make_contract(command="python"))
+
+        assert result.success is True
+        adapter.execute.assert_called_once()
 
 
 class TestExecuteWithRetry:

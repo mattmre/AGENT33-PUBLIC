@@ -1,0 +1,415 @@
+.consumer-plugins-layout {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+}
+
+.plugin-manager-panel {
+  animation: fade-in 0.4s ease-out forwards;
+  color: var(--text-main);
+}
+
+.plugin-manager-header,
+.plugin-manager-toolbar,
+.plugin-manager-detail-hero,
+.plugin-manager-detail-actions,
+.plugin-manager-header-actions {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+}
+
+.plugin-manager-header {
+  margin-bottom: 1.25rem;
+}
+
+.plugin-manager-header h2,
+.plugin-manager-detail-hero h3,
+.plugin-manager-section h3,
+.plugin-manager-install h3,
+.plugin-manager-empty h2,
+.plugin-manager-empty h3 {
+  margin: 0;
+  color: #fff;
+}
+
+.plugin-manager-header p,
+.plugin-manager-section p,
+.plugin-manager-empty p,
+.plugin-manager-list-summary span,
+.plugin-manager-list-item span,
+.plugin-manager-event-list span,
+.plugin-manager-check-list small {
+  color: var(--text-soft);
+}
+
+.plugin-manager-header-actions,
+.plugin-manager-detail-actions {
+  flex-wrap: wrap;
+}
+
+.plugin-manager-header-actions button,
+.plugin-manager-toolbar button,
+.plugin-manager-detail-actions button,
+.plugin-manager-config button,
+.plugin-manager-install button,
+.plugin-manager-empty button {
+  border: 1px solid rgba(48, 213, 200, 0.28);
+  border-radius: 8px;
+  background: rgba(48, 213, 200, 0.12);
+  color: #dffbf7;
+  cursor: pointer;
+  font-weight: 700;
+  padding: 0.68rem 0.9rem;
+}
+
+.plugin-manager-header-actions button:hover,
+.plugin-manager-toolbar button:hover,
+.plugin-manager-detail-actions button:hover,
+.plugin-manager-config button:hover,
+.plugin-manager-install button:hover,
+.plugin-manager-empty button:hover {
+  border-color: rgba(48, 213, 200, 0.55);
+}
+
+.plugin-manager-header-actions button:disabled,
+.plugin-manager-toolbar button:disabled,
+.plugin-manager-detail-actions button:disabled,
+.plugin-manager-config button:disabled,
+.plugin-manager-install button:disabled {
+  cursor: not-allowed;
+  opacity: 0.55;
+}
+
+.plugin-manager-alert,
+.plugin-manager-success {
+  border-radius: 8px;
+  margin: 0 0 1rem 0;
+  padding: 0.8rem 0.9rem;
+}
+
+.plugin-manager-alert {
+  background: rgba(248, 113, 113, 0.12);
+  border: 1px solid rgba(248, 113, 113, 0.3);
+  color: #fecaca;
+}
+
+.plugin-manager-success {
+  background: rgba(34, 197, 94, 0.12);
+  border: 1px solid rgba(34, 197, 94, 0.3);
+  color: #dcfce7;
+}
+
+.plugin-manager-toolbar {
+  align-items: end;
+  background: var(--bg-main);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  box-shadow: var(--shadow-outer-sm);
+  margin-bottom: 1rem;
+  padding: 1rem;
+}
+
+.plugin-manager-toolbar label,
+.plugin-manager-config label,
+.plugin-manager-install label {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+}
+
+.plugin-manager-toolbar label:first-child {
+  flex: 1;
+}
+
+.plugin-manager-toolbar span,
+.plugin-manager-config label span,
+.plugin-manager-install label span {
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+}
+
+.plugin-manager-toolbar input,
+.plugin-manager-toolbar select,
+.plugin-manager-config textarea,
+.plugin-manager-config select,
+.plugin-manager-install input,
+.plugin-manager-install select {
+  background: rgba(255, 255, 255, 0.04);
+  border: 1px solid rgba(48, 213, 200, 0.18);
+  border-radius: 8px;
+  color: var(--text-main);
+  padding: 0.72rem 0.85rem;
+}
+
+.plugin-manager-config textarea {
+  font-family: var(--mono);
+  min-height: 7rem;
+  resize: vertical;
+}
+
+.plugin-manager-toolbar input:focus,
+.plugin-manager-toolbar select:focus,
+.plugin-manager-config textarea:focus,
+.plugin-manager-config select:focus,
+.plugin-manager-install input:focus,
+.plugin-manager-install select:focus {
+  border-color: rgba(48, 213, 200, 0.5);
+  box-shadow: 0 0 0 2px rgba(48, 213, 200, 0.12);
+  outline: none;
+}
+
+.plugin-manager-layout {
+  display: grid;
+  grid-template-columns: minmax(220px, 280px) minmax(0, 1fr) minmax(220px, 300px);
+  gap: 1rem;
+  align-items: start;
+}
+
+.plugin-manager-list,
+.plugin-manager-detail,
+.plugin-manager-install,
+.plugin-manager-empty,
+.plugin-manager-detail-hero,
+.plugin-manager-metrics,
+.plugin-manager-section {
+  background: var(--bg-main);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  box-shadow: var(--shadow-outer-sm);
+}
+
+.plugin-manager-list,
+.plugin-manager-install {
+  display: flex;
+  flex-direction: column;
+  gap: 0.7rem;
+  padding: 1rem;
+  position: sticky;
+  top: 1rem;
+}
+
+.plugin-manager-list-summary {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.plugin-manager-list-item {
+  align-items: flex-start;
+  background: rgba(255, 255, 255, 0.03);
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 8px;
+  color: var(--text-main);
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  gap: 0.35rem;
+  padding: 0.85rem;
+  text-align: left;
+}
+
+.plugin-manager-list-item:hover,
+.plugin-manager-list-item.selected {
+  border-color: rgba(48, 213, 200, 0.42);
+}
+
+.plugin-manager-list-item strong {
+  color: #fff;
+}
+
+.plugin-manager-detail {
+  min-height: 30rem;
+  padding: 1rem;
+}
+
+.plugin-manager-empty {
+  padding: 1.25rem;
+}
+
+.plugin-manager-detail-hero {
+  align-items: flex-start;
+  box-shadow: none;
+  margin-bottom: 1rem;
+  padding: 1rem;
+}
+
+.plugin-manager-detail-hero p {
+  margin: 0.45rem 0 0 0;
+  color: var(--text-soft);
+}
+
+.plugin-manager-state,
+.plugin-manager-pill {
+  align-items: center;
+  border-radius: 999px;
+  display: inline-flex;
+  font-size: 0.78rem;
+  padding: 0.22rem 0.58rem;
+  text-transform: capitalize;
+}
+
+.plugin-manager-state {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.plugin-manager-state-active,
+.plugin-manager-pill-active {
+  background: rgba(34, 197, 94, 0.16);
+  border-color: rgba(34, 197, 94, 0.32);
+  color: #dcfce7;
+}
+
+.plugin-manager-state-idle,
+.plugin-manager-pill-idle {
+  background: rgba(14, 165, 233, 0.14);
+  border-color: rgba(14, 165, 233, 0.3);
+  color: #e0f2fe;
+}
+
+.plugin-manager-state-error,
+.plugin-manager-pill-error {
+  background: rgba(248, 113, 113, 0.14);
+  border-color: rgba(248, 113, 113, 0.32);
+  color: #fee2e2;
+}
+
+.plugin-manager-state-unknown,
+.plugin-manager-pill-unknown {
+  background: rgba(255, 255, 255, 0.04);
+  border-color: rgba(255, 255, 255, 0.12);
+  color: var(--text-soft);
+}
+
+.plugin-manager-pill {
+  border: 1px solid rgba(255, 255, 255, 0.14);
+}
+
+.plugin-manager-metrics {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 0.75rem;
+  margin-bottom: 1rem;
+  padding: 1rem;
+}
+
+.plugin-manager-metrics div {
+  display: flex;
+  flex-direction: column;
+  gap: 0.25rem;
+}
+
+.plugin-manager-metrics span,
+.plugin-manager-definition-list dt {
+  color: var(--accent);
+  font-family: var(--mono);
+  font-size: 0.78rem;
+  text-transform: uppercase;
+}
+
+.plugin-manager-metrics strong,
+.plugin-manager-definition-list dd {
+  color: var(--text-main);
+}
+
+.plugin-manager-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 1rem;
+}
+
+.plugin-manager-section {
+  box-shadow: none;
+  padding: 1rem;
+}
+
+.plugin-manager-config {
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+  grid-column: 1 / -1;
+}
+
+.plugin-manager-definition-list {
+  display: grid;
+  gap: 0.65rem;
+  margin: 0.75rem 0 0 0;
+}
+
+.plugin-manager-definition-list div {
+  display: grid;
+  gap: 0.25rem;
+}
+
+.plugin-manager-definition-list dd {
+  margin: 0;
+  overflow-wrap: anywhere;
+}
+
+.plugin-manager-check-list,
+.plugin-manager-compact-list,
+.plugin-manager-event-list {
+  margin: 0.75rem 0 0 0;
+  padding-left: 1.1rem;
+}
+
+.plugin-manager-check-list li,
+.plugin-manager-event-list li {
+  margin-bottom: 0.7rem;
+}
+
+.plugin-manager-check-list p {
+  margin: 0.3rem 0;
+}
+
+.plugin-manager-event-list li {
+  display: flex;
+  flex-direction: column;
+  gap: 0.2rem;
+}
+
+.plugin-manager-event-list code {
+  background: rgba(255, 255, 255, 0.06);
+  border-radius: 6px;
+  color: var(--text-soft);
+  padding: 0.3rem 0.45rem;
+  overflow-wrap: anywhere;
+}
+
+.plugin-manager-checkbox {
+  align-items: center;
+  flex-direction: row !important;
+}
+
+@media (max-width: 1280px) {
+  .plugin-manager-layout {
+    grid-template-columns: minmax(220px, 280px) minmax(0, 1fr);
+  }
+
+  .plugin-manager-install {
+    grid-column: 1 / -1;
+    position: static;
+  }
+}
+
+@media (max-width: 920px) {
+  .plugin-manager-header,
+  .plugin-manager-toolbar,
+  .plugin-manager-detail-hero {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .plugin-manager-layout,
+  .plugin-manager-grid,
+  .plugin-manager-metrics {
+    grid-template-columns: 1fr;
+  }
+
+  .plugin-manager-list {
+    position: static;
+  }
+}

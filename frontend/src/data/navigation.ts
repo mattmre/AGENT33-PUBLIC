@@ -24,6 +24,7 @@ export const APP_TAB_IDS = [
   "analytics",
   "impact",
   "marketplace",
+  "plugins",
   "mcp",
   "advanced",
   "design-kit",
@@ -219,8 +220,13 @@ export const APP_TAB_GROUPS: ReadonlyArray<AppTabGroup> = [
   {
     id: "admin",
     label: "Admin",
-    description: "Inspect external tool fabric health and use the quarantined raw controls only when needed.",
+    description: "Inspect extension health, plugin lifecycle, and quarantined raw controls.",
     tabs: [
+      {
+        id: "plugins",
+        label: "Plugins",
+        description: "Manage plugin and extension lifecycle, diagnostics, tenant config, and events."
+      },
       {
         id: "mcp",
         label: "MCP Health",

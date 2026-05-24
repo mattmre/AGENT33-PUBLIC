@@ -4,6 +4,7 @@ from __future__ import annotations
 
 import asyncio
 import contextlib
+import time
 import uuid
 
 import pytest
@@ -216,6 +217,46 @@ def cyclic_workflow(writer_client: TestClient, route_approval_headers) -> str:
     return workflow_name
 
 
+@pytest.fixture
+def hundred_step_workflow(writer_client: TestClient, route_approval_headers) -> str:
+    """Create a 100-step linear workflow for Phase 25 scale validation."""
+    workflow_name = f"hundred-viz-{uuid.uuid4().hex[:8]}"
+    steps = []
+    for index in range(100):
+        step_id = f"step-{index + 1:03d}"
+        previous_step_id = f"step-{index:03d}" if index > 0 else None
+        step = {
+            "id": step_id,
+            "name": f"Step {index + 1:03d}",
+            "action": "transform",
+            "transform": previous_step_id or "inputs",
+        }
+        if previous_step_id is not None:
+            step["depends_on"] = [previous_step_id]
+        steps.append(step)
+
+    payload = {
+        "name": workflow_name,
+        "version": "1.0.0",
+        "description": "100-step workflow for Phase 25 visualization scale validation",
+        "steps": steps,
+        "execution": {"mode": "dependency-aware"},
+    }
+    resp = writer_client.post(
+        "/v1/workflows/",
+        json=payload,
+        headers=route_approval_headers(
+            writer_client,
+            route_name="workflows.create",
+            operation="create",
+            arguments=payload,
+            details="Pytest 100-step visualization scale setup",
+        ),
+    )
+    assert resp.status_code == 201
+    return workflow_name
+
+
 # -- Happy path tests --------------------------------------------------------
 
 
@@ -317,6 +358,24 @@ class TestWorkflowGraphGeneration:
         # Should have depends_on in metadata
         assert "depends_on" in merge_node["metadata"]
         assert set(merge_node["metadata"]["depends_on"]) == {"branch-a", "branch-b"}
+
+    def test_100_step_workflow_graph_generates_under_one_second(
+        self, reader_client: TestClient, hundred_step_workflow: str
+    ) -> None:
+        """Phase 25 performance target: 100-step graph generation stays under 1s."""
+        started = time.perf_counter()
+        resp = reader_client.get(f"/v1/visualizations/workflows/{hundred_step_workflow}/graph")
+        elapsed_seconds = time.perf_counter() - started
+
+        assert resp.status_code == 200
+        assert elapsed_seconds < 1.0
+
+        data = resp.json()
+        assert len(data["nodes"]) == 100
+        assert len(data["edges"]) == 99
+        assert data["metadata"]["step_count"] == 100
+        assert data["layout"]["width"] > 0
+        assert data["layout"]["height"] > 0
 
 
 # -- Error handling tests ----------------------------------------------------

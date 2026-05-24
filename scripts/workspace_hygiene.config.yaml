@@ -1,0 +1,57 @@
+# Workspace hygiene gate config (issue #8 -- cluster G 1/3).
+#
+# Source-of-truth config consumed by scripts/check_workspace_hygiene.py.
+# R73a integrity-checks this file's SHA256 against the run_summary row's
+# config_sha256 field, so hand-editing this file changes the hash and
+# requires a fresh report. Schema:
+#   docs/conventions/brutal-honesty-kit/v3.5/schemas/workspace-hygiene-config.schema.json
+#
+# Soft-cap-not-zero: the gate produces ZERO findings on a clean tree but a
+# tree with a few INFO-level TODOs is intentionally informational, not
+# FAIL. R73c gates on severity_total_score against `cap` below.
+
+cap: 90
+
+weights:
+  info: 1
+  low: 5
+  medium: 15
+  high: 40
+
+default_severities:
+  todo-debris: info
+  fixme-debris: low
+  stray-temp-file: low
+  oversized-binary: high
+  secret-shaped-string: high
+  debug-print-leftover: low
+  broken-symlink: medium
+  misencoded-file: medium
+
+exclusion_globs:
+  - ".git/**"
+  - "__pycache__/**"
+  - "_generated/**"
+  - "node_modules/**"
+  - "v3.5/out/**"
+  - "**/*.pyc"
+
+oversized_binary_max_bytes: 10485760
+
+secret_shaped_min_entropy: 3.5
+
+secret_allow_marker: "# bhk-allow-secret-shape"
+
+debug_print_patterns:
+  - "py:print\\("
+  - "js:console\\.(log|debug|trace)\\("
+
+temp_file_patterns:
+  - "*.bak"
+  - "*.swp"
+  - "*.orig"
+  - "*.rej"
+  - "*.tmp"
+  - "Thumbs.db"
+  - ".DS_Store"
+  - "~$*"

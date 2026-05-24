@@ -63,6 +63,11 @@ class RegressionDetector:
         # RI-01: Previously passing task now fails
         regressions.extend(self._detect_task_regressions(baseline.task_results, current_results))
 
+        # RI-03: New failure category appears
+        regressions.extend(
+            self._detect_new_failure_categories(baseline.task_results, current_results)
+        )
+
         # RI-02: Metric drops below threshold
         if thresholds:
             regressions.extend(
@@ -71,6 +76,11 @@ class RegressionDetector:
 
         # RI-04: Time-to-green increases significantly
         regressions.extend(self._detect_ttg_increase(baseline.metrics, current_metrics))
+
+        # RI-05: Flaky test becomes consistent failure
+        regressions.extend(
+            self._detect_flaky_consistent_failures(baseline.task_results, current_results)
+        )
 
         for reg in regressions:
             logger.info(
@@ -95,7 +105,10 @@ class RegressionDetector:
             prev = baseline_map.get(current.item_id)
             if prev is None:
                 continue
-            if prev.result == TaskResult.PASS and current.result == TaskResult.FAIL:
+            if prev.result == TaskResult.PASS and current.result in (
+                TaskResult.FAIL,
+                TaskResult.ERROR,
+            ):
                 regressions.append(
                     RegressionRecord(
                         indicator=RegressionIndicator.RI_01,
@@ -107,6 +120,39 @@ class RegressionDetector:
                         affected_tasks=[current.item_id],
                     )
                 )
+        return regressions
+
+    def _detect_new_failure_categories(
+        self,
+        baseline_results: list[TaskRunResult],
+        current_results: list[TaskRunResult],
+    ) -> list[RegressionRecord]:
+        """RI-03: Detect a failure category not present in the baseline."""
+        baseline_categories = {
+            r.failure_category
+            for r in baseline_results
+            if r.failure_category and r.result in (TaskResult.FAIL, TaskResult.ERROR)
+        }
+        regressions: list[RegressionRecord] = []
+
+        for current in current_results:
+            if current.result not in (TaskResult.FAIL, TaskResult.ERROR):
+                continue
+            category = current.failure_category
+            if not category or category in baseline_categories:
+                continue
+            regressions.append(
+                RegressionRecord(
+                    indicator=RegressionIndicator.RI_03,
+                    description=(
+                        f"New failure category {category} appeared in {current.item_id}: "
+                        f"{current.notes}"
+                    ),
+                    severity=_INDICATOR_SEVERITY[RegressionIndicator.RI_03],
+                    affected_tasks=[current.item_id],
+                    failure_category=category,
+                )
+            )
         return regressions
 
     def _detect_threshold_breaches(
@@ -175,6 +221,36 @@ class RegressionDetector:
                 )
             ]
         return []
+
+    def _detect_flaky_consistent_failures(
+        self,
+        baseline_results: list[TaskRunResult],
+        current_results: list[TaskRunResult],
+    ) -> list[RegressionRecord]:
+        """RI-05: Detect flaky baseline items that now fail consistently."""
+        baseline_flaky = {r.item_id for r in baseline_results if r.flaky}
+        regressions: list[RegressionRecord] = []
+
+        for current in current_results:
+            if current.item_id not in baseline_flaky:
+                continue
+            if current.flaky:
+                continue
+            if current.result not in (TaskResult.FAIL, TaskResult.ERROR):
+                continue
+            regressions.append(
+                RegressionRecord(
+                    indicator=RegressionIndicator.RI_05,
+                    description=(
+                        f"Flaky item {current.item_id} is now a consistent failure: "
+                        f"{current.notes}"
+                    ),
+                    severity=_INDICATOR_SEVERITY[RegressionIndicator.RI_05],
+                    affected_tasks=[current.item_id],
+                    failure_category=current.failure_category,
+                )
+            )
+        return regressions
 
 
 class RegressionRecorder:

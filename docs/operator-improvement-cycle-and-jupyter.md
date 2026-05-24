@@ -34,6 +34,10 @@ Reference implementation:
 - frontend: `frontend/src/features/improvement-cycle/ImprovementCycleWizard.tsx`
 - tests: `frontend/src/features/improvement-cycle/ImprovementCycleWizard.test.tsx`
 
+For the detailed review flow, keep using:
+
+- [`phase25-26-live-review-walkthrough.md`](phase25-26-live-review-walkthrough.md)
+
 ## 2. Canonical Workflow Presets
 
 The `Workflows` domain now exposes preset-assisted create and execute flows backed by the canonical YAML templates in `core/workflows/improvement-cycle/`.

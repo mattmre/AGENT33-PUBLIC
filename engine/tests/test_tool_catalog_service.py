@@ -10,7 +10,7 @@ from agent33.tools.catalog import (
     ToolCatalogService,
     ToolProvider,
 )
-from agent33.tools.registry_entry import ToolRegistryEntry, ToolStatus
+from agent33.tools.registry_entry import ToolProvenance, ToolRegistryEntry, ToolScope, ToolStatus
 
 # ---------------------------------------------------------------------------
 # Helpers: build mock registries
@@ -57,16 +57,26 @@ def _make_entry(
     status: ToolStatus = ToolStatus.ACTIVE,
     parameters_schema: dict[str, Any] | None = None,
     result_schema: dict[str, Any] | None = None,
+    governance: dict[str, Any] | None = None,
+    owner: str = "agent33-core",
+    scope: ToolScope | None = None,
 ) -> ToolRegistryEntry:
     return ToolRegistryEntry(
         tool_id=name,
         name=name,
         version=version,
         description=description,
+        owner=owner,
+        provenance=ToolProvenance(
+            repo_url="https://github.com/agent-33/agent-33",
+            license="MIT",
+        ),
+        scope=scope or ToolScope(),
         tags=tags or [],
         status=status,
         parameters_schema=parameters_schema or {},
         result_schema=result_schema or {},
+        governance=governance or {},
     )
 
 
@@ -174,6 +184,48 @@ class TestAggregation:
         assert cat_entry.has_schema is True
         assert cat_entry.tags == ["system", "execution"]
         assert cat_entry.category == "system"  # first tag becomes category
+
+    def test_tool_entry_governance_propagated(self) -> None:
+        tool = _make_tool("shell", "Run shell commands")
+        entry = _make_entry(
+            "shell",
+            governance={
+                "required_scope": "tools:execute",
+                "command_allowlist": ["git", "python"],
+            },
+        )
+        reg = _mock_tool_registry(tools=[tool], entries=[entry])
+
+        svc = ToolCatalogService(tool_registry=reg)
+        result = svc.get_tool("shell")
+
+        assert result is not None
+        assert result.governance["required_scope"] == "tools:execute"
+        assert result.governance["command_allowlist"] == ["git", "python"]
+
+    def test_tool_entry_phase12_metadata_propagated(self) -> None:
+        tool = _make_tool("shell", "Run shell commands")
+        entry = _make_entry(
+            "shell",
+            version="2.1.0",
+            owner="platform-tools",
+            scope=ToolScope(commands=["git", "python"], data_access="write"),
+            governance={
+                "required_scope": "tools:execute",
+                "command_allowlist": ["git", "python"],
+            },
+        )
+        reg = _mock_tool_registry(tools=[tool], entries=[entry])
+
+        svc = ToolCatalogService(tool_registry=reg)
+        result = svc.get_tool("shell")
+
+        assert result is not None
+        assert result.owner == "platform-tools"
+        assert result.status == "active"
+        assert result.provenance["license"] == "MIT"
+        assert result.scope["commands"] == ["git", "python"]
+        assert result.scope["data_access"] == "write"
 
     def test_yaml_only_entries_included(self) -> None:
         """Entries from YAML definitions without a runtime Tool get included."""

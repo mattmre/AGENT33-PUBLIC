@@ -108,3 +108,47 @@ export function getWorkspaceRecoverySummary(workspaceId: WorkspaceSessionId): Wo
 
   return summary;
 }
+
+export interface WorkspaceRecoveryApiSnapshot {
+  readonly id?: string;
+  readonly label?: string;
+  readonly status?: string;
+  readonly resume_action?: string;
+  readonly rollback_action?: string;
+  readonly budget_label?: string;
+  readonly artifact_count?: number;
+}
+
+export interface WorkspaceRecoveryApiRecord {
+  readonly workspace_id?: string;
+  readonly primary_message?: string;
+  readonly next_action?: string;
+  readonly snapshots?: ReadonlyArray<WorkspaceRecoveryApiSnapshot>;
+}
+
+export function workspaceRecoverySummaryFromApi(
+  workspaceId: WorkspaceSessionId,
+  record: WorkspaceRecoveryApiRecord
+): WorkspaceRecoverySummary {
+  return {
+    workspaceId,
+    primaryMessage: record.primary_message?.trim() || "No live recovery checkpoints are currently open.",
+    nextAction: record.next_action?.trim() || "Start or resume workspace work to create a checkpoint.",
+    snapshots: (record.snapshots ?? []).map((snapshot, index) => ({
+      id: snapshot.id?.trim() || `${workspaceId}-recovery-${index + 1}`,
+      label: snapshot.label?.trim() || "Workspace checkpoint",
+      status: toRecoveryStatus(snapshot.status),
+      resumeAction: snapshot.resume_action?.trim() || "Resume checkpoint",
+      rollbackAction: snapshot.rollback_action?.trim() || "Restore latest checkpoint",
+      budgetLabel: snapshot.budget_label?.trim() || "Live session",
+      artifactCount: typeof snapshot.artifact_count === "number" ? snapshot.artifact_count : 0
+    }))
+  };
+}
+
+function toRecoveryStatus(value: string | undefined): WorkspaceRecoveryStatus {
+  if (value === "attention" || value === "blocked") {
+    return value;
+  }
+  return "ready";
+}

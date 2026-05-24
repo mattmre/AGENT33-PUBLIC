@@ -893,16 +893,20 @@ class TestHubAPIRoutes:
         assert result["results"][0]["name"] == "code-review"
         assert result["query"] == "code"
 
-    async def test_hub_search_no_hub_returns_empty(self) -> None:
-        """GET /v1/packs/hub/search returns empty when hub is None."""
+    async def test_hub_search_no_hub_returns_503(self) -> None:
+        """GET /v1/packs/hub/search is unavailable when hub is None."""
+        from fastapi import HTTPException
+
         from agent33.api.routes.packs import hub_search
 
         mock_request = MagicMock()
         mock_request.app.state = MagicMock(spec=[])  # no pack_hub attribute
 
-        result = await hub_search(mock_request, q="anything", tags="", limit=10)
-        assert result["results"] == []
-        assert result["count"] == 0
+        with pytest.raises(HTTPException) as exc_info:
+            await hub_search(mock_request, q="anything", tags="", limit=10)
+
+        assert exc_info.value.status_code == 503
+        assert exc_info.value.detail == "Pack hub not initialized"
 
     async def test_hub_get_entry_returns_entry(self) -> None:
         """GET /v1/packs/hub/entry/{name} returns matching entry."""

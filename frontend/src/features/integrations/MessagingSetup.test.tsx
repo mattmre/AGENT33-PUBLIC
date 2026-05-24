@@ -440,7 +440,7 @@ describe("MessagingSetup", () => {
     })
 
     const registerCall = apiRequestMock.mock.calls.find(
-      ([args]: [{ path: string }]) => args.path === "/v1/connectors/messaging/register"
+      ([args]) => (args as { path?: string }).path === "/v1/connectors/messaging/register"
     )
     if (!registerCall) {
       throw new Error("Expected a messaging register request")

@@ -10,6 +10,7 @@ Use this document with:
 - [`production-deployment-runbook.md`](production-deployment-runbook.md)
 - [`incident-response-playbooks.md`](incident-response-playbooks.md)
 - [`service-level-objectives.md`](service-level-objectives.md)
+- [`../../docs/research/session102-p11-scaling-scope.md`](../../docs/research/session102-p11-scaling-scope.md)
 
 ## Current Deployment Guardrail
 

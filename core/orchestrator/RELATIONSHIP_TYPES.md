@@ -51,6 +51,6 @@ Add to artifact files when relationships exist:
 
 ## Related Documents
 
-- `dedup-policy.md` - Uses `derived-from` and `supersedes` during canonicalization
-- `sync-plan.md` - Tracks provenance chain with relationship types
+- `core/extensibility/REFINEMENT_RELATIONSHIP_POLICY.md` - Uses `derived-from` and `supersedes` during canonicalization and refinement
+- `core/orchestrator/distribution/DISTRIBUTION_SYNC_SPEC.md` - Tracks downstream sync boundaries for canonical artifacts
 - `core/CHANGELOG.md` - Records relationship additions

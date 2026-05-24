@@ -10,8 +10,10 @@ No code in this file may originate from the EvoMap/Evolver project.  All types
 are derived from AGENT33's own architectural decisions:
 
 - **Decision #17** — concept-only clean-room adaptation
+  (docs/phases/PHASE-PLAN-POST-P72-2026.md)
 - **Decision #18** — ``candidate -> validated -> published -> revoked`` lifecycle
   with confidence/trust labels
+  (docs/phases/PHASE-PLAN-POST-P72-2026.md)
 
 Full design contract: ``docs/research/evolver-clean-room-guardrails.md``
 """

@@ -332,7 +332,7 @@ def _enforce_intake_access(request: Request, intake: ResearchIntake | None) -> R
 # ---------------------------------------------------------------------------
 
 
-@router.post("/intakes")
+@router.post("/intakes", dependencies=[require_scope("operator:write")])
 def submit_intake(req: SubmitIntakeRequest, request: Request) -> dict[str, Any]:
     """Submit a new research intake."""
     try:
@@ -405,7 +405,7 @@ def score_feature_candidates(req: ScoreFeatureCandidatesRequest) -> dict[str, An
         raise HTTPException(status_code=400, detail=str(exc)) from None
 
 
-@router.get("/intakes")
+@router.get("/intakes", dependencies=[require_scope("operator:read")])
 def list_intakes(
     request: Request,
     status: str | None = None,
@@ -428,14 +428,14 @@ def list_intakes(
     return [i.model_dump(mode="json") for i in intakes]
 
 
-@router.get("/intakes/{intake_id}")
+@router.get("/intakes/{intake_id}", dependencies=[require_scope("operator:read")])
 def get_intake(intake_id: str, request: Request) -> dict[str, Any]:
     """Get a specific research intake."""
     intake = _enforce_intake_access(request, _service.get_intake(intake_id))
     return intake.model_dump(mode="json")
 
 
-@router.post("/intakes/{intake_id}/transition")
+@router.post("/intakes/{intake_id}/transition", dependencies=[require_scope("operator:write")])
 def transition_intake(
     intake_id: str, req: TransitionIntakeRequest, request: Request
 ) -> dict[str, Any]:
@@ -463,7 +463,7 @@ def transition_intake(
 # ---------------------------------------------------------------------------
 
 
-@router.post("/lessons")
+@router.post("/lessons", dependencies=[require_scope("operator:write")])
 def record_lesson(req: RecordLessonRequest) -> dict[str, Any]:
     """Record a new lesson learned."""
     try:
@@ -494,7 +494,7 @@ def record_lesson(req: RecordLessonRequest) -> dict[str, Any]:
         raise HTTPException(status_code=400, detail=str(exc)) from None
 
 
-@router.get("/lessons")
+@router.get("/lessons", dependencies=[require_scope("operator:read")])
 def list_lessons(
     phase: str | None = None,
     event_type: str | None = None,
@@ -506,7 +506,7 @@ def list_lessons(
     ]
 
 
-@router.get("/lessons/{lesson_id}")
+@router.get("/lessons/{lesson_id}", dependencies=[require_scope("operator:read")])
 def get_lesson(lesson_id: str) -> dict[str, Any]:
     """Get a specific lesson learned."""
     lesson = _service.get_lesson(lesson_id)
@@ -515,7 +515,10 @@ def get_lesson(lesson_id: str) -> dict[str, Any]:
     return lesson.model_dump(mode="json")
 
 
-@router.post("/lessons/{lesson_id}/complete-action")
+@router.post(
+    "/lessons/{lesson_id}/complete-action",
+    dependencies=[require_scope("operator:write")],
+)
 def complete_lesson_action(lesson_id: str, req: CompleteLessonActionRequest) -> dict[str, Any]:
     """Mark a lesson action item as completed."""
     try:
@@ -525,7 +528,7 @@ def complete_lesson_action(lesson_id: str, req: CompleteLessonActionRequest) -> 
         raise HTTPException(status_code=400, detail=str(exc)) from None
 
 
-@router.post("/lessons/{lesson_id}/verify")
+@router.post("/lessons/{lesson_id}/verify", dependencies=[require_scope("operator:write")])
 def verify_lesson(lesson_id: str, req: VerifyLessonRequest) -> dict[str, Any]:
     """Mark a lesson as implemented and verified."""
     try:
@@ -540,7 +543,7 @@ def verify_lesson(lesson_id: str, req: VerifyLessonRequest) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 
-@router.post("/checklists")
+@router.post("/checklists", dependencies=[require_scope("operator:write")])
 def create_checklist(req: CreateChecklistRequest) -> dict[str, Any]:
     """Create a new periodic improvement checklist."""
     try:
@@ -551,7 +554,7 @@ def create_checklist(req: CreateChecklistRequest) -> dict[str, Any]:
     return checklist.model_dump(mode="json")
 
 
-@router.get("/checklists")
+@router.get("/checklists", dependencies=[require_scope("operator:read")])
 def list_checklists(period: str | None = None) -> list[dict[str, Any]]:
     """List improvement checklists."""
     p = None
@@ -563,7 +566,7 @@ def list_checklists(period: str | None = None) -> list[dict[str, Any]]:
     return [c.model_dump(mode="json") for c in _service.list_checklists(p)]
 
 
-@router.get("/checklists/{checklist_id}")
+@router.get("/checklists/{checklist_id}", dependencies=[require_scope("operator:read")])
 def get_checklist(checklist_id: str) -> dict[str, Any]:
     """Get a specific checklist."""
     checklist = _service.get_checklist(checklist_id)
@@ -572,7 +575,7 @@ def get_checklist(checklist_id: str) -> dict[str, Any]:
     return checklist.model_dump(mode="json")
 
 
-@router.post("/checklists/{checklist_id}/complete")
+@router.post("/checklists/{checklist_id}/complete", dependencies=[require_scope("operator:write")])
 def complete_checklist_item(checklist_id: str, req: CompleteCheckItemRequest) -> dict[str, Any]:
     """Complete a checklist item."""
     try:
@@ -582,7 +585,7 @@ def complete_checklist_item(checklist_id: str, req: CompleteCheckItemRequest) ->
         raise HTTPException(status_code=400, detail=str(exc)) from None
 
 
-@router.get("/checklists/{checklist_id}/evaluate")
+@router.get("/checklists/{checklist_id}/evaluate", dependencies=[require_scope("operator:read")])
 def evaluate_checklist(checklist_id: str) -> dict[str, Any]:
     """Evaluate a checklist for completion."""
     try:
@@ -597,7 +600,7 @@ def evaluate_checklist(checklist_id: str) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 
-@router.get("/metrics")
+@router.get("/metrics", dependencies=[require_scope("operator:read")])
 def get_latest_metrics() -> dict[str, Any]:
     """Get the latest metrics snapshot."""
     snapshot = _service.latest_metrics()
@@ -606,13 +609,13 @@ def get_latest_metrics() -> dict[str, Any]:
     return snapshot.model_dump(mode="json")
 
 
-@router.get("/metrics/history")
+@router.get("/metrics/history", dependencies=[require_scope("operator:read")])
 def get_metrics_history(limit: int = 10) -> list[dict[str, Any]]:
     """Get metrics snapshot history."""
     return [s.model_dump(mode="json") for s in _service.list_metrics_snapshots(limit)]
 
 
-@router.post("/metrics/snapshot")
+@router.post("/metrics/snapshot", dependencies=[require_scope("operator:write")])
 def save_metrics_snapshot(req: SaveSnapshotRequest) -> dict[str, Any]:
     """Save a new metrics snapshot."""
     try:
@@ -624,14 +627,14 @@ def save_metrics_snapshot(req: SaveSnapshotRequest) -> dict[str, Any]:
         raise HTTPException(status_code=400, detail=str(exc)) from None
 
 
-@router.post("/metrics/default-snapshot")
+@router.post("/metrics/default-snapshot", dependencies=[require_scope("operator:write")])
 def create_default_snapshot(period: str = "") -> dict[str, Any]:
     """Create a snapshot with canonical metrics at default values."""
     snapshot = _service.create_default_snapshot(period)
     return snapshot.model_dump(mode="json")
 
 
-@router.get("/metrics/trend/{metric_id}")
+@router.get("/metrics/trend/{metric_id}", dependencies=[require_scope("operator:read")])
 def get_metric_trend(metric_id: str, periods: int = 4) -> dict[str, Any]:
     """Get trend data for a specific metric."""
     trend, values = _service.get_metric_trend(metric_id, periods)
@@ -643,7 +646,7 @@ def get_metric_trend(metric_id: str, periods: int = 4) -> dict[str, Any]:
 # ---------------------------------------------------------------------------
 
 
-@router.post("/refreshes")
+@router.post("/refreshes", dependencies=[require_scope("operator:write")])
 def record_refresh(req: RecordRefreshRequest) -> dict[str, Any]:
     """Record a roadmap refresh event."""
     try:
@@ -658,13 +661,13 @@ def record_refresh(req: RecordRefreshRequest) -> dict[str, Any]:
         raise HTTPException(status_code=400, detail=str(exc)) from None
 
 
-@router.get("/refreshes")
+@router.get("/refreshes", dependencies=[require_scope("operator:read")])
 def list_refreshes(scope: str | None = None) -> list[dict[str, Any]]:
     """List roadmap refresh events."""
     return [r.model_dump(mode="json") for r in _service.list_refreshes(scope=scope)]
 
 
-@router.get("/refreshes/{refresh_id}")
+@router.get("/refreshes/{refresh_id}", dependencies=[require_scope("operator:read")])
 def get_refresh(refresh_id: str) -> dict[str, Any]:
     """Get a specific roadmap refresh."""
     refresh = _service.get_refresh(refresh_id)
@@ -673,7 +676,7 @@ def get_refresh(refresh_id: str) -> dict[str, Any]:
     return refresh.model_dump(mode="json")
 
 
-@router.post("/refreshes/{refresh_id}/complete")
+@router.post("/refreshes/{refresh_id}/complete", dependencies=[require_scope("operator:write")])
 def complete_refresh(refresh_id: str, req: CompleteRefreshRequest) -> dict[str, Any]:
     """Mark a roadmap refresh as completed."""
     try:

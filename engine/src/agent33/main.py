@@ -14,9 +14,8 @@ if TYPE_CHECKING:
     from agent33.llm.router import ModelRouter
 
 import structlog
-from fastapi import FastAPI, Request, Response
+from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from starlette.middleware.base import BaseHTTPMiddleware
 
 from agent33.api.middleware.session_pod import SessionPodMiddleware
 from agent33.api.routes import (
@@ -90,6 +89,7 @@ from agent33.api.routes import (
     tool_mutations,
     traces,
     training,
+    users,
     visualizations,
     web_research,
     webhook_delivery,
@@ -100,6 +100,7 @@ from agent33.api.routes import (
     workflow_transport,
     workflow_ws,
     workflows,
+    workspaces,
 )
 from agent33.api.routes import (
     capability_packs as capability_packs_routes,
@@ -593,6 +594,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
     tool_registry = ToolRegistry()
     tool_registry.discover_from_entrypoints()
     app.state.tool_registry = tool_registry
+    code_executor.set_tool_registry(tool_registry)
+    logger.info(
+        "code_executor_tool_registry_attached",
+        definition_count=len(tool_registry.list_entries()),
+    )
 
     tool_approval_service = ToolApprovalService(state_store=orchestration_state_store)
     app.state.tool_approval_service = tool_approval_service
@@ -2042,6 +2048,7 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         get_webhook_repository,
         set_webhook_repository,
     )
+    from agent33.phase23_lifecycle import install_phase23_lifecycle_repositories
     from agent33.security.auth_repository import (
         InMemoryAuthRepository,
         get_auth_repository,
@@ -2064,9 +2071,17 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
             db_path=_cp_db,
         )
 
-    # Use get_*() to reuse the lazily-created default repository instead of
-    # creating a new one.  This preserves the reference that module-level
-    # ``_users`` / ``_api_keys`` backwards-compatible aliases already hold.
+    phase23_lifecycle_repos = install_phase23_lifecycle_repositories(settings, state_paths)
+    app.state.phase23_lifecycle_repositories = phase23_lifecycle_repos
+    logger.info(
+        "phase23_lifecycle_repositories_initialized",
+        backend=phase23_lifecycle_repos.backend,
+        auth_db_path=phase23_lifecycle_repos.auth_db_path,
+        workspace_db_path=phase23_lifecycle_repos.workspace_db_path,
+    )
+
+    # Resolve the installed auth repository after Phase 23 runtime wiring.
+    # Legacy in-memory aliases remain available only when tests opt into that backend.
     auth_repo = get_auth_repository()
     logger.info(
         "auth_repository_initialized",
@@ -2319,6 +2334,11 @@ async def lifespan(app: FastAPI) -> AsyncIterator[None]:
         _security_store.close()
         logger.info("security_scan_store_closed")
 
+    _phase23_repos: Any = getattr(app.state, "phase23_lifecycle_repositories", None)
+    if _phase23_repos is not None:
+        _phase23_repos.close()
+        logger.info("phase23_lifecycle_repositories_closed")
+
     if nats_bus.is_connected:
         await nats_bus.close()
         logger.info("nats_closed")
@@ -2421,19 +2441,74 @@ def _register_agent_runtime_bridge(
 # -- Request size limit middleware ----------------------------------------------
 
 
-class RequestSizeLimitMiddleware(BaseHTTPMiddleware):
-    """Reject requests whose Content-Length exceeds the configured limit."""
+class _RequestBodyTooLargeError(Exception):
+    """Raised when a streaming request body exceeds the configured cap."""
 
-    async def dispatch(self, request: Request, call_next: Callable[[Request], Any]) -> Response:
-        content_length = request.headers.get("content-length")
-        if content_length and int(content_length) > settings.max_request_size_bytes:
-            return Response(
-                content='{"detail":"Request body too large"}',
-                status_code=413,
-                media_type="application/json",
-            )
-        response: Response = await call_next(request)
-        return response
+
+class RequestSizeLimitMiddleware:
+    """Reject oversized request bodies by header and by observed bytes."""
+
+    def __init__(self, app: Any) -> None:
+        self.app = app
+
+    async def __call__(self, scope: dict[str, Any], receive: Any, send: Any) -> None:
+        if scope.get("type") != "http":
+            await self.app(scope, receive, send)
+            return
+
+        max_size = settings.max_request_size_bytes
+        headers = {name.lower(): value for name, value in scope.get("headers", [])}
+        content_length = headers.get(b"content-length")
+        if content_length:
+            try:
+                declared_size = int(content_length.decode("latin-1"))
+            except ValueError:
+                await self._send_json_error(send, 400, "Invalid Content-Length")
+                return
+            if declared_size > max_size:
+                await self._send_json_error(send, 413, "Request body too large")
+                return
+
+        response_started = False
+        bytes_seen = 0
+
+        async def limited_receive() -> dict[str, Any]:
+            nonlocal bytes_seen
+            message = await receive()
+            if message.get("type") == "http.request":
+                body = message.get("body", b"")
+                bytes_seen += len(body)
+                if bytes_seen > max_size:
+                    raise _RequestBodyTooLargeError
+            return message
+
+        async def guarded_send(message: dict[str, Any]) -> None:
+            nonlocal response_started
+            if message.get("type") == "http.response.start":
+                response_started = True
+            await send(message)
+
+        try:
+            await self.app(scope, limited_receive, guarded_send)
+        except _RequestBodyTooLargeError:
+            if response_started:
+                raise
+            await self._send_json_error(send, 413, "Request body too large")
+
+    @staticmethod
+    async def _send_json_error(send: Any, status_code: int, detail: str) -> None:
+        body = json.dumps({"detail": detail}, separators=(",", ":")).encode()
+        await send(
+            {
+                "type": "http.response.start",
+                "status": status_code,
+                "headers": [
+                    (b"content-type", b"application/json"),
+                    (b"content-length", str(len(body)).encode("ascii")),
+                ],
+            }
+        )
+        await send({"type": "http.response.body", "body": body})
 
 
 # -- Application factory ------------------------------------------------------
@@ -2498,9 +2573,11 @@ app.include_router(health.router)
 app.include_router(chat.router)
 app.include_router(agents.router)
 app.include_router(workflows.router)
+app.include_router(workspaces.router)
 app.include_router(visualizations.router)
 app.include_router(explanations.router)
 app.include_router(auth.router)
+app.include_router(users.router)
 app.include_router(browser_sessions.router)
 app.include_router(webhooks.router)
 app.include_router(webhook_delivery.router)

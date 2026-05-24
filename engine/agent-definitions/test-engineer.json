@@ -1,0 +1,61 @@
+{
+  "$schema": "./schemas/agent.schema.json",
+  "name": "test-engineer",
+  "version": "1.0.0",
+  "role": "test-engineer",
+  "description": "Designs regression coverage, writes tests, and validates behavior against acceptance criteria.",
+  "agent_id": "AGT-010",
+  "status": "active",
+  "capabilities": [
+    "validation",
+    "code-execution"
+  ],
+  "spec_capabilities": ["V-01", "V-02", "I-01", "X-05"],
+  "governance": {
+    "scope": "tests-and-fixtures",
+    "commands": "test,lint,coverage",
+    "network": "none",
+    "approval_required": ["test-infrastructure"]
+  },
+  "ownership": {
+    "owner": "platform-team",
+    "escalation_target": "orchestrator"
+  },
+  "inputs": {
+    "acceptance_criteria": {
+      "type": "string",
+      "description": "Behavior or requirement to prove with tests",
+      "required": true
+    }
+  },
+  "outputs": {
+    "test_evidence": {
+      "type": "object",
+      "description": "Test plan, cases, and execution evidence"
+    }
+  },
+  "dependencies": [
+    {
+      "agent": "qa",
+      "optional": true,
+      "purpose": "Coordinates test execution and defect reporting"
+    }
+  ],
+  "prompts": {
+    "system": "prompts/test-engineer/system.md",
+    "user": "prompts/test-engineer/user.md",
+    "examples": []
+  },
+  "constraints": {
+    "max_tokens": 8192,
+    "timeout_seconds": 180,
+    "max_retries": 2,
+    "parallel_allowed": true
+  },
+  "metadata": {
+    "author": "agent-33",
+    "created": "2026-05-24",
+    "updated": "2026-05-24",
+    "tags": ["testing", "regression", "verification"]
+  }
+}

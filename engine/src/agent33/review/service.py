@@ -31,6 +31,15 @@ from agent33.review.state_machine import InvalidTransitionError, SignoffStateMac
 
 logger = logging.getLogger(__name__)
 
+_APPROVAL_DECISIONS = frozenset(
+    {
+        "approved",
+        "changes_requested",
+        "escalated",
+        "deferred",
+    }
+)
+
 
 def _sanitize_log_value(value: str) -> str:
     """Escape line breaks in user-controlled values before logging."""
@@ -179,6 +188,20 @@ class ReviewService:
         record.state = new_state
         record.touch()
 
+    def _ensure_l2_approval_if_required(
+        self,
+        record: ReviewRecord,
+        action: str,
+    ) -> None:
+        """Prevent final approval/merge when current risk requires L2."""
+        if (
+            record.risk_assessment.l2_required
+            and record.l2_review.decision != ReviewDecision.APPROVED
+        ):
+            raise ReviewStateError(
+                f"Cannot {action}: current risk assessment requires approved L2 review"
+            )
+
     def mark_ready(self, review_id: str) -> ReviewRecord:
         """Move review from DRAFT to READY."""
         record = self.get(review_id)
@@ -310,6 +333,8 @@ class ReviewService:
         if record.state != SignoffState.APPROVED:
             raise ReviewStateError(f"Cannot approve review in state {record.state.value}")
 
+        self._ensure_l2_approval_if_required(record, "approve review")
+
         # Determine approval type
         if record.l2_review.decision is not None:
             if record.l2_review.reviewer_id == "HUMAN":
@@ -355,10 +380,16 @@ class ReviewService:
         """
         record = self.get(review_id)
 
+        if decision not in _APPROVAL_DECISIONS:
+            raise ReviewStateError(f"Unsupported approval decision: {decision}")
+
         if record.state != SignoffState.APPROVED:
             raise ReviewStateError(
                 f"Cannot apply rationale approval in state {record.state.value}"
             )
+
+        if decision in {"approved", "escalated"}:
+            self._ensure_l2_approval_if_required(record, "approve review")
 
         # Determine approval type
         if record.l2_review.decision is not None:
@@ -400,6 +431,9 @@ class ReviewService:
     def merge(self, review_id: str) -> ReviewRecord:
         """Mark a review as MERGED (final state)."""
         record = self.get(review_id)
+        if record.state != SignoffState.APPROVED:
+            raise ReviewStateError(f"Cannot merge review in state {record.state.value}")
+        self._ensure_l2_approval_if_required(record, "merge review")
         self._transition(record, SignoffState.MERGED)
         logger.info("review_merged id=%s", review_id)
         self._persist_state()

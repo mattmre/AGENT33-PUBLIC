@@ -4,8 +4,6 @@ from __future__ import annotations
 
 import asyncio
 import os
-import subprocess
-import sys
 import time
 
 import structlog
@@ -68,25 +66,17 @@ class CLIAdapter(BaseAdapter):
         # -- Timeout from sandbox config (ms → seconds) -----------------------
         timeout_s = contract.sandbox.timeout_ms / 1000.0
 
-        # -- Spawn process (platform-aware) ------------------------------------
+        # -- Spawn process ------------------------------------------------------
+        stdin_pipe = asyncio.subprocess.PIPE if contract.inputs.stdin is not None else None
         try:
-            if sys.platform == "win32":
-                cmd_str = subprocess.list2cmdline(parts)
-                proc = await asyncio.create_subprocess_shell(
-                    cmd_str,
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE,
-                    env=env,
-                    cwd=contract.inputs.working_directory,
-                )
-            else:
-                proc = await asyncio.create_subprocess_exec(
-                    *parts,
-                    stdout=asyncio.subprocess.PIPE,
-                    stderr=asyncio.subprocess.PIPE,
-                    env=env,
-                    cwd=contract.inputs.working_directory,
-                )
+            proc = await asyncio.create_subprocess_exec(
+                *parts,
+                stdin=stdin_pipe,
+                stdout=asyncio.subprocess.PIPE,
+                stderr=asyncio.subprocess.PIPE,
+                env=env,
+                cwd=contract.inputs.working_directory,
+            )
         except FileNotFoundError:
             elapsed = (time.monotonic() - start) * 1000
             return ExecutionResult(
@@ -108,8 +98,13 @@ class CLIAdapter(BaseAdapter):
 
         # -- Communicate with timeout ------------------------------------------
         try:
+            stdin_bytes = (
+                contract.inputs.stdin.encode("utf-8")
+                if contract.inputs.stdin is not None
+                else None
+            )
             stdout_bytes, stderr_bytes = await asyncio.wait_for(
-                proc.communicate(),
+                proc.communicate(input=stdin_bytes),
                 timeout=timeout_s,
             )
         except TimeoutError:
@@ -142,11 +137,6 @@ class CLIAdapter(BaseAdapter):
         stdout = stdout_bytes.decode("utf-8", errors="replace")
         stderr = stderr_bytes.decode("utf-8", errors="replace")
         exit_code = proc.returncode if proc.returncode is not None else -1
-
-        # On Windows, cmd.exe doesn't raise FileNotFoundError — detect via
-        # stderr message and normalise to exit code 127 per spec.
-        if sys.platform == "win32" and exit_code != 0 and "is not recognized" in stderr:
-            exit_code = 127
 
         elapsed = (time.monotonic() - start) * 1000
 

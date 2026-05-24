@@ -1,7 +1,6 @@
 # Imported Capability Packs
 
-Purpose: Record the imported capability packs that bridge external skill libraries
-into AGENT-33's existing pack, workflow, and discovery surfaces.
+Purpose: Record the Phase 47 imported capability packs that bridge EVOKORE skills into AGENT-33's existing pack, workflow, and discovery surfaces.
 
 ## Bundled Packs
 

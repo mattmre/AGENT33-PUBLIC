@@ -1,0 +1,217 @@
+#!/usr/bin/env python3
+"""scripts/smoke_pipeline.py — Stage 2 of the v3.3 Rule 5 smoke gate.
+
+REPO-AGNOSTIC TEMPLATE — replace the {{...}} placeholders with your repo's
+production module surface. The template defaults to a FLOOR-tier check (import
++ surface verification through production code paths). Replace the
+`run_ceiling_smoke()` body with a real end-to-end exercise once you have one.
+
+Two-tier framing per project release gate:
+
+  Floor (this template, default):
+    Imports the production module, verifies its documented surface (constants,
+    entry points, scanner functions). Catches L1 scaffold-as-feature, L9
+    dependency-phantom, L10 broken imports. Acceptable as the v3.2 minimum but
+    NOT a substitute for ceiling-tier verification.
+
+  Ceiling (your target):
+    Runs the real production entry point against tests/fixtures/<input> and
+    asserts the produced output (file content, persisted record, response body)
+    matches expectations. Examples:
+      - OCR pipeline:  extract → OCR → assemble → verify output PDF contains
+                       expected text from the fixture
+      - Web service:   start app → POST /api/x → assert persisted record
+                       matches the request payload
+      - CLI tool:      run CLI with fixture args → assert output file exists
+                       with expected content
+    Until you reach ceiling-tier, the SMOKE: line in your PR body MUST name
+    which tier was run AND any ceiling gap MUST appear as a Carried Debt entry
+    in your next-session.md per §6.3.
+
+PLACEHOLDERS TO FILL IN:
+  {{PRODUCTION_MODULE}}       — e.g. "myapp.pipeline" / "cli.main" / "core.runner"
+  {{EXPECTED_CONSTANTS}}      — list of module-level constants that must exist
+                                (e.g. ["NUM_WORKERS", "DPI", "TIMEOUT_SECONDS"])
+                                Pass [] if your module has no public constants.
+  {{ENTRY_POINT_NAMES}}       — list of acceptable entry-point names
+                                (e.g. ["main", "run", "run_pipeline"])
+  {{SCANNER_NAMES}}           — list of acceptable input-iteration names
+                                (e.g. ["iter_source_files", "scan_inputs"])
+                                Pass [] if your pipeline does not iterate inputs.
+  {{ALSO_REQUIRED_IMPORTS}}   — additional production modules to import (catches
+                                breakage in the dependency graph). Empty list is
+                                fine if you only have one production module.
+"""
+
+from __future__ import annotations
+
+import sys
+import traceback
+from pathlib import Path
+
+REPO_ROOT = Path(__file__).resolve().parent.parent
+
+# Optional: point at a real fixture if you build a ceiling-tier exercise below.
+# These paths are only checked if you uncomment the fixture-presence guard.
+FIXTURE_PRIMARY = REPO_ROOT / "tests" / "fixtures" / "sample.pdf"
+FIXTURE_SECONDARY = REPO_ROOT / "tests" / "fixtures" / "sample.png"
+
+
+def _print(msg: str) -> None:
+    print(msg, flush=True)
+
+
+def _fail(reason: str) -> int:
+    _print(f"SMOKE_PIPELINE FAIL: {reason}")
+    return 1
+
+
+def _ok(msg: str) -> None:
+    _print(f"  OK: {msg}")
+
+
+def run_floor_smoke() -> int:
+    """Floor-tier smoke: import + surface verification through production code.
+
+    Returns 0 on PASS, 1 on FAIL. Does NOT require GPU, models, or external
+    services. Acceptable as the v3.2 minimum but not a substitute for ceiling.
+    """
+    _print(f"smoke_pipeline.py (floor tier) — REPO_ROOT={REPO_ROOT}")
+
+    # --- Make the repo importable -------------------------------------------
+    sys.path.insert(0, str(REPO_ROOT))
+
+    # --- 1. Import the primary production module ----------------------------
+    production_module_name = "{{PRODUCTION_MODULE}}"  # e.g. "myapp.pipeline"
+    try:
+        import importlib
+        production_module = importlib.import_module(production_module_name)
+        _ok(f"imported {production_module_name}")
+    except ImportError as exc:
+        return _fail(
+            f"cannot import production module {production_module_name!r}: {exc}\n"
+            f"  Production deps are not installed in the current Python env.\n"
+            f"  Stage 2 cannot honestly verify the production path without them.\n"
+            f"  Fix: install production deps OR run smoke.sh inside the production "
+            f"container."
+        )
+    except Exception as exc:  # noqa: BLE001 — surface ALL failures
+        return _fail(
+            f"{production_module_name} import raised non-ImportError: {exc!r}\n"
+            f"{traceback.format_exc()}"
+        )
+
+    # --- 2. Import additional required production modules -------------------
+    also_required: list[str] = []  # {{ALSO_REQUIRED_IMPORTS}}
+    for mod_name in also_required:
+        try:
+            importlib.import_module(mod_name)
+            _ok(f"imported {mod_name}")
+        except ImportError as exc:
+            return _fail(f"cannot import required production module {mod_name!r}: {exc}")
+        except Exception as exc:  # noqa: BLE001
+            return _fail(
+                f"{mod_name} import raised non-ImportError: {exc!r}\n"
+                f"{traceback.format_exc()}"
+            )
+
+    # --- 3. Verify the documented surface — public constants ---------------
+    expected_constants: list[str] = []  # {{EXPECTED_CONSTANTS}}
+    if expected_constants:
+        missing = [c for c in expected_constants if not hasattr(production_module, c)]
+        if missing:
+            return _fail(
+                f"{production_module_name} is missing documented constants: {missing}\n"
+                f"  These are load-bearing per your CLAUDE.md / docs.\n"
+                f"  Missing them is L4 partial-with-claim-of-complete: the module "
+                f"imports but its documented surface is incomplete."
+            )
+        _ok(f"production constants present: {expected_constants}")
+
+    # --- 4. Verify a CLI / programmatic entry point exists -----------------
+    entry_point_names: list[str] = ["main", "run", "run_pipeline"]  # {{ENTRY_POINT_NAMES}}
+    if entry_point_names:
+        has_entry = next(
+            (n for n in entry_point_names if hasattr(production_module, n)),
+            None,
+        )
+        if has_entry is None:
+            return _fail(
+                f"{production_module_name} exposes no entry point "
+                f"(looked for {entry_point_names}). The production module has no "
+                f"callable entry — this is L1 scaffold-as-feature."
+            )
+        _ok(f"production entry point exposed: {has_entry}")
+
+    # --- 5. Verify an input-iteration / scanner function exists ------------
+    scanner_names: list[str] = []  # {{SCANNER_NAMES}}
+    if scanner_names:
+        has_scanner = [n for n in scanner_names if hasattr(production_module, n)]
+        if not has_scanner:
+            return _fail(
+                f"{production_module_name} exposes no input-iteration function "
+                f"(looked for {scanner_names}). The production entry point has no "
+                f"way to find work to do — this is L1 scaffold-as-feature."
+            )
+        _ok(f"production input-iteration functions exposed: {has_scanner}")
+
+    return 0
+
+
+def run_ceiling_smoke() -> int:
+    """Ceiling-tier smoke: real end-to-end exercise against a real fixture.
+
+    REPLACE THIS BODY when you have a ceiling-tier exercise. Until then it
+    returns the sentinel value 2 ("not implemented"), which the caller treats
+    as a deferred check (not a failure of the floor tier, but recorded as
+    Carried Debt).
+
+    Example pattern (OCR-style):
+
+        if not FIXTURE_PRIMARY.exists():
+            return _fail(f"missing fixture: {FIXTURE_PRIMARY}")
+        from {{PRODUCTION_MODULE}} import run_pipeline
+        result = run_pipeline(input_path=FIXTURE_PRIMARY, output_dir=tempdir)
+        if not result.output_pdf.exists():
+            return _fail("pipeline did not produce expected output PDF")
+        text = extract_text(result.output_pdf)
+        if "expected_phrase" not in text:
+            return _fail(f"output PDF missing expected text: got {text[:200]!r}")
+        _ok("ceiling-tier exercise PASS")
+        return 0
+    """
+    return 2
+
+
+def main() -> int:
+    floor_status = run_floor_smoke()
+    if floor_status != 0:
+        return floor_status
+
+    ceiling_status = run_ceiling_smoke()
+
+    _print("")
+    if ceiling_status == 2:
+        # HONEST DISCLOSURE: floor-tier PASS, ceiling-tier NOT IMPLEMENTED.
+        # This block is load-bearing per Rulebook v3.5 §1 Rule 5 — do not delete it.
+        _print("HONEST DISCLOSURE (per project release gate):")
+        _print("  This smoke ran the FLOOR tier only (import + surface-check through")
+        _print("  production code paths). The ceiling tier (real end-to-end against a")
+        _print("  fixture) is NOT YET IMPLEMENTED in run_ceiling_smoke().")
+        _print("  Per Rule 5, claiming 'smoke passed' at ceiling-tier when only floor")
+        _print("  ran is L4 partial-with-claim-of-complete. The PR body SMOKE: line")
+        _print("  must name 'floor-tier only' AND any 'ceiling-tier gap' must appear")
+        _print("  as a Carried Debt entry in next-session.md per §6.3.")
+        _print("")
+        _print("SMOKE_PIPELINE PASS (floor tier; ceiling tier deferred)")
+        return 0
+    if ceiling_status != 0:
+        return ceiling_status
+
+    _print("")
+    _print("SMOKE_PIPELINE PASS (floor + ceiling tiers)")
+    return 0
+
+
+if __name__ == "__main__":
+    sys.exit(main())

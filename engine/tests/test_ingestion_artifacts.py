@@ -157,10 +157,7 @@ def test_ingestion_template_documents_required_fields() -> None:
 
 def test_example_ingestion_task_is_parseable_and_linked_to_planning_files() -> None:
     artifact_path = (
-        _repo_root()
-        / "_internal"
-        / "research"
-        / "codex-autorunner-ingestion-task-2026-03-28.md"
+        _repo_root() / "_internal" / "research" / "codex-autorunner-ingestion-task-2026-03-28.md"
     )
     artifact = IngestionTaskArtifact.load(artifact_path)
 
@@ -170,7 +167,9 @@ def test_example_ingestion_task_is_parseable_and_linked_to_planning_files() -> N
     assert "findings.md" in artifact.planning_refs
     assert "progress.md" in artifact.planning_refs
     _assert_repo_root_relative_refs_exist(artifact.planning_refs)
-    assert "docs/research/codex-autorunner-adaptive-ingestion-2026-03-28.md" in artifact.evidence
+    assert (
+        "docs/research/codex-autorunner-adaptive-ingestion-2026-03-28.md" in artifact.evidence
+    )
 
 
 def test_repo_ingestor_skill_template_path_is_repo_root_relative() -> None:

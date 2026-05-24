@@ -1,0 +1,61 @@
+{
+  "$schema": "./schemas/agent.schema.json",
+  "name": "reviewer",
+  "version": "1.0.0",
+  "role": "reviewer",
+  "description": "Reviews code, architecture, security posture, and compliance evidence before release.",
+  "agent_id": "AGT-005",
+  "status": "active",
+  "capabilities": [
+    "code-analysis",
+    "validation"
+  ],
+  "spec_capabilities": ["R-01", "R-02", "R-03", "R-04", "R-05"],
+  "governance": {
+    "scope": "read-only-review",
+    "commands": "read-only",
+    "network": "none",
+    "approval_required": []
+  },
+  "ownership": {
+    "owner": "platform-team",
+    "escalation_target": "director"
+  },
+  "inputs": {
+    "diff": {
+      "type": "string",
+      "description": "Diff, artifact, or review target",
+      "required": true
+    }
+  },
+  "outputs": {
+    "findings": {
+      "type": "array",
+      "description": "Prioritized review findings"
+    }
+  },
+  "dependencies": [
+    {
+      "agent": "orchestrator",
+      "optional": true,
+      "purpose": "Receives scoped review assignments"
+    }
+  ],
+  "prompts": {
+    "system": "prompts/reviewer/system.md",
+    "user": "prompts/reviewer/user.md",
+    "examples": []
+  },
+  "constraints": {
+    "max_tokens": 8192,
+    "timeout_seconds": 180,
+    "max_retries": 1,
+    "parallel_allowed": true
+  },
+  "metadata": {
+    "author": "agent-33",
+    "created": "2026-05-24",
+    "updated": "2026-05-24",
+    "tags": ["review", "governance", "quality"]
+  }
+}

@@ -1,0 +1,130 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent33.local/schemas/distribution-sync-rule.schema.json",
+  "title": "AGENT-33 distribution sync rule",
+  "type": "object",
+  "additionalProperties": false,
+  "required": ["sync_rule"],
+  "properties": {
+    "sync_rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "source",
+        "target_repo",
+        "target_path",
+        "strategy",
+        "frequency",
+        "filters",
+        "transforms",
+        "validation"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^sync-[a-z0-9][a-z0-9-]{2,80}$"
+        },
+        "source": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!/)(?!.*(^|/)\\.\\.($|/))(?!.*(^|/)\\.git($|/))(?!.*(^|/)_internal($|/)).+"
+        },
+        "target_repo": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+        },
+        "target_path": {
+          "type": "string",
+          "minLength": 1,
+          "pattern": "^(?!/)(?!.*(^|/)\\.\\.($|/))(?!.*(^|/)\\.git($|/)).+"
+        },
+        "strategy": {
+          "type": "string",
+          "enum": ["copy", "template", "reference"]
+        },
+        "frequency": {
+          "type": "string",
+          "enum": ["on_release", "on_change", "manual"]
+        },
+        "filters": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": ["include", "exclude"],
+          "properties": {
+            "include": {
+              "type": "array",
+              "minItems": 1,
+              "items": { "$ref": "#/$defs/safe_glob" }
+            },
+            "exclude": {
+              "type": "array",
+              "items": { "$ref": "#/$defs/safe_glob" }
+            }
+          }
+        },
+        "transforms": {
+          "type": "array",
+          "items": {
+            "oneOf": [
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["strip_internal_links"],
+                "properties": {
+                  "strip_internal_links": { "type": "boolean" }
+                }
+              },
+              {
+                "type": "object",
+                "additionalProperties": false,
+                "required": ["rewrite_paths"],
+                "properties": {
+                  "rewrite_paths": {
+                    "type": "object",
+                    "additionalProperties": false,
+                    "required": ["from", "to"],
+                    "properties": {
+                      "from": { "$ref": "#/$defs/safe_relative_prefix" },
+                      "to": { "$ref": "#/$defs/safe_relative_prefix" }
+                    }
+                  }
+                }
+              }
+            ]
+          }
+        },
+        "validation": {
+          "type": "object",
+          "additionalProperties": false,
+          "required": [
+            "checksum",
+            "schema_check",
+            "link_integrity",
+            "secret_scan",
+            "version_tag"
+          ],
+          "properties": {
+            "checksum": { "type": "boolean" },
+            "schema_check": { "type": "boolean" },
+            "link_integrity": { "type": "boolean" },
+            "secret_scan": { "type": "boolean" },
+            "version_tag": { "type": "boolean" }
+          }
+        }
+      }
+    }
+  },
+  "$defs": {
+    "safe_glob": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(^|/)\\.\\.($|/))(?!.*(^|/)\\.git($|/))(?!.*(^|/)_internal($|/)).+"
+    },
+    "safe_relative_prefix": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(^|/)\\.\\.($|/))(?!.*(^|/)\\.git($|/)).+"
+    }
+  }
+}

@@ -7,7 +7,7 @@ from typing import Any
 
 import structlog
 from fastapi import APIRouter, HTTPException, Request
-from pydantic import BaseModel
+from pydantic import BaseModel, ConfigDict
 
 from agent33.api.routes.tenant_access import require_tenant_context, tenant_filter_for_request
 from agent33.observability.failure import FailureCategory, FailureSeverity
@@ -40,6 +40,8 @@ def get_trace_collector() -> TraceCollector:
 
 
 class StartTraceRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     task_id: str = ""
     session_id: str = ""
     run_id: str = ""
@@ -49,6 +51,8 @@ class StartTraceRequest(BaseModel):
 
 
 class AddActionRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     step_id: str
     action_id: str
     tool: str
@@ -60,12 +64,16 @@ class AddActionRequest(BaseModel):
 
 
 class CompleteTraceRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     status: TraceStatus = TraceStatus.COMPLETED
     failure_code: str = ""
     failure_message: str = ""
 
 
 class RecordFailureRequest(BaseModel):
+    model_config = ConfigDict(extra="forbid")
+
     message: str
     category: FailureCategory = FailureCategory.UNKNOWN
     severity: FailureSeverity = FailureSeverity.MEDIUM

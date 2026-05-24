@@ -43,6 +43,34 @@ class _StubTool:
         return ToolResult.ok("ok")
 
 
+class _ContextEchoTool:
+    """Tool that exposes the effective allowlist context for registry tests."""
+
+    def __init__(self, name: str = "context_echo") -> None:
+        self._name = name
+        self.executed = False
+
+    @property
+    def name(self) -> str:
+        return self._name
+
+    @property
+    def description(self) -> str:
+        return "Echo effective tool context."
+
+    async def execute(self, params: dict[str, Any], context: ToolContext) -> ToolResult:
+        self.executed = True
+        return ToolResult.ok(
+            "|".join(
+                [
+                    ",".join(context.command_allowlist),
+                    ",".join(context.path_allowlist),
+                    ",".join(context.domain_allowlist),
+                ]
+            )
+        )
+
+
 def _make_entry(
     name: str = "stub",
     version: str = "1.0",
@@ -212,6 +240,59 @@ class TestSetStatus:
 
 
 class TestLoadDefinitions:
+    def test_loads_governance_parameters_and_scope_metadata(self, tmp_path: Path) -> None:
+        (tmp_path / "shell.yml").write_text(
+            textwrap.dedent("""\
+                name: shell
+                version: "1.0"
+                owner: team-x
+                provenance:
+                  repo_url: https://example.com
+                  license: MIT
+                status: active
+                approval:
+                  approver: platform-review
+                  approved_date: "2026-05-24"
+                  evidence: PR-653
+                last_review: "2026-05-24"
+                next_review: "2026-08-24"
+                deprecation_message: ""
+                parameters:
+                  command:
+                    type: string
+                    required: true
+                    description: Command to execute.
+                  timeout:
+                    type: integer
+                    required: false
+                    default: 30
+                governance:
+                  required_scope: tools:execute
+                  command_allowlist:
+                    - git
+                    - python
+                  write_operation: true
+            """),
+            encoding="utf-8",
+        )
+
+        reg = ToolRegistry()
+        count = reg.load_definitions(str(tmp_path))
+
+        assert count == 1
+        entry = reg.get_entry("shell")
+        assert entry is not None
+        assert entry.governance["required_scope"] == "tools:execute"
+        assert entry.scope.commands == ["git", "python"]
+        assert entry.scope.data_access == "write"
+        assert entry.approval.approver == "platform-review"
+        assert entry.approval.approved_date == date(2026, 5, 24)
+        assert entry.approval.evidence == "PR-653"
+        assert entry.last_review == date(2026, 5, 24)
+        assert entry.next_review == date(2026, 8, 24)
+        assert entry.parameters_schema["required"] == ["command"]
+        assert entry.parameters_schema["properties"]["timeout"]["default"] == 30
+
     def test_loads_yaml_files(self, tmp_path: Path) -> None:
         (tmp_path / "tool_a.yml").write_text(
             textwrap.dedent("""\
@@ -276,6 +357,168 @@ class TestLoadDefinitions:
         assert count >= 6  # shell + 5 new definitions
         assert reg.get_entry("shell") is not None
         assert reg.get_entry("browser") is not None
+
+    def test_discover_from_entrypoints_loads_packaged_metadata(self) -> None:
+        """Runtime discovery also loads packaged YAML metadata for the catalog."""
+        reg = ToolRegistry()
+        count = reg.discover_from_entrypoints(group="agent33.tests.no_entrypoints")
+
+        assert count == 0
+        shell = reg.get_entry("shell")
+        assert shell is not None
+        assert shell.governance["required_scope"] == "tools:execute"
+        assert "git" in shell.scope.commands
+        assert shell.parameters_schema["required"] == ["command"]
+
+
+# ------------------------------------------------------------------
+# Registry-scoped allowlist wiring
+# ------------------------------------------------------------------
+
+
+class TestRegistryAllowlistWiring:
+    @pytest.mark.asyncio
+    async def test_registry_command_allowlist_is_applied_when_context_is_unset(self) -> None:
+        reg = ToolRegistry()
+        tool = _ContextEchoTool("shell")
+        reg.register_with_entry(
+            tool,
+            ToolRegistryEntry(
+                tool_id="shell",
+                name="shell",
+                version="1.0",
+                scope=ToolScope(commands=["git", "python"]),
+                governance={"command_allowlist": ["git", "python"]},
+            ),
+        )
+
+        result = await reg.validated_execute("shell", {}, ToolContext())
+
+        assert result.success
+        assert result.output.split("|")[0] == "git,python"
+
+    @pytest.mark.asyncio
+    async def test_registry_allowlist_intersects_with_caller_context(self) -> None:
+        reg = ToolRegistry()
+        tool = _ContextEchoTool("shell")
+        reg.register_with_entry(
+            tool,
+            ToolRegistryEntry(
+                tool_id="shell",
+                name="shell",
+                version="1.0",
+                scope=ToolScope(commands=["git", "python"]),
+                governance={"command_allowlist": ["git", "python"]},
+            ),
+        )
+
+        result = await reg.validated_execute(
+            "shell",
+            {},
+            ToolContext(command_allowlist=["git", "node"]),
+        )
+
+        assert result.success
+        assert result.output.split("|")[0] == "git"
+
+    @pytest.mark.asyncio
+    async def test_empty_registry_path_allowlist_fails_closed(self) -> None:
+        reg = ToolRegistry()
+        tool = _ContextEchoTool("file_ops")
+        reg.register_with_entry(
+            tool,
+            ToolRegistryEntry(
+                tool_id="file_ops",
+                name="file_ops",
+                version="1.0",
+                scope=ToolScope(filesystem=[]),
+                governance={"path_allowlist": []},
+            ),
+        )
+
+        result = await reg.validated_execute("file_ops", {"path": "README.md"}, ToolContext())
+
+        assert not result.success
+        assert "path allowlist is empty" in result.error
+        assert tool.executed is False
+
+    @pytest.mark.asyncio
+    async def test_empty_registry_path_allowlist_uses_explicit_context(
+        self,
+        tmp_path: Path,
+    ) -> None:
+        reg = ToolRegistry()
+        tool = _ContextEchoTool("file_ops")
+        reg.register_with_entry(
+            tool,
+            ToolRegistryEntry(
+                tool_id="file_ops",
+                name="file_ops",
+                version="1.0",
+                scope=ToolScope(filesystem=[]),
+                governance={"path_allowlist": []},
+            ),
+        )
+
+        result = await reg.validated_execute(
+            "file_ops",
+            {"path": "README.md"},
+            ToolContext(path_allowlist=[str(tmp_path)]),
+        )
+
+        assert result.success
+        assert result.output.split("|")[1] == str(tmp_path)
+
+    def test_default_context_allowlists_exposes_loaded_non_empty_allowlists(self) -> None:
+        reg = ToolRegistry()
+        reg.register_with_entry(
+            _StubTool("shell"),
+            ToolRegistryEntry(
+                tool_id="shell",
+                name="shell",
+                version="1.0",
+                scope=ToolScope(commands=["git", "python"]),
+                governance={"command_allowlist": ["git", "python"]},
+            ),
+        )
+        reg.register_with_entry(
+            _StubTool("file_ops"),
+            ToolRegistryEntry(
+                tool_id="file_ops",
+                name="file_ops",
+                version="1.0",
+                scope=ToolScope(filesystem=[]),
+                governance={"path_allowlist": []},
+            ),
+        )
+
+        allowlists = reg.default_context_allowlists()
+
+        assert allowlists["command_allowlist"] == ["git", "python"]
+        assert allowlists["path_allowlist"] == []
+        assert allowlists["domain_allowlist"] == []
+
+    def test_route_context_helper_wires_loaded_allowlists_for_governance(self) -> None:
+        from agent33.api.routes.agents import _tool_context_allowlists
+        from agent33.tools.governance import ToolGovernance
+
+        reg = ToolRegistry()
+        reg.register_with_entry(
+            _StubTool("shell"),
+            ToolRegistryEntry(
+                tool_id="shell",
+                name="shell",
+                version="1.0",
+                scope=ToolScope(commands=["git"]),
+                governance={"command_allowlist": ["git"]},
+            ),
+        )
+        context = ToolContext(
+            user_scopes=["tools:execute"],
+            **_tool_context_allowlists(reg),
+        )
+
+        assert ToolGovernance().pre_execute_check("shell", {"command": "git status"}, context)
 
 
 # ------------------------------------------------------------------

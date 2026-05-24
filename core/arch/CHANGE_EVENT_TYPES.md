@@ -24,7 +24,7 @@ Use event types in CHANGELOG entries for consistency:
 | --- | --- | --- | --- |
 | 2026-01-20 | core/orchestrator/RELATIONSHIP_TYPES.md | artifact_created | Phase 21 deliverable |
 | 2026-01-20 | core/arch/templates.md | content_updated | Added relationship guidance |
-| 2026-01-20 | dedup-policy.md | relationship_added | Added link to RELATIONSHIP_TYPES.md |
+| 2026-05-24 | core/extensibility/REFINEMENT_RELATIONSHIP_POLICY.md | relationship_added | Added preserve-original relationship policy |
 ```
 
 ## Display Text Conventions
@@ -67,3 +67,4 @@ Each event conceptually has:
 - `core/CHANGELOG.md` - Uses event types for entries
 - `core/ARTIFACT_INDEX.md` - Tracks supersedes chains
 - `core/orchestrator/RELATIONSHIP_TYPES.md` - Defines relationship types for relationship_added events
+- `core/extensibility/REFINEMENT_RELATIONSHIP_POLICY.md` - Defines preserve-original relationship policy

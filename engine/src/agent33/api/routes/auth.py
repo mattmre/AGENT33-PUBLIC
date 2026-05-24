@@ -134,12 +134,18 @@ async def login(body: LoginRequest) -> TokenResponse:
     user = repo.get_user(body.username)
     if user is None:
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
+    if user.get("enabled", True) is False:
+        raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="User is disabled")
 
     password_hash = _hash_password(body.password, _get_user_salt(user))
     if not hmac.compare_digest(password_hash, user["password_hash"]):
         raise HTTPException(status_code=status.HTTP_401_UNAUTHORIZED, detail="Invalid credentials")
 
-    token = create_access_token(subject=body.username, scopes=user["scopes"])
+    token = create_access_token(
+        subject=body.username,
+        scopes=list(user.get("scopes", [])),
+        tenant_id=str(user.get("tenant_id", "")),
+    )
     return TokenResponse(access_token=token)
 
 

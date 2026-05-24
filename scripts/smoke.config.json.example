@@ -1,0 +1,8 @@
+{
+  "language": "python",
+  "production_entry": "myapp/pipeline.py",
+  "production_module": "myapp.pipeline",
+  "production_exports": ["main", "run_pipeline"],
+  "production_constants": ["NUM_WORKERS", "TIMEOUT_SECONDS"],
+  "ceiling_command": []
+}

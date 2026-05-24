@@ -16,6 +16,15 @@ function jsonResponse(body: unknown, init: ResponseInit = {}): Response {
   });
 }
 
+function voiceHealthResponse(): Response {
+  return jsonResponse({
+    feature: "enabled",
+    transport: "stub",
+    tts_provider: "stub",
+    stt_provider: "stub"
+  });
+}
+
 describe("LiveVoicePanel", () => {
   beforeEach(() => {
     window.__AGENT33_CONFIG__ = { API_BASE_URL };
@@ -29,8 +38,11 @@ describe("LiveVoicePanel", () => {
   });
 
   it("hydrates an existing active voice session", async () => {
-    const fetchMock = vi.fn().mockResolvedValueOnce(
-      jsonResponse([
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(voiceHealthResponse())
+      .mockResolvedValueOnce(
+        jsonResponse([
         {
           id: "vcs-existing",
           room_name: "agent33-voice-tenant-a",
@@ -41,13 +53,24 @@ describe("LiveVoicePanel", () => {
           last_error: ""
         }
       ])
-    );
+      );
     vi.stubGlobal("fetch", fetchMock);
 
     render(<LiveVoicePanel token="test-token" />);
 
     expect(await screen.findByText("Disconnect")).toBeInTheDocument();
     expect(screen.getByText("Room: agent33-voice-tenant-a")).toBeInTheDocument();
+    expect(fetchMock).toHaveBeenCalledWith(
+      `${API_BASE_URL}/v1/voice/health`,
+      {
+        method: "GET",
+        headers: {
+          Accept: "application/json",
+          Authorization: "Bearer test-token"
+        },
+        body: undefined
+      }
+    );
     expect(fetchMock).toHaveBeenCalledWith(
       `${API_BASE_URL}/v1/multimodal/voice/sessions?state=active&limit=1`,
       {
@@ -64,6 +87,7 @@ describe("LiveVoicePanel", () => {
   it("starts and stops a live voice session through the backend", async () => {
     const fetchMock = vi
       .fn()
+      .mockResolvedValueOnce(voiceHealthResponse())
       .mockResolvedValueOnce(jsonResponse([]))
       .mockResolvedValueOnce(
         jsonResponse({
@@ -92,7 +116,11 @@ describe("LiveVoicePanel", () => {
     const user = userEvent.setup();
     render(<LiveVoicePanel token="test-token" />);
 
-    await user.click(await screen.findByRole("button", { name: /Connect microphone/i }));
+    const connectButton = await screen.findByRole("button", { name: /Connect microphone/i });
+    await waitFor(() => {
+      expect(connectButton).toBeEnabled();
+    });
+    await user.click(connectButton);
     expect(await screen.findByText("Disconnect")).toBeInTheDocument();
     expect(screen.getByText("Health: healthy")).toBeInTheDocument();
 
@@ -102,7 +130,7 @@ describe("LiveVoicePanel", () => {
     });
 
     expect(fetchMock).toHaveBeenNthCalledWith(
-      2,
+      3,
       `${API_BASE_URL}/v1/multimodal/voice/sessions`,
       {
         method: "POST",
@@ -115,7 +143,7 @@ describe("LiveVoicePanel", () => {
       }
     );
     expect(fetchMock).toHaveBeenNthCalledWith(
-      3,
+      4,
       `${API_BASE_URL}/v1/multimodal/voice/sessions/vcs-123/stop`,
       {
         method: "POST",
@@ -131,6 +159,7 @@ describe("LiveVoicePanel", () => {
   it("renders backend errors when voice session creation fails", async () => {
     const fetchMock = vi
       .fn()
+      .mockResolvedValueOnce(voiceHealthResponse())
       .mockResolvedValueOnce(jsonResponse([]))
       .mockResolvedValueOnce(
         jsonResponse({ detail: "voice runtime is disabled" }, { status: 503 })
@@ -140,13 +169,20 @@ describe("LiveVoicePanel", () => {
     const user = userEvent.setup();
     render(<LiveVoicePanel token="test-token" />);
 
-    await user.click(await screen.findByRole("button", { name: /Connect microphone/i }));
+    const connectButton = await screen.findByRole("button", { name: /Connect microphone/i });
+    await waitFor(() => {
+      expect(connectButton).toBeEnabled();
+    });
+    await user.click(connectButton);
 
     expect(await screen.findByRole("alert")).toHaveTextContent("voice runtime is disabled");
   });
 
   it("surfaces hydration request failures and clears loading state", async () => {
-    const fetchMock = vi.fn().mockRejectedValueOnce(new Error("voice backend offline"));
+    const fetchMock = vi
+      .fn()
+      .mockResolvedValueOnce(voiceHealthResponse())
+      .mockRejectedValueOnce(new Error("voice backend offline"));
     vi.stubGlobal("fetch", fetchMock);
 
     render(<LiveVoicePanel token="test-token" />);
@@ -159,6 +195,7 @@ describe("LiveVoicePanel", () => {
   it("renders thrown start errors and clears the busy state", async () => {
     const fetchMock = vi
       .fn()
+      .mockResolvedValueOnce(voiceHealthResponse())
       .mockResolvedValueOnce(jsonResponse([]))
       .mockRejectedValueOnce(new Error("network dropped during start"));
     vi.stubGlobal("fetch", fetchMock);
@@ -166,7 +203,11 @@ describe("LiveVoicePanel", () => {
     const user = userEvent.setup();
     render(<LiveVoicePanel token="test-token" />);
 
-    await user.click(await screen.findByRole("button", { name: /Connect microphone/i }));
+    const connectButton = await screen.findByRole("button", { name: /Connect microphone/i });
+    await waitFor(() => {
+      expect(connectButton).toBeEnabled();
+    });
+    await user.click(connectButton);
 
     expect(await screen.findByRole("alert")).toHaveTextContent("network dropped during start");
     await waitFor(() => {
@@ -177,6 +218,7 @@ describe("LiveVoicePanel", () => {
   it("renders thrown stop errors and clears the busy state", async () => {
     const fetchMock = vi
       .fn()
+      .mockResolvedValueOnce(voiceHealthResponse())
       .mockResolvedValueOnce(
         jsonResponse([
           {

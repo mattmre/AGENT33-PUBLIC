@@ -79,3 +79,48 @@ export function getWorkspaceSession(id: WorkspaceSessionId): WorkspaceSessionSum
 
   return workspace;
 }
+
+export interface WorkspaceApiRecord {
+  readonly id?: string;
+  readonly workspace_id?: string;
+  readonly name?: string;
+  readonly template?: string;
+  readonly goal?: string;
+  readonly status?: string;
+  readonly agents?: number;
+  readonly tasks?: number;
+  readonly updated_at?: string;
+}
+
+export function workspaceSessionFromApi(record: WorkspaceApiRecord): WorkspaceSessionSummary | null {
+  const rawId = record.id ?? record.workspace_id ?? null;
+  if (!isWorkspaceSessionId(rawId)) {
+    return null;
+  }
+
+  const fallback = getWorkspaceSession(rawId);
+  return {
+    id: rawId,
+    name: record.name?.trim() || fallback.name,
+    template: record.template?.trim() || fallback.template,
+    goal: record.goal?.trim() || fallback.goal,
+    status: record.status === "Planning" || record.status === "Running" ? record.status : "Ready",
+    updatedLabel: record.updated_at ? "Live backend" : fallback.updatedLabel,
+    agents: typeof record.agents === "number" ? record.agents : fallback.agents,
+    tasks: typeof record.tasks === "number" ? record.tasks : fallback.tasks
+  };
+}
+
+export function mergeWorkspaceSessions(
+  records: ReadonlyArray<WorkspaceApiRecord>
+): ReadonlyArray<WorkspaceSessionSummary> {
+  const liveById = new Map<WorkspaceSessionId, WorkspaceSessionSummary>();
+  for (const record of records) {
+    const workspace = workspaceSessionFromApi(record);
+    if (workspace) {
+      liveById.set(workspace.id, workspace);
+    }
+  }
+
+  return WORKSPACE_SESSIONS.map((workspace) => liveById.get(workspace.id) ?? workspace);
+}

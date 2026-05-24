@@ -586,6 +586,10 @@ class BackupService:
             "state/databases/outcomes.db": self._settings.outcomes_db_path,
             "state/databases/ppack_ab.db": self._settings.ppack_v3_ab_db_path,
             "state/databases/agent33_memory.db": self._settings.sqlite_memory_db_path,
+            "state/databases/phase23_auth_lifecycle.db": self._settings.phase23_auth_db_path,
+            "state/databases/phase23_workspace_lifecycle.db": (
+                self._settings.phase23_workspace_db_path
+            ),
             "state/databases/improvement_learning_signals.sqlite3": (
                 self._settings.improvement_learning_persistence_db_path
             ),

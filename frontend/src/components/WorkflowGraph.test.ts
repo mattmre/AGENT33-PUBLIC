@@ -435,6 +435,28 @@ describe("WorkflowGraph", () => {
     expect(onRefresh).toHaveBeenCalledTimes(2);
   });
 
+  it("uses the default 2s polling interval while a node is active", () => {
+    vi.useFakeTimers();
+    const onRefresh = vi.fn();
+
+    render(
+      createElement(WorkflowGraph, {
+        onRefresh,
+        data: {
+          workflow_id: "running-flow",
+          nodes: [{ id: "step-a", name: "Step A", action: "transform", status: "running" }],
+          edges: []
+        }
+      })
+    );
+
+    vi.advanceTimersByTime(1_999);
+    expect(onRefresh).not.toHaveBeenCalled();
+
+    vi.advanceTimersByTime(1);
+    expect(onRefresh).toHaveBeenCalledTimes(1);
+  });
+
   it("does not poll when nodes are only skipped", () => {
     vi.useFakeTimers();
     const onRefresh = vi.fn();

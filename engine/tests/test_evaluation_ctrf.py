@@ -851,4 +851,4 @@ class TestCTRFAPIRoutes:
         for test in tests:
             assert isinstance(test["name"], str)
             assert test["status"] in ("passed", "failed", "skipped", "pending", "other")
-            assert isinstance(test["duration"], (int, float))
+            assert isinstance(test["duration"], int | float)

@@ -216,6 +216,21 @@ export function LiveVoicePanel({ token, onOpenSetup }: LiveVoicePanelProps): JSX
           <p style={{ margin: 0, fontSize: "0.82rem", color: "#f6d37b" }}>
             Sign in first to enable live voice sessions.
           </p>
+          <button
+            disabled
+            aria-label="Connect microphone for voice session"
+            style={{
+              width: "fit-content",
+              background: "rgba(48, 213, 200, 0.08)",
+              border: "1px solid rgba(48, 213, 200, 0.28)",
+              color: "#8eaab3",
+              borderRadius: "8px",
+              padding: "0.4rem 0.7rem",
+              cursor: "not-allowed"
+            }}
+          >
+            Connect Microphone
+          </button>
           {onOpenSetup ? (
             <button
               onClick={onOpenSetup}

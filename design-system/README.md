@@ -10,7 +10,7 @@ A design system, brand guide, and UI kit for **AGENT-33** — a local-first AI a
 
 The system was reverse-engineered from a single source repository:
 
-- **GitHub:** [`mattmre/AGENT33-PUBLIC`](https://github.com/mattmre/AGENT33-PUBLIC) — main branch
+- **GitHub:** [`mattmre/AGENT33`](https://github.com/mattmre/AGENT33) — main branch
 - **Frontend code:** `frontend/src/styles.css` (~7,800 lines, exhaustive — the canonical token + component sheet) plus `frontend/src/components/*` (~25 React components covering the full control plane).
 - **Top-level README** describes the platform's purpose, surfaces, and audience.
 

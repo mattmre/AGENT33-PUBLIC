@@ -12,6 +12,15 @@ export interface CatalogEntry {
   parameters_schema: Record<string, unknown>;
   result_schema: Record<string, unknown>;
   tags: string[];
+  governance: Record<string, unknown>;
+  owner: string;
+  status: string;
+  provenance: Record<string, unknown>;
+  scope: Record<string, unknown>;
+  approval: Record<string, unknown>;
+  last_review: string;
+  next_review: string;
+  deprecation_message: string;
 }
 
 export interface CatalogPage {

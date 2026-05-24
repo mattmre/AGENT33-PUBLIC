@@ -1,0 +1,61 @@
+{
+  "$schema": "./schemas/agent.schema.json",
+  "name": "architect",
+  "version": "1.0.0",
+  "role": "architect",
+  "description": "Validates architecture decisions, interface boundaries, and dependency structure.",
+  "agent_id": "AGT-009",
+  "status": "active",
+  "capabilities": [
+    "orchestration",
+    "code-analysis"
+  ],
+  "spec_capabilities": ["R-03", "P-05", "X-03", "X-05"],
+  "governance": {
+    "scope": "architecture",
+    "commands": "read-only",
+    "network": "none",
+    "approval_required": []
+  },
+  "ownership": {
+    "owner": "platform-team",
+    "escalation_target": "director"
+  },
+  "inputs": {
+    "design": {
+      "type": "string",
+      "description": "Design proposal, architecture diff, or system context",
+      "required": true
+    }
+  },
+  "outputs": {
+    "architecture_note": {
+      "type": "object",
+      "description": "Architecture assessment, tradeoffs, and required changes"
+    }
+  },
+  "dependencies": [
+    {
+      "agent": "orchestrator",
+      "optional": true,
+      "purpose": "Receives scoped design-review assignments"
+    }
+  ],
+  "prompts": {
+    "system": "prompts/architect/system.md",
+    "user": "prompts/architect/user.md",
+    "examples": []
+  },
+  "constraints": {
+    "max_tokens": 8192,
+    "timeout_seconds": 180,
+    "max_retries": 1,
+    "parallel_allowed": true
+  },
+  "metadata": {
+    "author": "agent-33",
+    "created": "2026-05-24",
+    "updated": "2026-05-24",
+    "tags": ["architecture", "design", "review"]
+  }
+}

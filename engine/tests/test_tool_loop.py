@@ -691,6 +691,37 @@ class TestBudgetEnforcement:
         # The tool should not have been executed via validated_execute
         registry.validated_execute.assert_not_called()
 
+    async def test_enforcer_stop_condition_stops_loop(self) -> None:
+        """Runtime stop conditions are evaluated by the live tool loop."""
+        from types import SimpleNamespace
+
+        from agent33.autonomy.models import EnforcementResult
+
+        tc = _make_tool_call()
+        tool = _make_mock_tool()
+        router = _make_router(_tool_response([tc]))
+        registry = _make_registry(tool)
+
+        enforcer = MagicMock()
+        enforcer.check_command.return_value = EnforcementResult.ALLOWED
+        enforcer.record_iteration.return_value = EnforcementResult.ALLOWED
+        enforcer.check_duration.return_value = EnforcementResult.ALLOWED
+        enforcer.evaluate_stop_conditions.return_value = ["Stop when iteration limit reached"]
+        enforcer.context = SimpleNamespace(stopped=True)
+
+        config = ToolLoopConfig(enable_double_confirmation=False)
+        loop = ToolLoop(
+            router=router,
+            tool_registry=registry,
+            runtime_enforcer=enforcer,
+            config=config,
+        )
+
+        result = await loop.run(_initial_messages(), model="m")
+
+        assert result.termination_reason == "budget_exceeded"
+        enforcer.evaluate_stop_conditions.assert_called()
+
 
 # ---------------------------------------------------------------------------
 # Error handling tests

@@ -1,0 +1,353 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://agent33.local/schemas/downstream-sync-evidence.schema.json",
+  "title": "AGENT-33 downstream sync evidence manifest",
+  "type": "object",
+  "additionalProperties": false,
+  "required": [
+    "schema_version",
+    "evidence_id",
+    "execution_status",
+    "source",
+    "rule",
+    "diff_summary",
+    "validation",
+    "risk_triggers",
+    "autonomy_budget",
+    "rollback",
+    "downstream_evidence"
+  ],
+  "properties": {
+    "schema_version": {
+      "type": "string",
+      "const": "1.0"
+    },
+    "evidence_id": {
+      "type": "string",
+      "pattern": "^p09-[a-z0-9][a-z0-9-]{2,100}$"
+    },
+    "execution_status": {
+      "type": "string",
+      "enum": [
+        "dry-run-only",
+        "disposable-local-real-io",
+        "real-downstream-repo-io"
+      ]
+    },
+    "source": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["release", "commit", "provenance"],
+      "properties": {
+        "release": {
+          "type": "string",
+          "minLength": 1
+        },
+        "commit": {
+          "type": "string",
+          "pattern": "^[0-9a-f]{7,40}$"
+        },
+        "provenance": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "rule": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "id",
+        "file_path",
+        "target_repo",
+        "target_branch",
+        "target_path",
+        "strategy"
+      ],
+      "properties": {
+        "id": {
+          "type": "string",
+          "pattern": "^sync-[a-z0-9][a-z0-9-]{2,80}$"
+        },
+        "file_path": {
+          "$ref": "#/$defs/safe_relative_path"
+        },
+        "target_repo": {
+          "type": "string",
+          "pattern": "^[A-Za-z0-9_.-]+/[A-Za-z0-9_.-]+$"
+        },
+        "target_branch": {
+          "type": "string",
+          "minLength": 1
+        },
+        "target_path": {
+          "$ref": "#/$defs/safe_relative_path"
+        },
+        "strategy": {
+          "type": "string",
+          "enum": ["copy", "template", "reference"]
+        }
+      }
+    },
+    "diff_summary": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["added", "modified", "removed", "unchanged", "excluded", "manifest"],
+      "properties": {
+        "added": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "modified": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "removed": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "unchanged": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "excluded": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "manifest": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "validation": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "checksum",
+        "link_integrity",
+        "schema_check",
+        "secret_scan",
+        "version_tag",
+        "commands"
+      ],
+      "properties": {
+        "checksum": {
+          "$ref": "#/$defs/check_status"
+        },
+        "link_integrity": {
+          "$ref": "#/$defs/check_status"
+        },
+        "schema_check": {
+          "$ref": "#/$defs/check_status"
+        },
+        "secret_scan": {
+          "$ref": "#/$defs/check_status"
+        },
+        "version_tag": {
+          "$ref": "#/$defs/check_status"
+        },
+        "commands": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "risk_triggers": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "validation_failures",
+        "manual_conflicts",
+        "override_use",
+        "internal_token_rewrites",
+        "missing_version_tag",
+        "public_private_boundary_changes",
+        "downstream_ci_failures"
+      ],
+      "properties": {
+        "validation_failures": {
+          "$ref": "#/$defs/string_list"
+        },
+        "manual_conflicts": {
+          "$ref": "#/$defs/string_list"
+        },
+        "override_use": {
+          "$ref": "#/$defs/string_list"
+        },
+        "internal_token_rewrites": {
+          "$ref": "#/$defs/string_list"
+        },
+        "missing_version_tag": {
+          "type": "boolean"
+        },
+        "public_private_boundary_changes": {
+          "$ref": "#/$defs/string_list"
+        },
+        "downstream_ci_failures": {
+          "$ref": "#/$defs/string_list"
+        }
+      }
+    },
+    "autonomy_budget": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "auto_merge_allowed",
+        "max_retry_attempts",
+        "required_reviewer_class",
+        "manual_stop_conditions"
+      ],
+      "properties": {
+        "auto_merge_allowed": {
+          "type": "boolean"
+        },
+        "max_retry_attempts": {
+          "type": "integer",
+          "minimum": 0
+        },
+        "required_reviewer_class": {
+          "type": "string",
+          "minLength": 1
+        },
+        "manual_stop_conditions": {
+          "type": "array",
+          "minItems": 1,
+          "items": {
+            "type": "string",
+            "minLength": 1
+          }
+        }
+      }
+    },
+    "rollback": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": [
+        "previous_sync_point",
+        "plan",
+        "decision_log",
+        "upstream_follow_up_issue_rule"
+      ],
+      "properties": {
+        "previous_sync_point": {
+          "type": "string",
+          "minLength": 1
+        },
+        "plan": {
+          "type": "string",
+          "minLength": 1
+        },
+        "decision_log": {
+          "type": "string",
+          "minLength": 1
+        },
+        "upstream_follow_up_issue_rule": {
+          "type": "string",
+          "minLength": 1
+        }
+      }
+    },
+    "downstream_evidence": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["branch", "pull_request", "ci_check_run", "reviewer_decision"],
+      "properties": {
+        "branch": {
+          "$ref": "#/$defs/downstream_branch"
+        },
+        "pull_request": {
+          "$ref": "#/$defs/downstream_pull_request"
+        },
+        "ci_check_run": {
+          "$ref": "#/$defs/downstream_ci_check_run"
+        },
+        "reviewer_decision": {
+          "$ref": "#/$defs/downstream_reviewer_decision"
+        }
+      }
+    }
+  },
+  "$defs": {
+    "safe_relative_path": {
+      "type": "string",
+      "minLength": 1,
+      "pattern": "^(?!/)(?!.*(^|/)\\.\\.($|/))(?!.*(^|/)\\.git($|/)).+"
+    },
+    "check_status": {
+      "type": "string",
+      "enum": ["pass", "fail", "warn", "not-run"]
+    },
+    "nullable_uri": {
+      "type": ["string", "null"],
+      "format": "uri"
+    },
+    "string_list": {
+      "type": "array",
+      "items": {
+        "type": "string",
+        "minLength": 1
+      }
+    },
+    "downstream_branch": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "url"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["missing", "local-only", "remote-created"]
+        },
+        "url": {
+          "$ref": "#/$defs/nullable_uri"
+        }
+      }
+    },
+    "downstream_pull_request": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "url"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["missing", "open", "merged", "closed"]
+        },
+        "url": {
+          "$ref": "#/$defs/nullable_uri"
+        }
+      }
+    },
+    "downstream_ci_check_run": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "url"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["missing", "pending", "success", "failure", "cancelled", "skipped"]
+        },
+        "url": {
+          "$ref": "#/$defs/nullable_uri"
+        }
+      }
+    },
+    "downstream_reviewer_decision": {
+      "type": "object",
+      "additionalProperties": false,
+      "required": ["status", "url"],
+      "properties": {
+        "status": {
+          "type": "string",
+          "enum": ["missing", "pending", "approved", "changes-requested", "commented"]
+        },
+        "url": {
+          "$ref": "#/$defs/nullable_uri"
+        }
+      }
+    }
+  }
+}

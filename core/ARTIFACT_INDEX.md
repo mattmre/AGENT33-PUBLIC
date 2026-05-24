@@ -19,6 +19,8 @@ Lightweight metadata index for efficient artifact discovery. Reduces context win
 | agent-routing-map | Agent Routing Map | reference | agents, routing | 2026-01-16 | - |
 | relationship-types | Relationship Types | reference | relationships, provenance | 2026-01-20 | - |
 | agent-memory-protocol | Agent Memory Protocol | protocol | agents, memory, autonomy | 2026-01-20 | - |
+| refinement-relationship-policy | Refinement Relationship Policy | policy | relationships, provenance, refinement | 2026-05-24 | - |
+| distribution-sync-spec | Distribution Sync Specification | specification | distribution, sync, provenance | 2026-01-30 | - |
 
 ### Policy Pack v1
 

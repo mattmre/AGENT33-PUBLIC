@@ -2,6 +2,11 @@
 
 This index connects the core orchestration system, AEP workflow, and reusable workflows.
 
+## Promoted-File Provenance
+Machine-readable promoted Markdown source/rationale coverage is maintained in
+`core/P02_SOURCE_RATIONALE_MANIFEST.json` and enforced by
+`scripts/validate_p02_source_rationale.py`.
+
 ## Model-Agnostic Principle
 All guidance is written to be model-neutral. If a task requires a specific tool or model, document it in TASKS.
 
@@ -177,8 +182,9 @@ All guidance is written to be model-neutral. If a task requires a specific tool 
 - `core/orchestrator/community/GOVERNANCE_COMMUNITY_SPEC.md`
 
 ## Research
-- `core/research/06-SECURITY-ANALYSIS.md`
-- `core/research/07-FEATURE-PARITY.md`
+Historical research notes are archived under `docs/research/` and are not
+part of the canonical `core/ORCHESTRATION_INDEX.md` file list unless promoted
+with source/rationale evidence.
 
 ---
 

@@ -397,7 +397,7 @@ def _install_connector_services():
     app.state.connector_metrics = collector
 
     handles = [
-        _FakeChildHandle("skills-mcp", state="healthy"),
+        _FakeChildHandle("evokore", state="healthy"),
         _FakeChildHandle("codex", state="degraded"),
     ]
     proxy_manager = _FakeProxyManager(handles)
@@ -447,7 +447,7 @@ class TestConnectorRoutes:
         data = resp.json()
         assert len(data["connectors"]) == 2
         ids = {c["connector_id"] for c in data["connectors"]}
-        assert ids == {"skills-mcp", "codex"}
+        assert ids == {"evokore", "codex"}
         # Each should have a circuit snapshot
         for c in data["connectors"]:
             assert c["circuit"] is not None
@@ -509,10 +509,10 @@ class TestConnectorRoutes:
             base_url="http://test",
             headers=_auth_headers(),
         ) as client:
-            resp = await client.get("/v1/connectors/skills-mcp")
+            resp = await client.get("/v1/connectors/evokore")
         assert resp.status_code == 200
         data = resp.json()
-        assert data["connector_id"] == "skills-mcp"
+        assert data["connector_id"] == "evokore"
         assert data["connector_type"] == "mcp_proxy"
         assert data["circuit"] is not None
         assert data["circuit"]["state"] == "closed"
@@ -565,10 +565,10 @@ class TestConnectorRoutes:
             base_url="http://test",
             headers=_auth_headers(),
         ) as client:
-            resp = await client.get("/v1/connectors/skills-mcp/events")
+            resp = await client.get("/v1/connectors/evokore/events")
         assert resp.status_code == 200
         data = resp.json()
-        assert data["connector_id"] == "skills-mcp"
+        assert data["connector_id"] == "evokore"
         assert data["events"] == []
 
     @pytest.mark.asyncio
@@ -579,15 +579,15 @@ class TestConnectorRoutes:
     ) -> None:
         """GET /v1/connectors/{id}/events returns recorded events."""
         collector = _install_connector_services[0]
-        collector.record_circuit_event("skills-mcp", "closed", "open")
-        collector.record_circuit_event("skills-mcp", "open", "half_open")
+        collector.record_circuit_event("evokore", "closed", "open")
+        collector.record_circuit_event("evokore", "open", "half_open")
 
         async with AsyncClient(
             transport=ASGITransport(app=app),
             base_url="http://test",
             headers=_auth_headers(),
         ) as client:
-            resp = await client.get("/v1/connectors/skills-mcp/events")
+            resp = await client.get("/v1/connectors/evokore/events")
         assert resp.status_code == 200
         data = resp.json()
         assert len(data["events"]) == 2
@@ -605,8 +605,8 @@ class TestConnectorRoutes:
     ) -> None:
         """When metrics are recorded for a proxy connector ID, they appear in the listing."""
         collector = _install_connector_services[0]
-        collector.record_call("skills-mcp", success=True, latency_ms=10.0)
-        collector.record_call("skills-mcp", success=False, latency_ms=50.0)
+        collector.record_call("evokore", success=True, latency_ms=10.0)
+        collector.record_call("evokore", success=False, latency_ms=50.0)
 
         async with AsyncClient(
             transport=ASGITransport(app=app),
@@ -615,10 +615,10 @@ class TestConnectorRoutes:
         ) as client:
             resp = await client.get("/v1/connectors")
         data = resp.json()
-        matched_connector = [c for c in data["connectors"] if c["connector_id"] == "skills-mcp"][0]
-        assert matched_connector["metrics"] is not None
-        assert matched_connector["metrics"]["total_calls"] == 2
-        assert matched_connector["metrics"]["failures"] == 1
+        evokore = [c for c in data["connectors"] if c["connector_id"] == "evokore"][0]
+        assert evokore["metrics"] is not None
+        assert evokore["metrics"]["total_calls"] == 2
+        assert evokore["metrics"]["failures"] == 1
 
 
 # ======================================================================

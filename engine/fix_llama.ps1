@@ -1,5 +1,5 @@
 $ErrorActionPreference = "Stop"
-$WorkingDir = (Resolve-Path $PSScriptRoot).Path
+$WorkingDir = "d:\GITHUB\AGENT33\engine"
 $Url = "https://github.com/ggml-org/llama.cpp/releases/download/b8116/llama-b8116-bin-win-cuda-12.4-x64.zip"
 $OutPath = "$WorkingDir\bin\llama.zip"
 $BinDir = "$WorkingDir\bin\llama-cpp"

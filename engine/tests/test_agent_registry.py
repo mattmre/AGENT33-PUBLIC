@@ -3,6 +3,7 @@
 from __future__ import annotations
 
 import json
+import re
 import tempfile
 from pathlib import Path
 from unittest.mock import MagicMock
@@ -255,6 +256,34 @@ class TestRegistryDiscover:
             count = reg.discover(tmpdir)
             assert count == 1
 
+    def test_default_definitions_cover_canonical_core_registry_ids(self) -> None:
+        repo_root = Path(__file__).resolve().parents[2]
+        core_registry_doc = repo_root / "core" / "orchestrator" / "AGENT_REGISTRY.md"
+        canonical_ids = set(
+            re.findall(r"^### (AGT-\d{3}):", core_registry_doc.read_text(encoding="utf-8"), re.M)
+        )
+
+        reg = AgentRegistry()
+        count = reg.discover(repo_root / "engine" / "agent-definitions")
+        loaded_ids = {d.agent_id for d in reg.list_all() if d.agent_id}
+
+        assert count >= len(canonical_ids)
+        assert canonical_ids <= loaded_ids
+
+    def test_default_definitions_are_queryable_and_governed(self) -> None:
+        repo_root = Path(__file__).resolve().parents[2]
+        reg = AgentRegistry()
+        reg.discover(repo_root / "engine" / "agent-definitions")
+
+        for definition in reg.list_all():
+            assert definition.agent_id is not None
+            assert definition.spec_capabilities
+            assert definition.governance.scope
+            assert definition.governance.commands
+            assert definition.governance.network
+            assert definition.ownership.owner
+            assert definition.ownership.escalation_target
+
 
 # ---------------------------------------------------------------------------
 # API route tests
@@ -309,6 +338,28 @@ class TestAgentRoutes:
         data = resp.json()
         assert len(data) == 1
         assert data[0]["name"] == "planner"
+
+    def test_search_filter_parity_for_capability_category_and_status(
+        self,
+        client: TestClient,
+    ) -> None:
+        resp = client.get(
+            "/v1/agents/search",
+            params={
+                "role": "qa",
+                "spec_capability": "V-02",
+                "category": "V",
+                "status": "active",
+            },
+        )
+
+        assert resp.status_code == 200
+        data = resp.json()
+        assert len(data) == 1
+        assert data[0]["name"] == "tester"
+        assert data[0]["role"] == "qa"
+        assert data[0]["status"] == "active"
+        assert "V-02" in data[0]["spec_capabilities"]
 
     def test_search_invalid_role_returns_422(self, client: TestClient) -> None:
         resp = client.get("/v1/agents/search", params={"role": "nonexistent"})
@@ -376,4 +427,130 @@ class TestInvokeAgentBridge:
                 mod.get_agent("nonexistent")
         finally:
             mod._definition_registry = old_reg
+            mod._agent_registry.update(old_agents)
+
+    @pytest.mark.asyncio
+    async def test_execute_routes_definition_only_agent_through_default_bridge(self) -> None:
+        from agent33.workflows.actions import invoke_agent as mod
+
+        old_reg = mod._definition_registry
+        old_agents = dict(mod._agent_registry)
+        mod._agent_registry.clear()
+
+        calls: list[dict[str, object]] = []
+
+        async def default_bridge(inputs: dict[str, object]) -> dict[str, object]:
+            calls.append(dict(inputs))
+            return {"agent": inputs["agent_name"], "prompt": inputs["prompt"]}
+
+        try:
+            reg = AgentRegistry()
+            reg.register(
+                AgentDefinition.model_validate(
+                    {
+                        **_MINIMAL_DEF,
+                        "name": "registry-only",
+                        "agent_id": "AGT-098",
+                    }
+                )
+            )
+
+            mod.set_definition_registry(reg)
+            mod.register_agent("__default__", default_bridge)
+
+            result = await mod.execute("registry-only", {"prompt": "hello"})
+
+            assert result == {"agent": "registry-only", "prompt": "hello"}
+            assert calls == [{"prompt": "hello", "agent_name": "registry-only"}]
+        finally:
+            mod._definition_registry = old_reg
+            mod._agent_registry.clear()
+            mod._agent_registry.update(old_agents)
+
+    @pytest.mark.asyncio
+    async def test_workflow_executor_uses_default_bridge_for_registered_definition(
+        self,
+    ) -> None:
+        from agent33.workflows.actions import invoke_agent as mod
+        from agent33.workflows.definition import (
+            StepAction,
+            WorkflowDefinition,
+            WorkflowExecution,
+            WorkflowStep,
+        )
+        from agent33.workflows.executor import WorkflowExecutor, WorkflowStatus
+
+        old_reg = mod._definition_registry
+        old_agents = dict(mod._agent_registry)
+        mod._agent_registry.clear()
+
+        async def default_bridge(inputs: dict[str, object]) -> dict[str, object]:
+            return {"agent": inputs["agent_name"], "prompt": inputs["prompt"]}
+
+        try:
+            reg = AgentRegistry()
+            reg.register(
+                AgentDefinition.model_validate(
+                    {
+                        **_MINIMAL_DEF,
+                        "name": "registry-only",
+                        "agent_id": "AGT-096",
+                    }
+                )
+            )
+            mod.set_definition_registry(reg)
+            mod.register_agent("__default__", default_bridge)
+
+            workflow = WorkflowDefinition(
+                name="definition-only-workflow",
+                version="1.0.0",
+                execution=WorkflowExecution(),
+                steps=[
+                    WorkflowStep(
+                        id="invoke",
+                        action=StepAction.INVOKE_AGENT,
+                        agent="registry-only",
+                        inputs={"prompt": "hello"},
+                    )
+                ],
+            )
+
+            result = await WorkflowExecutor(workflow).execute()
+
+            assert result.status == WorkflowStatus.SUCCESS
+            assert result.step_results[0].outputs == {
+                "agent": "registry-only",
+                "prompt": "hello",
+            }
+        finally:
+            mod._definition_registry = old_reg
+            mod._agent_registry.clear()
+            mod._agent_registry.update(old_agents)
+
+    @pytest.mark.asyncio
+    async def test_execute_definition_only_agent_without_bridge_fails_clearly(self) -> None:
+        from agent33.workflows.actions import invoke_agent as mod
+
+        old_reg = mod._definition_registry
+        old_agents = dict(mod._agent_registry)
+        mod._agent_registry.clear()
+
+        try:
+            reg = AgentRegistry()
+            reg.register(
+                AgentDefinition.model_validate(
+                    {
+                        **_MINIMAL_DEF,
+                        "name": "registry-only",
+                        "agent_id": "AGT-097",
+                    }
+                )
+            )
+            mod.set_definition_registry(reg)
+
+            with pytest.raises(TypeError, match="no executable handler"):
+                await mod.execute("registry-only", {"prompt": "hello"})
+        finally:
+            mod._definition_registry = old_reg
+            mod._agent_registry.clear()
             mod._agent_registry.update(old_agents)

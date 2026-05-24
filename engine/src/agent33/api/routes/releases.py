@@ -12,10 +12,13 @@ from pydantic import BaseModel, Field
 from agent33.component_security.models import FindingsSummary, SecurityGatePolicy
 from agent33.release.models import (
     CheckStatus,
+    ReleaseEvidence,
     ReleaseStatus,
     ReleaseType,
     RollbackType,
+    SyncExecution,
     SyncFrequency,
+    SyncStatus,
     SyncStrategy,
     SyncTransform,
 )
@@ -45,15 +48,67 @@ def get_release_service() -> ReleaseService:
     return _service
 
 
+def _evidence_from_request(body: "CreateReleaseRequest") -> ReleaseEvidence:
+    evidence_payload = body.evidence.model_dump() if body.evidence is not None else {}
+    for field in (
+        "commit_hash",
+        "branch",
+        "build_id",
+        "changelog_ref",
+        "release_notes_ref",
+    ):
+        value = getattr(body, field)
+        if value:
+            evidence_payload[field] = value
+    return ReleaseEvidence(**evidence_payload)
+
+
+def _sync_execution_response(exe: SyncExecution) -> dict[str, Any]:
+    return {
+        "execution_id": exe.execution_id,
+        "rule_id": exe.rule_id,
+        "release_version": exe.release_version,
+        "status": exe.status.value,
+        "files_added": exe.files_added,
+        "files_modified": exe.files_modified,
+        "files_removed": exe.files_removed,
+        "dry_run": exe.dry_run,
+        "io_mode": exe.io_mode,
+        "approved_dry_run_execution_id": exe.approved_dry_run_execution_id,
+        "source_root": exe.source_root,
+        "target_root": exe.target_root,
+        "file_results": [result.model_dump(mode="json") for result in exe.file_results],
+        "errors": exe.errors,
+    }
+
+
 # ---------------------------------------------------------------------------
 # Request models
 # ---------------------------------------------------------------------------
+
+
+class ReleaseEvidenceRequest(BaseModel):
+    gate_passed: bool = False
+    success_rate: float = 0.0
+    rework_rate: float = 0.0
+    all_tasks_passed: bool = False
+    commit_hash: str = ""
+    branch: str = ""
+    build_id: str = ""
+    changelog_ref: str = ""
+    release_notes_ref: str = ""
 
 
 class CreateReleaseRequest(BaseModel):
     version: str
     release_type: ReleaseType = ReleaseType.MINOR
     description: str = ""
+    evidence: ReleaseEvidenceRequest | None = None
+    commit_hash: str = ""
+    branch: str = ""
+    build_id: str = ""
+    changelog_ref: str = ""
+    release_notes_ref: str = ""
 
 
 class TransitionRequest(BaseModel):
@@ -99,6 +154,10 @@ class DryRunRequest(BaseModel):
 class ExecuteSyncRequest(BaseModel):
     available_files: list[str] = Field(default_factory=list)
     release_version: str = ""
+    approved_dry_run_execution_id: str = ""
+    source_root: str = ""
+    target_root: str = ""
+    confirm_real_io: bool = False
 
 
 class InitiateRollbackRequest(BaseModel):
@@ -129,12 +188,14 @@ async def create_release(body: CreateReleaseRequest) -> dict[str, Any]:
         version=body.version,
         release_type=body.release_type,
         description=body.description,
+        evidence=_evidence_from_request(body),
     )
     return {
         "release_id": release.release_id,
         "version": release.version,
         "status": release.status.value,
         "checklist_items": len(release.evidence.checklist),
+        "evidence": release.evidence.model_dump(mode="json", exclude={"checklist"}),
     }
 
 
@@ -156,9 +217,23 @@ async def list_releases(
             "status": r.status.value,
             "release_type": r.release_type.value,
             "created_at": r.created_at.isoformat(),
+            "evidence": r.evidence.model_dump(mode="json", exclude={"checklist"}),
         }
         for r in releases
     ]
+
+
+@router.get(
+    "/rollbacks",
+    dependencies=[require_scope("workflows:read")],
+)
+async def list_rollbacks(
+    release_id: str | None = None,
+    limit: int = 50,
+) -> list[dict[str, Any]]:
+    """List rollback records."""
+    records = _service.rollback_manager.list_all(release_id=release_id, limit=limit)
+    return [r.model_dump(mode="json") for r in records]
 
 
 @router.get(
@@ -356,13 +431,7 @@ async def sync_dry_run(rule_id: str, body: DryRunRequest) -> dict[str, Any]:
         available_files=body.available_files,
         release_version=body.release_version,
     )
-    return {
-        "execution_id": exe.execution_id,
-        "status": exe.status.value,
-        "files_added": exe.files_added,
-        "dry_run": exe.dry_run,
-        "errors": exe.errors,
-    }
+    return _sync_execution_response(exe)
 
 
 @router.post(
@@ -375,14 +444,20 @@ async def sync_execute(rule_id: str, body: ExecuteSyncRequest) -> dict[str, Any]
         rule_id=rule_id,
         available_files=body.available_files,
         release_version=body.release_version,
+        approved_dry_run_execution_id=body.approved_dry_run_execution_id,
+        source_root=body.source_root,
+        target_root=body.target_root,
+        confirm_real_io=body.confirm_real_io,
     )
-    return {
-        "execution_id": exe.execution_id,
-        "status": exe.status.value,
-        "files_added": exe.files_added,
-        "dry_run": exe.dry_run,
-        "errors": exe.errors,
-    }
+    if exe.status == SyncStatus.FAILED:
+        raise HTTPException(
+            status_code=409,
+            detail={
+                "execution_id": exe.execution_id,
+                "errors": exe.errors,
+            },
+        )
+    return _sync_execution_response(exe)
 
 
 # ---------------------------------------------------------------------------
@@ -407,6 +482,8 @@ async def initiate_rollback(release_id: str, body: InitiateRollbackRequest) -> d
         )
     except ReleaseNotFoundError:
         raise HTTPException(status_code=404, detail=f"Release not found: {release_id}") from None
+    except InvalidReleaseTransitionError as exc:
+        raise HTTPException(status_code=409, detail=str(exc)) from None
     rollbacks = _service.rollback_manager.list_all(release_id=release_id, limit=1)
     rollback_id = rollbacks[0].rollback_id if rollbacks else ""
     return {
@@ -414,19 +491,6 @@ async def initiate_rollback(release_id: str, body: InitiateRollbackRequest) -> d
         "status": release.status.value,
         "rollback_id": rollback_id,
     }
-
-
-@router.get(
-    "/rollbacks",
-    dependencies=[require_scope("workflows:read")],
-)
-async def list_rollbacks(
-    release_id: str | None = None,
-    limit: int = 50,
-) -> list[dict[str, Any]]:
-    """List rollback records."""
-    records = _service.rollback_manager.list_all(release_id=release_id, limit=limit)
-    return [r.model_dump(mode="json") for r in records]
 
 
 @router.post(

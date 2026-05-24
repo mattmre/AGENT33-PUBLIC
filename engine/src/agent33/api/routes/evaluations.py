@@ -52,7 +52,10 @@ class TaskResultInput(BaseModel):
     result: TaskResult = TaskResult.PASS
     checks_passed: int = 0
     checks_total: int = 0
+    diff_lines: int = 0
     duration_ms: int = 0
+    failure_category: str = ""
+    flaky: bool = False
     notes: str = ""
 
 
@@ -173,7 +176,10 @@ async def submit_results(run_id: str, body: SubmitResultsRequest) -> dict[str, A
             result=tr.result,
             checks_passed=tr.checks_passed,
             checks_total=tr.checks_total,
+            diff_lines=tr.diff_lines,
             duration_ms=tr.duration_ms,
+            failure_category=tr.failure_category,
+            flaky=tr.flaky,
             notes=tr.notes,
         )
         for tr in body.task_results

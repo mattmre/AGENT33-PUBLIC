@@ -1,0 +1,61 @@
+{
+  "$schema": "./schemas/agent.schema.json",
+  "name": "documentation",
+  "version": "1.0.0",
+  "role": "documentation",
+  "description": "Maintains operator-facing documentation, templates, and verified handoff records.",
+  "agent_id": "AGT-007",
+  "status": "active",
+  "capabilities": [
+    "file-read",
+    "file-write"
+  ],
+  "spec_capabilities": ["I-03", "I-04", "X-02", "V-04"],
+  "governance": {
+    "scope": "documentation",
+    "commands": "markdown-lint,link-check",
+    "network": "none",
+    "approval_required": ["public-docs"]
+  },
+  "ownership": {
+    "owner": "platform-team",
+    "escalation_target": "orchestrator"
+  },
+  "inputs": {
+    "artifact": {
+      "type": "string",
+      "description": "Source artifact or change set to document",
+      "required": true
+    }
+  },
+  "outputs": {
+    "documentation_update": {
+      "type": "string",
+      "description": "Updated documentation or summary"
+    }
+  },
+  "dependencies": [
+    {
+      "agent": "reviewer",
+      "optional": true,
+      "purpose": "Reviews documentation accuracy when risk triggers apply"
+    }
+  ],
+  "prompts": {
+    "system": "prompts/documentation/system.md",
+    "user": "prompts/documentation/user.md",
+    "examples": []
+  },
+  "constraints": {
+    "max_tokens": 8192,
+    "timeout_seconds": 180,
+    "max_retries": 2,
+    "parallel_allowed": true
+  },
+  "metadata": {
+    "author": "agent-33",
+    "created": "2026-05-24",
+    "updated": "2026-05-24",
+    "tags": ["docs", "templates", "handoff"]
+  }
+}

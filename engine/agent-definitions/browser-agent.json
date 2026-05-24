@@ -2,13 +2,15 @@
   "$schema": "./schemas/agent.schema.json",
   "name": "browser-agent",
   "version": "1.0.0",
-  "role": "worker",
+  "role": "implementer",
   "description": "Autonomous browser agent that decomposes web tasks into steps, navigates pages, interacts with elements, and extracts results using a planner/navigator pattern.",
-  "status": "active",
+  "agent_id": "AGT-011",
+  "status": "experimental",
   "capabilities": [
-    "api-calls"
+    "api-calls",
+    "research"
   ],
-  "spec_capabilities": [],
+  "spec_capabilities": ["X-01", "I-04"],
   "governance": {
     "scope": "browser-sandbox",
     "commands": "none",

@@ -238,7 +238,7 @@ def _level_2_budget(budget_id: str, task_name: str) -> AutonomyBudget:
             write=["**"],
             deny=["/etc/**", "/sys/**", "/proc/**", "~/.ssh/**", "**/.env", "**/.env.*"],
         ),
-        allowed_commands=[],
+        allowed_commands=[CommandPermission(command="*")],
         denied_commands=list(_LEVEL_2_DENIED_COMMANDS),
         require_approval_commands=[],
         network=NetworkScope(
@@ -295,12 +295,12 @@ def _level_3_budget(budget_id: str, task_name: str) -> AutonomyBudget:
             write=["**"],
             deny=[],
         ),
-        allowed_commands=[],
+        allowed_commands=[CommandPermission(command="*")],
         denied_commands=[],
         require_approval_commands=[],
         network=NetworkScope(
             enabled=True,
-            allowed_domains=[],
+            allowed_domains=["*"],
             denied_domains=[],
             max_requests=0,
         ),

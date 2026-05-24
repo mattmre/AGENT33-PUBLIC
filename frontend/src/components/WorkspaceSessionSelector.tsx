@@ -1,8 +1,8 @@
 import {
   WORKSPACE_SESSIONS,
-  getWorkspaceSession,
   isWorkspaceSessionId,
-  type WorkspaceSessionId
+  type WorkspaceSessionId,
+  type WorkspaceSessionSummary
 } from "../data/workspaces";
 import { getWorkspaceTaskCounts } from "../data/workspaceBoard";
 import {
@@ -10,10 +10,14 @@ import {
   getPrimaryWorkspaceTemplateStarter
 } from "../data/workspaceTemplateStarters";
 import { getWorkspaceRecoverySummary } from "../data/workspaceRecovery";
+import type { WorkspaceRecoverySummary } from "../data/workspaceRecovery";
 import type { WorkflowStarterDraft } from "../features/workflow-starter/types";
 
 interface WorkspaceSessionSelectorProps {
   selectedWorkspaceId: WorkspaceSessionId;
+  selectedWorkspace: WorkspaceSessionSummary;
+  workspaceSessions?: ReadonlyArray<WorkspaceSessionSummary>;
+  recoverySummary?: WorkspaceRecoverySummary;
   onSelectWorkspace: (workspaceId: WorkspaceSessionId) => void;
   onOpenRuns: () => void;
   onOpenWorkflows: (draft?: WorkflowStarterDraft) => void;
@@ -21,15 +25,17 @@ interface WorkspaceSessionSelectorProps {
 
 export function WorkspaceSessionSelector({
   selectedWorkspaceId,
+  selectedWorkspace,
+  workspaceSessions = WORKSPACE_SESSIONS,
+  recoverySummary,
   onSelectWorkspace,
   onOpenRuns,
   onOpenWorkflows
 }: WorkspaceSessionSelectorProps): JSX.Element {
-  const selectedWorkspace = getWorkspaceSession(selectedWorkspaceId);
   const primaryStarter = getPrimaryWorkspaceTemplateStarter(selectedWorkspaceId);
   const taskCounts = getWorkspaceTaskCounts(selectedWorkspaceId);
-  const recoverySummary = getWorkspaceRecoverySummary(selectedWorkspaceId);
-  const primarySnapshot = recoverySummary.snapshots[0] ?? null;
+  const effectiveRecoverySummary = recoverySummary ?? getWorkspaceRecoverySummary(selectedWorkspaceId);
+  const primarySnapshot = effectiveRecoverySummary.snapshots[0] ?? null;
 
   return (
     <section className="cockpit-sidebar-context workspace-session-card" aria-label="Workspace session">
@@ -54,7 +60,7 @@ export function WorkspaceSessionSelector({
           onSelectWorkspace(workspaceId);
         }}
       >
-        {WORKSPACE_SESSIONS.map((workspace) => (
+        {workspaceSessions.map((workspace) => (
           <option key={workspace.id} value={workspace.id}>
             {workspace.name} - {workspace.template}
           </option>
@@ -87,8 +93,8 @@ export function WorkspaceSessionSelector({
 
       <section className="workspace-session-recovery" aria-label="Workspace recovery">
         <span>Recovery</span>
-        <strong>{recoverySummary.primaryMessage}</strong>
-        <p>{recoverySummary.nextAction}</p>
+        <strong>{effectiveRecoverySummary.primaryMessage}</strong>
+        <p>{effectiveRecoverySummary.nextAction}</p>
         {primarySnapshot ? (
           <small>
             {primarySnapshot.resumeAction} / {primarySnapshot.budgetLabel} / {primarySnapshot.artifactCount} artifacts

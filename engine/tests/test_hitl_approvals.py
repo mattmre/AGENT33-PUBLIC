@@ -39,7 +39,11 @@ def test_tool_policy_ask_creates_pending_approval() -> None:
 def test_supervised_destructive_flow_consumes_approved_token() -> None:
     approvals = ToolApprovalService()
     governance = ToolGovernance(approval_service=approvals)
-    context = ToolContext(user_scopes=["tools:execute"], requested_by="requester-2")
+    context = ToolContext(
+        user_scopes=["tools:execute"],
+        path_allowlist=["src"],
+        requested_by="requester-2",
+    )
 
     allowed = governance.pre_execute_check(
         "file_ops",
@@ -151,6 +155,7 @@ def test_supervised_destructive_flow_consumes_approval_token() -> None:
     )
     context = ToolContext(
         user_scopes=["tools:execute"],
+        path_allowlist=["src"],
         requested_by="requester-2",
         tenant_id="tenant-a",
     )

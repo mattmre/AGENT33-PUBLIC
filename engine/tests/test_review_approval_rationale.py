@@ -184,6 +184,18 @@ class TestApproveWithRationaleService:
                 decision="approved",
             )
 
+    def test_approve_with_rationale_rejects_unknown_decision(self) -> None:
+        service = ReviewService()
+        record = service.create(task_id="task-unknown-decision", tenant_id="t1")
+        _advance_to_approved(service, record.id)
+
+        with pytest.raises(ReviewStateError, match="Unsupported approval decision"):
+            service.approve_with_rationale(
+                record.id,
+                approver_id="operator-1",
+                decision="not-a-real-decision",
+            )
+
     def test_changes_requested_then_ready_cycle(self) -> None:
         """Verify the full cycle: APPROVED -> CHANGES_REQUESTED -> READY."""
         service = ReviewService()
@@ -199,8 +211,8 @@ class TestApproveWithRationaleService:
         assert service.get(record.id).state == SignoffState.CHANGES_REQUESTED
 
         # Author addresses changes and moves back to READY
-        service._transition(service.get(record.id), SignoffState.READY)
-        assert service.get(record.id).state == SignoffState.READY
+        result = service.mark_ready(record.id)
+        assert result.state == SignoffState.READY
 
     def test_deferred_then_ready_cycle(self) -> None:
         """Verify the full cycle: APPROVED -> DEFERRED -> READY."""
@@ -216,8 +228,8 @@ class TestApproveWithRationaleService:
         )
         assert service.get(record.id).state == SignoffState.DEFERRED
 
-        service._transition(service.get(record.id), SignoffState.READY)
-        assert service.get(record.id).state == SignoffState.READY
+        result = service.mark_ready(record.id)
+        assert result.state == SignoffState.READY
 
 
 # ---------------------------------------------------------------------------

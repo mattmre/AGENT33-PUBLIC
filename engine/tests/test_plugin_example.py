@@ -350,7 +350,7 @@ class TestRegistryIntegration:
             'version: "1.0.0"\n'
             'description: "Count words, characters, and lines in a text string."\n'
             'author: "AGENT-33 Contributors"\n'
-            'homepage: "https://github.com/mattmre/AGENT33-PUBLIC"\n'
+            'homepage: "https://github.com/mattmre/AGENT33"\n'
             'entry_point: "word_count_plugin:WordCountPlugin"\n'
             "permissions:\n"
             "  - config:read\n"

@@ -1,11 +1,11 @@
 name: hive-family
 version: 1.0.0
-description: Goal-driven agent development capability pack adapted from an external skill library.
+description: Goal-driven agent development capability pack imported from the EVOKORE skill library.
 author: AGENT-33
 license: Apache-2.0
 tags:
   - imported
-  - external-skills
+  - evokore
   - agents
   - workflow
 category: agent-development

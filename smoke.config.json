@@ -1,0 +1,7 @@
+{
+  "language": "python",
+  "production_module": "agent33.main",
+  "production_exports": ["app"],
+  "production_constants": [],
+  "ceiling_command": ["python", "scripts/smoke_pipeline.py"]
+}

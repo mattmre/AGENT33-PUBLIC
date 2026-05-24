@@ -17,6 +17,47 @@ export const autonomyDomain: DomainConfig = {
           agent_id: "AGT-001",
           in_scope: ["engine/src/**"],
           out_of_scope: ["infra/**"],
+          files: {
+            read: ["engine/src/**", "engine/tests/**"],
+            write: ["engine/src/**", "engine/tests/**"],
+            deny: ["**/.env", "**/.env.*", "**/secrets/**"]
+          },
+          allowed_commands: [
+            {
+              command: "python",
+              args_pattern: "^-m (pytest|ruff)\\b.*"
+            }
+          ],
+          denied_commands: ["rm", "sudo", "ssh"],
+          require_approval_commands: ["git"],
+          network: {
+            enabled: false,
+            allowed_domains: [],
+            denied_domains: [],
+            max_requests: 0
+          },
+          limits: {
+            max_iterations: 20,
+            max_duration_minutes: 30,
+            max_files_modified: 10,
+            max_lines_changed: 1000,
+            max_tool_calls: 50
+          },
+          stop_conditions: [
+            {
+              condition_id: "SC-DEFAULT-01",
+              description: "Stop when iteration limit reached",
+              action: "stop"
+            }
+          ],
+          escalation_triggers: [
+            {
+              trigger_id: "ET-DEFAULT-01",
+              description: "Escalate when budget enforcement blocks execution",
+              target: "orchestrator",
+              urgency: "normal"
+            }
+          ],
           default_escalation_target: "orchestrator"
         },
         null,
@@ -133,7 +174,7 @@ export const autonomyDomain: DomainConfig = {
       defaultBody: JSON.stringify(
         {
           path: "engine/src/agent33/main.py",
-          action: "read"
+          mode: "read"
         },
         null,
         2
@@ -167,8 +208,7 @@ export const autonomyDomain: DomainConfig = {
       },
       defaultBody: JSON.stringify(
         {
-          host: "api.github.com",
-          protocol: "https"
+          domain: "api.github.com"
         },
         null,
         2

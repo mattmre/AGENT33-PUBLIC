@@ -206,7 +206,7 @@ def _make_operator_service(
         status_line_service=FakeAsyncHealthService("ok"),
     )
 
-    settings = Settings()
+    settings = Settings(_env_file=None)
 
     return OperatorService(
         app_state=state,

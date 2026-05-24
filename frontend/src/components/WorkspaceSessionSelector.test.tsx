@@ -3,12 +3,14 @@ import userEvent from "@testing-library/user-event";
 import { describe, expect, it, vi } from "vitest";
 
 import { WorkspaceSessionSelector } from "./WorkspaceSessionSelector";
+import { getWorkspaceSession } from "../data/workspaces";
 
 describe("WorkspaceSessionSelector", () => {
   it("renders the active workspace with beginner-readable context", () => {
     render(
       <WorkspaceSessionSelector
         selectedWorkspaceId="solo-builder"
+        selectedWorkspace={getWorkspaceSession("solo-builder")}
         onSelectWorkspace={vi.fn()}
         onOpenRuns={vi.fn()}
         onOpenWorkflows={vi.fn()}
@@ -38,6 +40,7 @@ describe("WorkspaceSessionSelector", () => {
     render(
       <WorkspaceSessionSelector
         selectedWorkspaceId="solo-builder"
+        selectedWorkspace={getWorkspaceSession("solo-builder")}
         onSelectWorkspace={onSelectWorkspace}
         onOpenRuns={onOpenRuns}
         onOpenWorkflows={onOpenWorkflows}

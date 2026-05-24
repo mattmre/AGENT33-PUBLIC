@@ -1,0 +1,30 @@
+# Example Phase 09 distribution rule fixture.
+#
+# This file materializes the rules path declared by
+# core/orchestrator/distribution/DISTRIBUTION_SYNC_SPEC.md. It is not an active
+# downstream repo rule; operators should copy it to a repo-specific filename and
+# replace target_repo before enabling sync automation.
+sync_rule:
+  id: sync-example-orchestrator-docs
+  source: "core/orchestrator/**/*.md"
+  target_repo: "example/downstream-repo"
+  target_path: "docs/agent33/orchestrator/"
+  strategy: copy
+  frequency: manual
+  filters:
+    include:
+      - "core/orchestrator/*.md"
+      - "core/orchestrator/handoff/*.md"
+    exclude:
+      - "core/orchestrator/distribution/**"
+  transforms:
+    - strip_internal_links: true
+    - rewrite_paths:
+        from: "core/"
+        to: "docs/agent33/"
+  validation:
+    checksum: true
+    schema_check: true
+    link_integrity: true
+    secret_scan: true
+    version_tag: true
