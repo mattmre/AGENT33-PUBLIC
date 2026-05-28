@@ -70,7 +70,7 @@ jobs:
             org.opencontainers.image.vendor=mattmre
 
       - name: Build and push
-        uses: docker/build-push-action@v5
+        uses: docker/build-push-action@v7
         with:
           # The Dockerfile installs the package from the engine/ directory, so
           # the build context is scoped to engine/ to match the COPY paths
