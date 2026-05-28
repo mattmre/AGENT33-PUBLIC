@@ -50,7 +50,7 @@ jobs:
 
       - name: Extract metadata
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v6
         with:
           # GHCR namespace must be lowercase. `mattmre/agent33` is already
           # lowercased; do not template this from `github.repository` because
