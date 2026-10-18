@@ -1,3 +1,4 @@
+# Disabled 2026-10-17: Matt does not use GitHub Actions; CI runs locally (see AGENTS.md).
 # Node.js 24 migration: COMPLETE (all actions Node 24 ready)
 # - actions/checkout: v6
 # - actions/setup-python: v6
@@ -5,8 +6,11 @@
 name: Post-Merge Smoke
 
 on:
-  push:
-    branches: [main]
+  workflow_dispatch:
+# Original triggers before 2026-10-17 (restore this block to re-enable):
+#   on:
+#     push:
+#       branches: [main]
 
 jobs:
   targeted-smoke:

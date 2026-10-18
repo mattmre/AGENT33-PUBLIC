@@ -1,9 +1,13 @@
+# Disabled 2026-10-17: Matt does not use GitHub Actions; CI runs locally (see AGENTS.md).
 name: Runtime Compatibility Drift
 
 on:
   workflow_dispatch:
-  schedule:
-    - cron: "0 9 * * 1"
+# Original triggers before 2026-10-17 (restore this block to re-enable):
+#   on:
+#     workflow_dispatch:
+#     schedule:
+#       - cron: "0 9 * * 1"
 
 jobs:
   runtime-compatibility:

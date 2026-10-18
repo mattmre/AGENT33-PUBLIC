@@ -1,3 +1,4 @@
+# Disabled 2026-10-17: Matt does not use GitHub Actions; CI runs locally (see AGENTS.md).
 # Build and publish the AGENT-33 engine container image to GitHub Container
 # Registry (GHCR) on tag pushes and on manual workflow_dispatch.
 #
@@ -14,9 +15,6 @@
 name: Docker Publish
 
 on:
-  push:
-    tags:
-      - 'v*'
   workflow_dispatch:
     inputs:
       tag:
@@ -24,6 +22,18 @@ on:
         required: true
         default: 'latest'
         type: string
+# Original triggers before 2026-10-17 (restore this block to re-enable):
+#   on:
+#     push:
+#       tags:
+#         - 'v*'
+#     workflow_dispatch:
+#       inputs:
+#         tag:
+#           description: 'Image tag to publish (e.g. 2.1.0 or latest)'
+#           required: true
+#           default: 'latest'
+#           type: string
 
 permissions:
   contents: read

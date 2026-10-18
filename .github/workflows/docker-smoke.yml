@@ -1,3 +1,4 @@
+# Disabled 2026-10-17: Matt does not use GitHub Actions; CI runs locally (see AGENTS.md).
 # Docker Compose E2E smoke test
 # Validates the full API stack boots and serves health/metrics/docs endpoints.
 # Runs on PRs that touch Dockerfile, docker-compose, deployment manifests,
@@ -6,16 +7,19 @@
 name: Docker Smoke
 
 on:
-  pull_request:
-    paths:
-      - 'engine/Dockerfile'
-      - 'engine/docker-compose.yml'
-      - 'engine/src/agent33/main.py'
-      - 'engine/src/agent33/config.py'
-      - 'deploy/**'
-      - 'scripts/docker-smoke-test.sh'
-      - '.github/workflows/docker-smoke.yml'
   workflow_dispatch:
+# Original triggers before 2026-10-17 (restore this block to re-enable):
+#   on:
+#     pull_request:
+#       paths:
+#         - 'engine/Dockerfile'
+#         - 'engine/docker-compose.yml'
+#         - 'engine/src/agent33/main.py'
+#         - 'engine/src/agent33/config.py'
+#         - 'deploy/**'
+#         - 'scripts/docker-smoke-test.sh'
+#         - '.github/workflows/docker-smoke.yml'
+#     workflow_dispatch:
 
 jobs:
   docker-smoke:
