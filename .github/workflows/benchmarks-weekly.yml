@@ -1,3 +1,4 @@
+# Disabled 2026-10-17: Matt does not use GitHub Actions; CI runs locally (see AGENTS.md).
 # Weekly SkillsBench full-run evaluation (POST-2.1b)
 # - Runs agent33 bench run against the full 86-task SkillsBench suite
 # - Detects >5pp regression vs committed baseline; auto-opens GitHub issue
@@ -7,8 +8,6 @@
 name: Benchmarks Weekly
 
 on:
-  schedule:
-    - cron: "0 0 * * 0"  # Every Sunday at 00:00 UTC
   workflow_dispatch:
     inputs:
       model:
@@ -19,6 +18,20 @@ on:
         description: "SkillsBench repo ref to checkout (tag or SHA)"
         required: false
         default: "main"
+# Original triggers before 2026-10-17 (restore this block to re-enable):
+#   on:
+#     schedule:
+#       - cron: "0 0 * * 0"  # Every Sunday at 00:00 UTC
+#     workflow_dispatch:
+#       inputs:
+#         model:
+#           description: "LLM model to use for evaluation"
+#           required: false
+#           default: "llama3.2"
+#         skillsbench_ref:
+#           description: "SkillsBench repo ref to checkout (tag or SHA)"
+#           required: false
+#           default: "main"
 
 permissions:
   contents: write   # push to benchmarks branch

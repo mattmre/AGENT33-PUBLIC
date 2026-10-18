@@ -1,3 +1,4 @@
+# Disabled 2026-10-17: Matt does not use GitHub Actions; CI runs locally (see AGENTS.md).
 # Auto-approve and enable squash auto-merge for Dependabot PRs that are
 # patch or minor version bumps. Major version bumps get a comment instead of
 # an auto-merge so a human can review the breaking change.
@@ -9,11 +10,14 @@
 name: Dependabot Auto-Merge
 
 on:
-  pull_request:
-    types:
-      - opened
-      - synchronize
-      - reopened
+  workflow_dispatch:
+# Original triggers before 2026-10-17 (restore this block to re-enable):
+#   on:
+#     pull_request:
+#       types:
+#         - opened
+#         - synchronize
+#         - reopened
 
 permissions:
   contents: write
